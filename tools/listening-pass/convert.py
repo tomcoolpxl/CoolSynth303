@@ -2,7 +2,9 @@
 Turns the set renders (raw 32-bit float mono at 96 kHz, out/SET-xn.f32 from sets.cpp) into WAVs to A/B against Din
 Sync's recordings of a real TB-303, at one level for every set so the sets' own level differences stay audible.
 
-    python -I tools/listening-pass/convert.py <renders folder> <Din Sync folder> <out folder>
+    python -I tools/listening-pass/convert.py <renders folder> <Din Sync folder> <out folder> [gain]
+
+A gain given keeps a level fitted before (to compare a few sets rendered again at the same level).
 
 The level: the median over all 400 notes of the real note's level against ours (30 to 80 ms after its onset, as
 compare_sets.py measures). A 5 Hz high-pass takes out the voice's DC, as the real unit's output capacitor does.
@@ -60,7 +62,7 @@ def main():
         for note in range(16):
             at = int((1.14 + 3.0 * note) * RATE)
             ratios.append(real[note] / rms(y[at + int(0.03 * RATE):at + int(0.08 * RATE)]))
-    gain = statistics.median(ratios)
+    gain = float(sys.argv[4]) if len(sys.argv) > 4 else statistics.median(ratios)
     spread = [20 * math.log10(r / gain) for r in ratios]
     print("gain %.4g; the notes' level against the real unit's: 10 %% within %.1f dB, 90 %% within %.1f dB" % (
         gain, sorted(abs(s) for s in spread)[len(spread) // 10], sorted(abs(s) for s in spread)[9 * len(spread) // 10]))
