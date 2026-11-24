@@ -3,6 +3,7 @@
 #include <cmath>
 #include <memory>
 
+#include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include "Processor.h"
@@ -217,6 +218,45 @@ namespace
                 const auto& pat = p->project().pattern(p->playingPattern(), p->playingVariationB());
                 expectWithinAbsoluteError(pat.motion[static_cast<size_t>(Knob::decay)][static_cast<size_t>(step)], 0.77f, 1e-6f);
                 expectWithinAbsoluteError(p->project().panel.decay, 0.77f, 1e-6f);
+            }
+
+            // COOLSYNTH303_RENDER=<folder>: the new project's chain once through and its first line with the knobs moved,
+            // as WAV files, for a listening pass
+            if (const auto folder = juce::SystemStats::getEnvironmentVariable("COOLSYNTH303_RENDER", {}); folder.isNotEmpty())
+            {
+                beginTest("listening_files");
+                const juce::File dir(folder);
+                dir.createDirectory();
+                const auto write = [&](const juce::String& name, const std::vector<float>& left) {
+                    auto file = dir.getChildFile(name + ".wav");
+                    file.deleteFile();
+                    juce::WavAudioFormat wav;
+                    std::unique_ptr<juce::OutputStream> stream = std::make_unique<juce::FileOutputStream>(file);
+                    auto w = wav.createWriterFor(stream, juce::AudioFormatWriterOptions {}.withSampleRate(48000.0).withNumChannels(2).withBitsPerSample(24));
+                    juce::AudioBuffer<float> b(2, static_cast<int>(left.size()));
+                    for (int ch = 0; ch < 2; ++ch)
+                        b.copyFrom(ch, 0, left.data(), static_cast<int>(left.size()));
+                    w->writeFromAudioSampleBuffer(b, 0, b.getNumSamples());
+                };
+                {
+                    auto p = prepared();
+                    p->edit([](Project& pr) { pr.chainOn = true; pr.loop = false; }, false);
+                    p->setPlaying(true);
+                    write("chain", render(*p, 12.0).left);
+                }
+                {
+                    auto p = prepared();
+                    p->edit([](Project& pr) { pr.panel.square = true; pr.panel.resonance = 0.9f; pr.panel.envMod = 0.8f; pr.panel.decay = 0.3f; pr.panel.drive = 0.6f; }, false);
+                    p->setPlaying(true);
+                    write("line1-square-resonant", render(*p, 8.0).left);
+                }
+                {
+                    auto p = prepared();
+                    p->edit([](Project& pr) { pr.panel.driveOn = false; pr.panel.delayOn = false; }, false);
+                    p->setPlaying(true);
+                    write("line1-dry", render(*p, 8.0).left);
+                }
+                expect(true);
             }
 
             beginTest("a_chain_once_through_stops_the_transport_at_its_end");
