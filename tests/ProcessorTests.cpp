@@ -239,6 +239,60 @@ namespace
                 expect(turned->project().panel == Panel {});
             }
 
+            beginTest("the_devil_fish_switch_plays_the_modded_voice_and_off_brings_the_stock_one_back");
+            {
+                const auto play = [](Processor& p) {
+                    p.setPlaying(true);
+                    return render(p, 2.0).left;
+                };
+                auto stock = prepared();
+                render(*stock, 0.2);
+                const auto a = play(*stock);
+
+                auto fish = prepared();
+                fish->edit([](Project& pr) { pr.panel.devilFish = true; });
+                render(*fish, 0.2);
+                expect(fish->isDevilFishPlaying(), "the switch reaches the audio thread");
+                const auto b = play(*fish);
+                expect(allFinite(b));
+                double difference = 0.0;
+                for (size_t i = 0; i < a.size(); ++i)
+                    difference += std::abs(static_cast<double>(a[i]) - b[i]);
+                expect(difference / static_cast<double>(a.size()) > 1.0e-3, "the Devil Fish sounds different");
+                const double levelA = 20.0 * std::log10(rms(a, 0, a.size())), levelB = 20.0 * std::log10(rms(b, 0, b.size()));
+                logMessage("line 1, stock " + juce::String(levelA, 1) + " dBFS, Devil Fish at its stock-like settings "
+                           + juce::String(levelB, 1) + " dBFS");
+                expectLessThan(std::abs(levelA - levelB), 6.0, "at its stock-like settings near the stock's level");
+
+                auto back = prepared();
+                back->edit([](Project& pr) { pr.panel.devilFish = true; });
+                render(*back, 0.1);
+                back->edit([](Project& pr) { pr.panel.devilFish = false; });
+                render(*back, 0.1);
+                expect(! back->isDevilFishPlaying(), "off again");
+                const auto c = play(*back);
+                const double levelC = 20.0 * std::log10(rms(c, 0, c.size()));
+                // not to the bit: the switch settles the stock circuit at rest where the other ran 0.2 s idle, and its
+                // slow capacitors (C13, C42) start the line a hair apart
+                expectLessThan(std::abs(levelA - levelC), 0.25, "off, the stock voice plays as before");
+            }
+
+            beginTest("the_red_accent_button_accents_every_note_on_a_devil_fish");
+            {
+                const auto hold = [](bool accent) {
+                    auto p = prepared();
+                    p->edit([](Project& pr) { pr.panel.devilFish = true; }, false);
+                    render(*p, 0.2);
+                    p->holdAccent(accent);
+                    p->audition(12);
+                    return render(*p, 0.4).left;
+                };
+                const auto plain = hold(false), accented = hold(true);
+                const double a = 20.0 * std::log10(rms(plain, 0, plain.size())), b = 20.0 * std::log10(rms(accented, 0, accented.size()));
+                logMessage("a held key, plain " + juce::String(a, 1) + " dBFS, with Accent held " + juce::String(b, 1) + " dBFS");
+                expectGreaterThan(b, a + 1.0, "louder accented");
+            }
+
             beginTest("in_a_daw_the_host_transport_runs_it_and_a_loop_back_starts_the_pattern_again");
             {
                 struct Head final : juce::AudioPlayHead
@@ -378,6 +432,32 @@ namespace
                     p->edit([](Project& pr) { pr.panel.driveOn = false; pr.panel.delayOn = false; }, false);
                     p->setPlaying(true);
                     write("line1-dry", render(*p, 8.0).left);
+                }
+                {
+                    auto p = prepared();
+                    p->edit([](Project& pr) { pr.panel.driveOn = false; pr.panel.delayOn = false; pr.panel.devilFish = true; }, false);
+                    p->setPlaying(true);
+                    write("line1-devil-fish-stock-settings", render(*p, 8.0).left);
+                }
+                {
+                    auto p = prepared();
+                    p->edit([](Project& pr) {
+                        auto& pn = pr.panel;
+                        pn.driveOn = false;
+                        pn.delayOn = false;
+                        pn.devilFish = true;
+                        pn.overdrive = 0.5f;
+                        pn.slideTime = 0.5f;
+                        pn.normalDecay = 0.35f;
+                        pn.accentDecay = 0.2f;
+                        pn.tracking = 0.4f;
+                        pn.filterFm = 0.25f;
+                        pn.muffler = 1;
+                        pn.resonance = 0.9f;
+                        pn.envMod = 0.45f;
+                    }, false);
+                    p->setPlaying(true);
+                    write("line1-devil-fish-pushed", render(*p, 8.0).left);
                 }
                 expect(true);
             }

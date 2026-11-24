@@ -40,8 +40,9 @@ namespace cs303::ui
         void tap();
     };
 
-    /** The Mods panel, over the synth's sections while open (CoolSynth's D296): the trimmers inside the case, as
-        fitted to a real unit, and Stock to set them back. The Devil Fish's controls are not in the engine yet. */
+    /** The Mods panel, over the synth's sections while open (CoolSynth's D296, D308): the trimmers inside the case, as
+        fitted to a real unit, and Stock to set them back; the Devil Fish, switched on or off, with its knobs, its
+        three switches, its red Accent button and Stock. */
     class ModsPanel final : public juce::Component
     {
     public:
@@ -49,9 +50,12 @@ namespace cs303::ui
         void paint(juce::Graphics&) override;
         void refresh();
 
+        static constexpr int fishX = 324, fishRight = 1204; // the Devil Fish's section
+
     private:
         Editor& editor;
         std::vector<std::unique_ptr<juce::Component>> parts;
+        void buildDevilFish();
     };
 
     /** The synth's sections in the signal's order with arrows between: oscillator, filter, envelope, amplifier,

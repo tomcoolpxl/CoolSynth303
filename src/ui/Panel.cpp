@@ -1,5 +1,8 @@
 #include "ui/Panel.h"
 
+#include <array>
+#include <cmath>
+
 #include "Editor.h"
 #include "Processor.h"
 #include "ui/Theme.h"
@@ -200,14 +203,14 @@ namespace cs303::ui
             float lo, hi, stock;
         };
         const Panel stock;
-        const Trim trims[] = { { "TM3 range", &Panel::tm3, 0.0f, 1.0f, stock.tm3 },
-                               { "TM4 tune", &Panel::tm4, 0.0f, 1.0f, stock.tm4 },
-                               { "TM5 width", &Panel::tm5, 0.0f, 1.0f, stock.tm5 },
+        const Trim trims[] = { { "TM3", &Panel::tm3, 0.0f, 1.0f, stock.tm3 },
+                               { "TM4", &Panel::tm4, 0.0f, 1.0f, stock.tm4 },
+                               { "TM5", &Panel::tm5, 0.0f, 1.0f, stock.tm5 },
                                { "C11", &Panel::c11, c11Lowest, c11Highest, stock.c11 } };
-        int x = 28;
+        int x = 14;
         for (const auto& t : trims)
         {
-            auto k = std::make_unique<Knob>(t.name, 40.0f);
+            auto k = std::make_unique<Knob>(t.name, 34.0f);
             const auto field = t.field;
             const float lo = t.lo, hi = t.hi;
             k->get = [&p, field, lo, hi] { return ((p.project().panel.*field) - lo) / (hi - lo); };
@@ -217,7 +220,7 @@ namespace cs303::ui
             k->gestureStart = [&p] { p.beginGesture(); };
             k->gestureEnd = [&p] { p.endGesture(); };
             const auto b = k->preferredBounds(0, 0);
-            k->setBounds(x, faceTop + 30, b.getWidth() + 20, b.getHeight());
+            k->setBounds(x, faceTop + 22, b.getWidth() + 14, b.getHeight());
             addAndMakeVisible(*k);
             parts.push_back(std::move(k));
             auto value = std::make_unique<Caption>();
@@ -229,10 +232,10 @@ namespace cs303::ui
             value->font = monoFont(11.0f);
             value->ink = colour::orange;
             value->justification = juce::Justification::centred;
-            value->setBounds(x, faceTop + 30 + b.getHeight() + 2, b.getWidth() + 20, 16);
+            value->setBounds(x, faceTop + 22 + b.getHeight() + 2, b.getWidth() + 14, 16);
             addAndMakeVisible(*value);
             parts.push_back(std::move(value));
-            x += 110;
+            x += 76;
         }
         auto stockKey = std::make_unique<Key>("Stock", true);
         stockKey->onClick = [&p] {
@@ -249,25 +252,221 @@ namespace cs303::ui
             const auto& pn = p.project().panel;
             return pn.tm3 == s.tm3 && pn.tm4 == s.tm4 && pn.tm5 == s.tm5 && pn.c11 == s.c11;
         };
-        stockKey->setBounds(28 + 4 * 110 + 8, faceTop + 112, 70, 24 + Key::lampRoom);
+        stockKey->setBounds(14, faceTop + 124, 70, 24 + Key::lampRoom);
         addAndMakeVisible(*stockKey);
         parts.push_back(std::move(stockKey));
+        auto trimNote = std::make_unique<Caption>();
+        trimNote->multiline = true;
+        trimNote->font = bodyFont(11.0f);
+        trimNote->ink = colour::hint;
+        trimNote->justification = juce::Justification::topLeft;
+        trimNote->text = [] {
+            return juce::String("Inside the case: TM3 the cutoff's reach, TM4 the tune, TM5 an octave's width, C11 the "
+                                "square's shaper.");
+        };
+        trimNote->setBounds(96, faceTop + 122, 214, 44);
+        addAndMakeVisible(*trimNote);
+        parts.push_back(std::move(trimNote));
+
+        buildDevilFish();
+
         auto close = std::make_unique<Key>("Close", false);
         close->onClick = [this] { editor.setModsOpen(false); };
-        close->setBounds(1210 - 100, faceTop + 128, 80, 24);
+        close->setBounds(1112, faceTop + 132, 84, 24);
         addAndMakeVisible(*close);
         parts.push_back(std::move(close));
+    }
+
+    namespace
+    {
+        /** The Devil Fish's red Accent button: every note accented while it is held. */
+        class AccentButton final : public juce::Component
+        {
+        public:
+            explicit AccentButton(Processor& p) : processor(p) {}
+            std::function<bool()> enabled;
+            void paint(juce::Graphics& g) override
+            {
+                const bool on = enabled == nullptr || enabled();
+                const auto r = juce::Rectangle<float>(0.0f, 0.0f, 30.0f, 30.0f).withCentre({ getWidth() * 0.5f, 17.0f });
+                g.setColour(juce::Colours::black.withAlpha(0.5f));
+                g.fillEllipse(r.translated(0.0f, 1.5f));
+                const auto red = juce::Colour(0xffd8261c).withMultipliedBrightness(held ? 0.75f : 1.0f);
+                g.setColour(on ? red : red.withSaturation(0.25f).withMultipliedBrightness(0.5f));
+                g.fillEllipse(r);
+                g.setColour(juce::Colours::white.withAlpha(0.18f));
+                g.fillEllipse(r.reduced(6.0f).translated(-3.0f, -4.0f));
+                g.setColour(on ? colour::label : colour::dim);
+                g.setFont(labelFont(10.5f));
+                g.drawText("ACCENT", getLocalBounds().removeFromBottom(14), juce::Justification::centred, false);
+            }
+            void mouseDown(const juce::MouseEvent&) override
+            {
+                if (enabled != nullptr && !enabled())
+                    return;
+                held = true;
+                processor.holdAccent(true);
+                repaint();
+            }
+            void mouseUp(const juce::MouseEvent&) override
+            {
+                held = false;
+                processor.holdAccent(false);
+                repaint();
+            }
+
+        private:
+            Processor& processor;
+            bool held = false;
+        };
+    }
+
+    void ModsPanel::buildDevilFish()
+    {
+        auto& p = editor.processor;
+        const auto fishOn = [&p] { return p.project().panel.devilFish; };
+
+        auto onKey = std::make_unique<Key>("On", true);
+        onKey->isOn = fishOn;
+        onKey->onClick = [&p] { p.edit([](Project& pr) { pr.panel.devilFish = !pr.panel.devilFish; }); };
+        onKey->setBounds(fishX + 14, faceTop + 22, 58, 24 + Key::lampRoom);
+        addAndMakeVisible(*onKey);
+        parts.push_back(std::move(onKey));
+
+        auto accent = std::make_unique<AccentButton>(p);
+        accent->enabled = fishOn;
+        accent->setBounds(fishX + 10, faceTop + 76, 66, 50);
+        addAndMakeVisible(*accent);
+        parts.push_back(std::move(accent));
+
+        // Each knob with what it sets, in the units Whittle gives (Tb303Voice::DevilFish for the scales).
+        const auto ms = [](double s) {
+            return s < 0.01 ? juce::String(s * 1000.0, 1) + " ms"
+                            : s < 1.0 ? juce::String(juce::roundToInt(s * 1000.0)) + " ms" : juce::String(s, 2) + " s";
+        };
+        struct FishKnob
+        {
+            const char* name;
+            float Panel::*field;
+            std::function<juce::String(float)> value;
+        };
+        const FishKnob knobs[] = {
+            { "Overdrive", &Panel::overdrive,
+              [](float t) {
+                  const double g = t < 0.2f ? t / 0.2 : std::pow(66.6, (t - 0.2) / 0.8);
+                  return juce::String::charToString(0xd7) + juce::String(g, g < 10.0 ? 1 : 0);
+              } },
+            { "Slide Time", &Panel::slideTime, [ms](float t) { return ms(0.06 * (103.3 + 500.0 * t) / 103.3); } },
+            { "Soft Attack", &Panel::softAttack, [ms](float t) { return ms(0.3e-3 * std::pow(100.0, t)); } },
+            { "Norm Decay", &Panel::normalDecay, [ms](float t) { return ms(0.03 * std::pow(100.0, t)); } },
+            { "Acc Decay", &Panel::accentDecay, [ms](float t) { return ms(0.03 * std::pow(100.0, t)); } },
+            { "Tracking", &Panel::tracking, [](float t) { return juce::String(1.5 * t, 2) + " oct/V"; } },
+            { "Filter FM", &Panel::filterFm, [](float t) { return juce::String(juce::roundToInt(t * 10.0f)) + " / 10"; } },
+        };
+        int x = fishX + 84;
+        const Panel stock;
+        for (const auto& k : knobs)
+        {
+            auto knob = std::make_unique<Knob>(k.name, 34.0f);
+            const auto field = k.field;
+            knob->get = [&p, field] { return p.project().panel.*field; };
+            knob->set = [&p, field](float v) { p.edit([&](Project& pr) { pr.panel.*field = v; }); };
+            knob->defaultValue = stock.*field;
+            knob->showRange = false;
+            knob->dimmed = [fishOn] { return !fishOn(); };
+            knob->gestureStart = [&p] { p.beginGesture(); };
+            knob->gestureEnd = [&p] { p.endGesture(); };
+            const auto b = knob->preferredBounds(0, 0);
+            knob->setBounds(x, faceTop + 22, b.getWidth() + 18, b.getHeight());
+            addAndMakeVisible(*knob);
+            parts.push_back(std::move(knob));
+            auto value = std::make_unique<Caption>();
+            const auto shown = k.value;
+            value->text = [&p, field, shown] { return shown(p.project().panel.*field); };
+            value->font = monoFont(11.0f);
+            value->ink = colour::orange;
+            value->justification = juce::Justification::centred;
+            value->setBounds(x - 6, faceTop + 22 + b.getHeight() + 2, b.getWidth() + 30, 16);
+            addAndMakeVisible(*value);
+            parts.push_back(std::move(value));
+            x += 82;
+        }
+
+        // The three switches: a key each, clicked through its positions (right-click back).
+        struct FishSwitch
+        {
+            const char* name;
+            int Panel::*field;
+            std::array<const char*, 3> positions;
+        };
+        const FishSwitch switches[] = {
+            { "Sweep Speed", &Panel::sweepSpeed, { "Fast", "Normal", "Slow" } },
+            { "Acc Sweep", &Panel::accentSweep, { "Off, high res", "High res", "Normal" } },
+            { "Muffler", &Panel::muffler, { "Off", "Soft", "Hard" } },
+        };
+        int y = faceTop + 22;
+        for (const auto& s : switches)
+        {
+            auto key = std::make_unique<Key>(s.name, false);
+            const auto field = s.field;
+            const juce::String name = s.name;
+            const auto positions = s.positions;
+            key->textOf = [&p, field, name, positions] {
+                return name + ": " + positions[static_cast<size_t>(juce::jlimit(0, 2, p.project().panel.*field))];
+            };
+            key->onClick = [&p, field] { p.edit([&](Project& pr) { pr.panel.*field = (pr.panel.*field + 1) % 3; }); };
+            key->onRightClick = [&p, field] { p.edit([&](Project& pr) { pr.panel.*field = (pr.panel.*field + 2) % 3; }); };
+            key->enabled = fishOn;
+            key->setBounds(fishRight - 196, y, 184, 26);
+            addAndMakeVisible(*key);
+            parts.push_back(std::move(key));
+            y += 32;
+        }
+
+        auto fishStock = std::make_unique<Key>("Stock", true);
+        fishStock->onClick = [&p] {
+            p.edit([](Project& pr) {
+                const Panel s;
+                auto& pn = pr.panel;
+                pn.overdrive = s.overdrive;
+                pn.slideTime = s.slideTime;
+                pn.softAttack = s.softAttack;
+                pn.normalDecay = s.normalDecay;
+                pn.accentDecay = s.accentDecay;
+                pn.tracking = s.tracking;
+                pn.filterFm = s.filterFm;
+                pn.sweepSpeed = s.sweepSpeed;
+                pn.accentSweep = s.accentSweep;
+                pn.muffler = s.muffler;
+                pn.decay = 0.5f; // a Devil Fish's DECAY is the volume envelope's: the TB-303's at half
+            });
+        };
+        fishStock->isOn = [&p] {
+            const Panel s;
+            const auto& pn = p.project().panel;
+            return pn.overdrive == s.overdrive && pn.slideTime == s.slideTime && pn.softAttack == s.softAttack
+                   && pn.normalDecay == s.normalDecay && pn.accentDecay == s.accentDecay && pn.tracking == s.tracking
+                   && pn.filterFm == s.filterFm && pn.sweepSpeed == s.sweepSpeed && pn.accentSweep == s.accentSweep
+                   && pn.muffler == s.muffler && pn.decay == 0.5f;
+        };
+        fishStock->enabled = fishOn;
+        fishStock->setBounds(fishRight - 196, faceTop + 124, 76, 24 + Key::lampRoom);
+        addAndMakeVisible(*fishStock);
+        parts.push_back(std::move(fishStock));
+
         auto note = std::make_unique<Caption>();
         note->multiline = true;
-        note->font = bodyFont(11.5f);
+        note->font = bodyFont(11.0f);
         note->ink = colour::hint;
         note->justification = juce::Justification::topLeft;
-        note->text = [] {
-            return juce::String("The trimmers inside the case, as fitted to a real unit: TM3 sets how far the cutoff reaches, "
-                                "TM4 tunes it, TM5 sets the width of an octave (turned, the octaves are no longer 2:1), C11 is the "
-                                "square's shaper's capacitor. Stock sets them back. The Devil Fish's controls come later.");
+        note->text = [fishOn] {
+            return fishOn() ? juce::String("Robin Whittle's mod: the panel's Decay now sets the volume's decay (held notes past "
+                                           "half), Env Mod and Cut Off reach further, the bass is fuller. Stock sets the "
+                                           "knobs where it sounds most like a TB-303.")
+                            : juce::String("Off: the stock TB-303, untouched. On: Robin Whittle's Devil Fish mod, with these "
+                                           "controls and wider Cut Off and Env Mod ranges.");
         };
-        note->setBounds(600, faceTop + 28, 480, 90);
+        note->setBounds(fishX + 92, faceTop + 118, fishRight - 196 - fishX - 104, 48);
         addAndMakeVisible(*note);
         parts.push_back(std::move(note));
     }
@@ -275,7 +474,20 @@ namespace cs303::ui
     void ModsPanel::paint(juce::Graphics& g)
     {
         g.fillAll(colour::face);
-        drawSection(g, juce::Rectangle<int>(6, faceTop, 1198, sectionHeight).toFloat(), "Mods " + juce::String::charToString(0xb7) + " trimmers", colour::face);
+        drawSection(g, juce::Rectangle<int>(6, faceTop, fishX - 14, sectionHeight).toFloat(), "Trimmers", colour::face);
+        const auto fish = juce::Rectangle<int>(fishX, faceTop, fishRight - fishX, sectionHeight).toFloat();
+        drawSection(g, fish, {}, colour::face);
+        // The name in red, as the Devil Fish's own panel prints it.
+        const auto font = juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 17.0f,
+                                                       juce::Font::bold | juce::Font::italic));
+        const juce::String name = "Devil Fish";
+        const float w = juce::GlyphArrangement::getStringWidth(font, name) + 14.0f;
+        const juce::Rectangle<float> gap(fish.getX() + 10.0f, fish.getY() - 10.0f, w, 20.0f);
+        g.setColour(colour::face);
+        g.fillRect(gap);
+        g.setColour(juce::Colour(0xffe0362a));
+        g.setFont(font);
+        g.drawText(name, gap, juce::Justification::centred, false);
     }
 
     void ModsPanel::refresh()

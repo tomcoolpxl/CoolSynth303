@@ -40,6 +40,12 @@ The panel, from the top:
 - Mods, at the top right, opens the trimmers inside the case over the synth's sections: TM3 (how far the cutoff
   reaches), TM4 (the tune), TM5 (the width of an octave) and C11 (the square's shaper), as fitted to a real unit;
   Stock sets them back.
+- Beside them, the Devil Fish: Robin Whittle's well-known modification of the 303, switched on or off (off is the
+  stock 303, untouched). On, it adds Overdrive, Slide Time, Soft Attack, Normal and Accent Decay, Filter Tracking,
+  Filter FM, the Sweep Speed, Accent Sweep and Muffler switches and the red Accent button (every note accented while
+  held). Cut Off and Env Mod reach further, the bass is fuller, and the panel's Decay then sets the volume's decay
+  (held notes past half). Its Stock sets the knobs where it sounds most like a 303. Devil Fish is Whittle's name; this
+  is a model of his mod from his manual, not his product.
 
 MIDI: while stopped, a note plays the voice (the middle C at MIDI note 36); while playing, a note transposes the
 pattern from middle C (note 60). It follows a MIDI clock when one comes in (its start, stop, continue, song position
@@ -55,6 +61,10 @@ twice the output's rate (96 kHz at 48 kHz) and is matched to ngspice renders of 
 fraction of a cent and about half a decibel. The sequencer plays it as the original's CPU does: six clocks a step,
 the gate on for three of them, a slide holding it into the next note, accent and slide latched at the step's start,
 the gate 2 ms behind the clock.
+
+The Devil Fish is the same circuit with the parts Whittle changed set to his values, a current into the filter's
+control for tracking and FM, and a sustain on the volume envelope; Soft Attack and the Muffler, whose circuits he
+never published, are simple stand-ins after the VCA.
 
 ## Building from source
 

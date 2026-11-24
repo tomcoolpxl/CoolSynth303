@@ -46,6 +46,13 @@ namespace
                 p.bpm = 133.5;
                 p.panel.square = true;
                 p.panel.delayDivision = 3;
+                p.panel.devilFish = true;
+                p.panel.overdrive = 0.8f;
+                p.panel.normalDecay = 0.1f;
+                p.panel.tracking = 0.6f;
+                p.panel.sweepSpeed = 2;
+                p.panel.accentSweep = 0;
+                p.panel.muffler = 1;
                 p.scale = Scale::phrygian;
                 p.root = 5;
                 const auto back = projectFromJson(toJson(p));

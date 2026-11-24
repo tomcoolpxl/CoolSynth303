@@ -80,6 +80,12 @@ namespace cs303
         float feedback = 0.35f, mix = 0.22f;
         // the Mods panel: the trimmers as fitted to a real unit (CoolSynth's D275), C11 in microfarads
         float tm3 = 0.35f, tm4 = 0.5687f, tm5 = 0.7389f, c11 = 0.82f;
+        // the Devil Fish (CoolSynth's D308): off, the stock TB-303; on, Whittle's modifications with these knobs
+        // (turns 0..1) and switches, their defaults where it sounds most like a TB-303 (Tb303Voice::DevilFish)
+        bool devilFish = false;
+        float overdrive = 0.2f, slideTime = 0.0f, softAttack = 0.0f, normalDecay = 0.62f, accentDecay = 0.41f;
+        float tracking = 0.0f, filterFm = 0.0f;
+        int sweepSpeed = 1, accentSweep = 2, muffler = 0; // 0 fast 1 normal 2 slow; 2 stock 1 high res 0 off; 0 1 2
         bool operator==(const Panel&) const = default;
     };
 

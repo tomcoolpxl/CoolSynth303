@@ -217,6 +217,17 @@ namespace cs303
         k->setProperty("tm4", pn.tm4);
         k->setProperty("tm5", pn.tm5);
         k->setProperty("c11", pn.c11);
+        k->setProperty("devilFish", pn.devilFish);
+        k->setProperty("overdrive", pn.overdrive);
+        k->setProperty("slideTime", pn.slideTime);
+        k->setProperty("softAttack", pn.softAttack);
+        k->setProperty("normalDecay", pn.normalDecay);
+        k->setProperty("accentDecay", pn.accentDecay);
+        k->setProperty("tracking", pn.tracking);
+        k->setProperty("filterFm", pn.filterFm);
+        k->setProperty("sweepSpeed", pn.sweepSpeed);
+        k->setProperty("accentSweep", pn.accentSweep);
+        k->setProperty("muffler", pn.muffler);
         o->setProperty("panel", juce::var(k));
         return juce::var(o);
     }
@@ -273,6 +284,17 @@ namespace cs303
         pn.tm4 = clamp01(k["tm4"], d.tm4);
         pn.tm5 = clamp01(k["tm5"], d.tm5);
         pn.c11 = k["c11"].isVoid() ? d.c11 : juce::jlimit(c11Lowest, c11Highest, static_cast<float>(static_cast<double>(k["c11"])));
+        pn.devilFish = boolOr(k["devilFish"], d.devilFish);
+        pn.overdrive = clamp01(k["overdrive"], d.overdrive);
+        pn.slideTime = clamp01(k["slideTime"], d.slideTime);
+        pn.softAttack = clamp01(k["softAttack"], d.softAttack);
+        pn.normalDecay = clamp01(k["normalDecay"], d.normalDecay);
+        pn.accentDecay = clamp01(k["accentDecay"], d.accentDecay);
+        pn.tracking = clamp01(k["tracking"], d.tracking);
+        pn.filterFm = clamp01(k["filterFm"], d.filterFm);
+        pn.sweepSpeed = clampInt(k["sweepSpeed"], 0, 2, d.sweepSpeed);
+        pn.accentSweep = clampInt(k["accentSweep"], 0, 2, d.accentSweep);
+        pn.muffler = clampInt(k["muffler"], 0, 2, d.muffler);
         return p;
     }
 

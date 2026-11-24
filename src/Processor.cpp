@@ -29,6 +29,8 @@ namespace cs303
           pending(std::make_unique<AudioCopy>()),
           audio(std::make_unique<AudioCopy>()),
           voice(std::make_unique<Tb303Voice>()),
+          fishVoice(std::make_unique<Tb303Voice>(true)),
+          active(voice.get()),
           decimator(std::make_unique<coolsynth::synth::HalfBandDecimator2x>()),
           drive(std::make_unique<DriveProcessor>()),
           delay(std::make_unique<coolsynth::synth::GlobalDelay>())
@@ -55,8 +57,11 @@ namespace cs303
         voiceBuffer.assign(static_cast<size_t>(2 * block), 0.0f);
         driveScratch.assign(static_cast<size_t>(2 * block), 0.0f);
         stereo.setSize(2, block, false, true, true);
-        voice->prepare(voiceRate);
-        voice->settle(noteVolts(12));
+        for (auto* v : { voice.get(), fishVoice.get() })
+        {
+            v->prepare(voiceRate);
+            v->settle(noteVolts(12));
+        }
         decimator->reset();
         coolsynth::synth::v3::SlotMemory memory;
         drive->prepare(voiceRate, block, memory);
@@ -179,10 +184,42 @@ namespace cs303
         t.tm4 = pn.tm4;
         t.tm5 = pn.tm5;
         t.c11 = pn.c11 * 1.0e-6;
-        const auto& was = voice->trimmers();
-        if (t.tm3 != was.tm3 || t.tm4 != was.tm4 || t.tm5 != was.tm5 || t.c11 != was.c11)
-            voice->setTrimmers(t);
+        for (auto* v : { voice.get(), fishVoice.get() })
+        {
+            const auto& was = v->trimmers();
+            if (t.tm3 != was.tm3 || t.tm4 != was.tm4 || t.tm5 != was.tm5 || t.c11 != was.c11)
+                v->setTrimmers(t);
+        }
+        Tb303Voice::DevilFish f;
+        f.overdrive = pn.overdrive;
+        f.slideTime = pn.slideTime;
+        f.softAttack = pn.softAttack;
+        f.normalDecay = pn.normalDecay;
+        f.accentDecay = pn.accentDecay;
+        f.tracking = pn.tracking;
+        f.filterFm = pn.filterFm;
+        f.sweepSpeed = pn.sweepSpeed;
+        f.accentSweep = pn.accentSweep;
+        f.muffler = pn.muffler;
+        const auto& had = fishVoice->devilFish();
+        if (f.overdrive != had.overdrive || f.slideTime != had.slideTime || f.softAttack != had.softAttack
+            || f.normalDecay != had.normalDecay || f.accentDecay != had.accentDecay || f.tracking != had.tracking
+            || f.filterFm != had.filterFm || f.sweepSpeed != had.sweepSpeed || f.accentSweep != had.accentSweep
+            || f.muffler != had.muffler)
+            fishVoice->setDevilFish(f);
         applyPanel(audio->panel, playing ? &sequencer.current() : nullptr); // a knob turned takes effect at once
+        chooseVoice(pn.devilFish);
+    }
+
+    void Processor::chooseVoice(bool devilFish) noexcept
+    {
+        auto* wanted = devilFish ? fishVoice.get() : voice.get();
+        if (wanted == active)
+            return;
+        // The other circuit takes over at rest at the pitch that plays (as a wake from rest does).
+        wanted->settle(playing ? sequencer.current().volts : auditionVolts);
+        active = wanted;
+        fishNow.store(devilFish);
     }
 
     void Processor::applyPanel(const Panel& p, const StepOut* step) noexcept
@@ -200,6 +237,7 @@ namespace cs303
         }
         k.square = p.square;
         voice->setKnobs(k);
+        fishVoice->setKnobs(k);
     }
 
     void Processor::renderSpan(float* out, int start, int count) noexcept
@@ -232,7 +270,7 @@ namespace cs303
         {
             if (resting)
             {
-                voice->settle(playing ? sequencer.current().volts : auditionVolts);
+                active->settle(playing ? sequencer.current().volts : auditionVolts);
                 resting = false;
                 quietVoiceSamples = 0;
             }
@@ -282,11 +320,13 @@ namespace cs303
                 gate = true;
                 slide = auditionSlide;
             }
-            double y = voice->process(volts, gate, accent, slide);
+            if (accentHeld.load(std::memory_order_relaxed) && active == fishVoice.get())
+                accent = gate;
+            double y = active->process(volts, gate, accent, slide);
             if (! std::isfinite(y))
             {
-                voice->prepare(voiceRate);
-                voice->settle(volts);
+                active->prepare(voiceRate);
+                active->settle(volts);
                 y = 0.0;
             }
             // C38: the output's DC off, a one-pole high-pass

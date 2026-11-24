@@ -9,6 +9,7 @@
 #include "Editor.h"
 #include "Processor.h"
 #include "ui/Keyboard.h"
+#include "ui/Panel.h"
 #include "ui/SequencerView.h"
 
 namespace
@@ -176,6 +177,27 @@ namespace
                 playFor(*p, 0.05);
             }
 
+            beginTest("the_devil_fish_switch_in_the_mods_panel_turns_it_on_and_off");
+            {
+                auto& board = e->board();
+                e->setModsOpen(true);
+                auto* mods = find<ui::ModsPanel>(board);
+                expect(mods != nullptr && mods->isVisible());
+                if (mods != nullptr)
+                {
+                    // the On key: its place in the Devil Fish's section, below its lamp
+                    const juce::Point<float> on(static_cast<float>(ui::ModsPanel::fishX + 14 + 29), 10.0f + 22.0f + 8.0f + 12.0f);
+                    expect(! p->project().panel.devilFish);
+                    click(board, onBoard(board, *mods, on));
+                    expect(p->project().panel.devilFish, "on");
+                    playFor(*p, 0.05);
+                    expect(p->isDevilFishPlaying(), "and playing");
+                    click(board, onBoard(board, *mods, on));
+                    expect(! p->project().panel.devilFish, "off again");
+                }
+                e->setModsOpen(false);
+            }
+
             const auto folder = juce::SystemStats::getEnvironmentVariable("COOLSYNTH303_SNAPSHOTS", {});
             if (folder.isNotEmpty())
             {
@@ -192,6 +214,9 @@ namespace
                 e->transposeMode = false;
                 e->setModsOpen(true);
                 snapshot(*e, dir, "panel-mods");
+                p->edit([](Project& pr) { pr.panel.devilFish = true; pr.panel.overdrive = 0.45f; pr.panel.sweepSpeed = 2; }, false);
+                snapshot(*e, dir, "panel-devil-fish");
+                p->edit([](Project& pr) { pr.panel = Panel {}; }, false);
                 e->setModsOpen(false);
                 p->setPlaying(false);
                 playFor(*p, 0.05);

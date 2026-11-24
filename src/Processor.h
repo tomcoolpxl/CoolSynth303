@@ -92,6 +92,10 @@ namespace cs303
         /** A key held on the panel while stopped: the voice plays it (key 0..36), -1 lets it go. */
         void audition(int key) noexcept { auditionKey.store(key); }
         void setRecording(bool on) noexcept { recording.store(on); }
+        /** The Devil Fish's red Accent button: every note accented while it is held (on a Devil Fish only). */
+        void holdAccent(bool held) noexcept { accentHeld.store(held); }
+        /** Whether the Devil Fish plays now (the audio thread has taken the switch). */
+        [[nodiscard]] bool isDevilFishPlaying() const noexcept { return fishNow.load(); }
         [[nodiscard]] bool isRecording() const noexcept { return recording.load(); }
 
         // ---------------------------------------------------------------- where it plays (for the panel)
@@ -149,11 +153,15 @@ namespace cs303
         std::atomic<int> transposeRequest { 0 };
         std::atomic<int> auditionKey { -1 };
         std::atomic<bool> recording { false };
+        std::atomic<bool> accentHeld { false };
 
         // audio thread
         std::unique_ptr<AudioCopy> audio;
         Sequencer sequencer;
-        std::unique_ptr<coolsynth::synth::v3::Tb303Voice> voice;
+        // the stock TB-303 and the Devil Fish (D308): two builds of the circuit, the one the panel picks plays
+        std::unique_ptr<coolsynth::synth::v3::Tb303Voice> voice, fishVoice;
+        coolsynth::synth::v3::Tb303Voice* active = nullptr;
+        void chooseVoice(bool devilFish) noexcept;
         std::unique_ptr<coolsynth::synth::HalfBandDecimator2x> decimator;
         std::unique_ptr<coolsynth::synth::v3::DriveProcessor> drive;
         std::unique_ptr<coolsynth::synth::GlobalDelay> delay;
@@ -182,7 +190,7 @@ namespace cs303
         double loadFollow = 0.0;
 
         // audio thread to the panel
-        std::atomic<bool> playingNow { false }, clockFollowed { false }, hostFollowed { false };
+        std::atomic<bool> playingNow { false }, clockFollowed { false }, hostFollowed { false }, fishNow { false };
         std::atomic<double> bpmNow { 128.0 };
         std::atomic<int> patternNow { 0 }, stepNow { -1 }, queuedNow { -1 }, chainNow { 0 }, soundingNow { -1 };
         std::atomic<bool> variationBNow { false };
