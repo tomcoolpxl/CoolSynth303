@@ -63,9 +63,13 @@ set(COOLSYNTH303_SOURCES
     src/mcp/McpServer.cpp
     src/mcp/Tools303.cpp
     src/Library.cpp
-    src/ui/LibraryShelf.cpp)
+    src/ui/LibraryShelf.cpp
+    src/StandaloneDevices.cpp
+    src/ui/WindowLook.cpp
+    src/ui/OptionsWindow.cpp)
 
-target_sources(CoolSynth303 PRIVATE ${COOLSYNTH303_SOURCES})
+# The standalone app's own window (D349) only in the app, not in the tests.
+target_sources(CoolSynth303 PRIVATE ${COOLSYNTH303_SOURCES} src/StandaloneApp.cpp)
 target_include_directories(CoolSynth303 PRIVATE src)
 target_compile_features(CoolSynth303 PUBLIC cxx_std_20)
 target_compile_definitions(CoolSynth303
@@ -73,7 +77,11 @@ target_compile_definitions(CoolSynth303
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        JUCE_DISPLAY_SPLASH_SCREEN=0)
+        JUCE_DISPLAY_SPLASH_SCREEN=0
+    PRIVATE
+        # Our own app around the standalone (D349, as CoolSynth 808's D311): JUCE's window without its Options
+        # button, in the 303's look.
+        JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1)
 target_link_libraries(CoolSynth303
     PRIVATE
         coolsynth_engine
@@ -95,6 +103,7 @@ if(BUILD_TESTING)
             tests/HostingTests.cpp
             tests/McpTests.cpp
             tests/LibraryTests.cpp
+            tests/OptionsTests.cpp
             ${COOLSYNTH303_SOURCES})
     target_include_directories(CoolSynth303Tests PRIVATE src tests)
     target_compile_features(CoolSynth303Tests PUBLIC cxx_std_20)

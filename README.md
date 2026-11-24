@@ -54,15 +54,19 @@ The panel, from the top:
 
 MIDI: while stopped, a note plays the voice (the middle C at MIDI note 36); while playing, a note transposes the
 pattern from middle C (note 60). It follows a MIDI clock when one comes in (its start, stop, continue, song position
-and tempo, the top bar then showing CLOCK), and sends its own while it plays when none does. The audio and MIDI
-settings are in the Options menu of the window.
+and tempo, the top bar then showing CLOCK), and sends its own while it plays when none does.
+
+Options, in the top bar, opens the 303's own options: the audio device and the accuracy, the MIDI ports, the
+window's size, and a page kept for the WAV export to come (in a DAW, the Host page has the accuracy).
+- Accuracy: Best, or Light: the voice at the output's own rate and solved a little less tightly, some 40 % less CPU,
+  the top octave up to 3.5 dB duller. A DAW's export always renders at Best.
 
 ## How the sound is made
 
 The voice is the engine's TB-303 circuit (`external/coolsynth-engine/src/synth/v3/Tb303Voice.h`): the oscillator's
 exponential converter and its capacitor's reset, the square's one-transistor shaper, the diode ladder with its drive
 and read-out, the envelope generator and the accent's circuit, and the BA662 VCA, each as its transistors. It runs at
-twice the output's rate (96 kHz at 48 kHz) and is matched to ngspice renders of the service notes' circuit within a
+twice the output's rate (96 kHz at 48 kHz; at the output's own in Light) and is matched to ngspice renders of the service notes' circuit within a
 fraction of a cent and about half a decibel. The sequencer plays it as the original's CPU does: six clocks a step,
 the gate on for three of them, a slide holding it into the next note, accent and slide latched at the step's start,
 the gate 2 ms behind the clock.

@@ -2,9 +2,11 @@
 
 #include "Library.h"
 #include "Processor.h"
+#include "StandaloneDevices.h"
 #include "ui/Keyboard.h"
 #include "ui/LibraryShelf.h"
 #include "ui/LidView.h"
+#include "ui/OptionsWindow.h"
 #include "ui/Panel.h"
 #include "ui/SequencerView.h"
 #include "ui/Theme.h"
@@ -81,6 +83,13 @@ namespace cs303
             const auto area = display->userBounds.reduced(24.0f, 48.0f);
             fit = std::min({ 1.0f, area.getWidth() / static_cast<float>(baseWidth), area.getHeight() / static_cast<float>(baseHeight) });
         }
+        // a size chosen in the options (D349) instead, in the app and a plugin (the tests keep the fit)
+        if (processor.wrapperType != juce::AudioProcessor::wrapperType_Undefined)
+        {
+            const juce::PropertiesFile settings(Processor::settingsOptions());
+            if (const int kept = settings.getIntValue("windowSize", 0); kept > 0)
+                fit = juce::jlimit(50, 300, kept) / 100.0f;
+        }
         setSize(std::max(640, juce::roundToInt(baseWidth * fit)), std::max(400, juce::roundToInt(baseHeight * fit)));
         startTimerHz(30);
     }
@@ -88,6 +97,9 @@ namespace cs303
     Editor::~Editor()
     {
         stopTimer();
+        optionsWindow.reset(); // its hooks point here
+        if (watchedWindow != nullptr)
+            watchedWindow->removeComponentListener(this);
         stopAudition(); // the project as it was, before the window goes
         library = nullptr;
         lid->setOpen(false);
@@ -115,6 +127,75 @@ namespace cs303
         const float x = (getWidth() - baseWidth * scale) * 0.5f, y = (getHeight() - baseHeight * scale) * 0.5f;
         boardHolder->setTransform(juce::AffineTransform::scale(scale).translated(x, y));
         lid->setBounds(getLocalBounds());
+    }
+
+    // ---------------------------------------------------------------- the options (D349)
+    bool Editor::optionsOpen() const noexcept { return optionsWindow != nullptr && optionsWindow->isVisible(); }
+
+    ui::OptionsHooks Editor::optionsHooks()
+    {
+        ui::OptionsHooks hooks;
+        hooks.accuracy = [this] { return processor.accuracy(); };
+        hooks.chooseAccuracy = [this](int level) { processor.setAccuracy(level); }; // kept by the processor in its settings
+        hooks.windowSize = [this] { return windowSizePercent(); };
+        hooks.chooseWindowSize = [this](int percent) { chooseWindowSize(percent); };
+        return hooks;
+    }
+
+    void Editor::toggleOptions()
+    {
+        if (optionsOpen())
+        {
+            optionsWindow.reset();
+            top->refresh();
+            return;
+        }
+        optionsWindow = std::make_unique<ui::OptionsWindow>(optionsHooks(), standaloneDeviceManager(), Processor::settingsOptions());
+        optionsWindow->onClose = [this]
+        {
+            // after the click that asked has returned
+            juce::MessageManager::callAsync([safe = juce::Component::SafePointer<Editor>(this)]
+            {
+                if (safe != nullptr && safe->optionsOpen())
+                    safe->toggleOptions();
+            });
+        };
+        optionsWindow->keepAbove(*this);
+        optionsWindow->setVisible(true);
+        optionsWindow->toFront(true);
+        // It stays above the 303's window: brought to the front whenever that window is (not above other apps).
+        if (auto* window = getTopLevelComponent(); window != nullptr && window != this && window != watchedWindow)
+        {
+            if (watchedWindow != nullptr)
+                watchedWindow->removeComponentListener(this);
+            watchedWindow = window;
+            watchedWindow->addComponentListener(this);
+        }
+        top->refresh();
+    }
+
+    void Editor::componentBroughtToFront(juce::Component&)
+    {
+        if (optionsOpen())
+            optionsWindow->toFront(false);
+    }
+
+    int Editor::windowSizePercent() const
+    {
+        const float scale = std::min(getWidth() / static_cast<float>(baseWidth), getHeight() / static_cast<float>(baseHeight));
+        return juce::roundToInt(scale * 100.0f);
+    }
+
+    void Editor::chooseWindowSize(int percent)
+    {
+        percent = juce::jlimit(50, 300, percent);
+        if (processor.wrapperType != juce::AudioProcessor::wrapperType_Undefined)
+        {
+            juce::PropertiesFile settings(Processor::settingsOptions());
+            settings.setValue("windowSize", percent);
+            settings.saveIfNeeded();
+        }
+        setSize(baseWidth * percent / 100, baseHeight * percent / 100);
     }
 
     void Editor::setLidOpen(bool open)

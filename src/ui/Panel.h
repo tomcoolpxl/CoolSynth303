@@ -14,7 +14,8 @@ namespace cs303
 
 namespace cs303::ui
 {
-    /** The top bar: the pattern's name between two arrows, New, Open, Save; the transport, the tempo, Tap, Rec. */
+    /** The top bar: the pattern's name between two arrows, New, Open, Save, Library, Options; the transport, the
+        tempo, Tap, Rec. */
     class TopBar final : public juce::Component
     {
     public:
@@ -29,7 +30,7 @@ namespace cs303::ui
     private:
         Editor& editor;
         std::vector<std::unique_ptr<Key>> keys;
-        Key *prev = nullptr, *next = nullptr, *play = nullptr, *rec = nullptr, *mods = nullptr, *lid = nullptr, *library = nullptr, *tapKey = nullptr;
+        Key *prev = nullptr, *next = nullptr, *play = nullptr, *rec = nullptr, *mods = nullptr, *lid = nullptr, *library = nullptr, *tapKey = nullptr, *options = nullptr;
         juce::Rectangle<int> nameBox, tempoBox;
         double dragStartBpm = 0.0;
         std::vector<double> taps;

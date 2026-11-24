@@ -137,6 +137,17 @@ namespace cs303
         /** How much of the time the audio thread spent rendering, smoothed (0..1 of the block's own time). */
         [[nodiscard]] float load() const noexcept { return loadNow.load(); }
 
+        // ---------------------------------------------------------------- the accuracy (D349; message thread)
+        /** The circuits' accuracy: 0 Best; 1 Light, the voice at the host's rate, not near 96 kHz, and every
+            circuit's solve to 1 uV but the pitch's (Tb303Voice::setLighter). A host's offline render always runs at
+            Best. The app keeps it in its settings, the same for every song. */
+        void setAccuracy(int level);
+        [[nodiscard]] int accuracy() const noexcept { return accuracyLevel; }
+        /** The level the voice runs at now: the setting, or Best while the host renders offline. */
+        [[nodiscard]] int accuracyInUse() const noexcept { return accuracyNow; }
+        /** The app's own settings file (the accuracy; in the standalone also the devices, the options' page). */
+        [[nodiscard]] static juce::PropertiesFile::Options settingsOptions();
+
         /** Renders while stopped from a key, for tests: the voice's own path without the sequencer. */
         static constexpr int maxBlock = 4096;
 
@@ -215,6 +226,9 @@ namespace cs303
         juce::AudioBuffer<float> stereo;
         double hostRate = 48000.0, voiceRate = 96000.0;
         int factor = 2; // voice samples a host sample
+        int accuracyLevel = 0, accuracyNow = 0; // D349: the setting (message thread), the level prepared
+        int preparedBlock = 0;
+        bool prepared = false;
         bool playing = false, playingByClock = false, playingByHost = false, endedUnderClock = false;
         ClockFollower clock;
         std::int64_t samplesSoFar = 0;

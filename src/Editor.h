@@ -19,6 +19,8 @@ namespace cs303
         class TopBar;
         class LidView;
         class LibraryShelf;
+        class OptionsWindow;
+        struct OptionsHooks;
     }
     struct LibraryLine;
     struct LibrarySound;
@@ -31,7 +33,7 @@ namespace cs303
         What the panel shows but the project does not keep lives here: the step picked, the pattern edited, the
         keyboard's mode, which knob's moves the motion lane shows, what Mutate may change.
     */
-    class Editor final : public juce::AudioProcessorEditor, private juce::Timer
+    class Editor final : public juce::AudioProcessorEditor, private juce::Timer, private juce::ComponentListener
     {
     public:
         static constexpr int baseWidth = 1280, baseHeight = 800;
@@ -67,6 +69,14 @@ namespace cs303
         void auditionLine(const LibraryLine* line);
         void auditionSound(const LibrarySound* sound);
         [[nodiscard]] bool isAuditioning() const noexcept { return auditionSaved != nullptr; }
+        /** The options (D349): a window of their own above this one, opened and closed by the top bar's Options key. */
+        void toggleOptions();
+        [[nodiscard]] bool optionsOpen() const noexcept;
+        /** What the options act on: the processor's accuracy, this window's size. */
+        [[nodiscard]] ui::OptionsHooks optionsHooks();
+        /** The window's size in percent of the base size, and a size chosen in the options (kept in the app's settings). */
+        [[nodiscard]] int windowSizePercent() const;
+        void chooseWindowSize(int percent);
         Knob motionKnob = Knob::cutoff;
         MutateWhat mutateWhat {};
         std::optional<Pattern> clipboard; // a pattern copied from a pattern key's menu
@@ -91,8 +101,11 @@ namespace cs303
 
     private:
         void timerCallback() override;
+        void componentBroughtToFront(juce::Component&) override;
 
         std::unique_ptr<juce::Component> boardHolder;
+        std::unique_ptr<ui::OptionsWindow> optionsWindow;
+        juce::Component* watchedWindow = nullptr; // the window this editor is in, while the options keep above it
         std::unique_ptr<ui::TopBar> top;
         std::unique_ptr<ui::SynthPanel> synth;
         std::unique_ptr<ui::ModsPanel> mods;

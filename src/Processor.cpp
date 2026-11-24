@@ -60,6 +60,12 @@ namespace cs303
             k.store(0.0f);
         lidRing.assign(static_cast<size_t>(lidFrames) * static_cast<size_t>(lidStride()), 0.0f);
         push();
+        // The accuracy (D349): the app's, from its settings, in the standalone and a plugin; Best in the tests.
+        if (wrapperType != wrapperType_Undefined)
+        {
+            juce::PropertiesFile file(settingsOptions());
+            accuracyLevel = juce::jlimit(0, 1, file.getIntValue("accuracy", 0));
+        }
         // Claude's way in, in the standalone app only (a plugin in a DAW opens no port).
         if (wrapperType == wrapperType_Standalone)
         {
@@ -70,6 +76,37 @@ namespace cs303
     }
 
     int Processor::lidSeries() noexcept { return coolsynth::synth::v3::Tb303Lid::count(); }
+
+    juce::PropertiesFile::Options Processor::settingsOptions()
+    {
+        // Beside JUCE's own file for the standalone's devices, as CoolSynth 808's (D339).
+        juce::PropertiesFile::Options options;
+        options.applicationName = "CoolSynth303";
+        options.filenameSuffix = ".settings";
+        options.folderName = "CoolSynth303";
+        options.osxLibrarySubFolder = "Application Support";
+        return options;
+    }
+
+    void Processor::setAccuracy(int level)
+    {
+        level = juce::jlimit(0, 1, level);
+        if (level == accuracyLevel)
+            return;
+        accuracyLevel = level;
+        if (wrapperType != wrapperType_Undefined)
+        {
+            juce::PropertiesFile file(settingsOptions());
+            file.setValue("accuracy", level);
+            file.saveIfNeeded();
+        }
+        if (! prepared)
+            return;
+        // The voice's tolerances and perhaps its rate change: prepared again while the audio thread skips its blocks.
+        suspendProcessing(true);
+        prepareToPlay(hostRate, preparedBlock);
+        suspendProcessing(false);
+    }
 
     Processor::~Processor()
     {
@@ -127,8 +164,12 @@ namespace cs303
     void Processor::prepareToPlay(double sampleRate, int samplesPerBlock)
     {
         hostRate = sampleRate > 0.0 ? sampleRate : 48000.0;
-        factor = hostRate < 80000.0 ? 2 : 1; // the voice near 96 kHz (D294): twice 44.1 or 48 kHz, a fast device's own rate
+        // The accuracy (D349): a host's offline render at Best whatever the setting.
+        accuracyNow = isNonRealtime() ? 0 : accuracyLevel;
+        // the voice near 96 kHz (D294): twice 44.1 or 48 kHz, a fast device's own rate; Light the host's own
+        factor = hostRate < 80000.0 && accuracyNow == 0 ? 2 : 1;
         voiceRate = factor * hostRate;
+        preparedBlock = samplesPerBlock;
         lidEvery = std::max(1, juce::roundToInt(voiceRate / lidRate));
         lidPhase = 0;
         const int block = std::max(samplesPerBlock, maxBlock);
@@ -138,6 +179,7 @@ namespace cs303
         for (auto* v : { voice.get(), fishVoice.get() })
         {
             v->prepare(voiceRate);
+            v->setLighter(accuracyNow >= 1);
             v->settle(noteVolts(12));
         }
         decimator->reset();
@@ -152,6 +194,7 @@ namespace cs303
         playing = false;
         sixteenth = -1;
         dirty.store(true);
+        prepared = true;
     }
 
     // ---------------------------------------------------------------- the project

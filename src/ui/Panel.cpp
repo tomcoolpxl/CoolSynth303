@@ -33,6 +33,9 @@ namespace cs303::ui
         add("Save").onClick = [this] { saveProject(); };
         library = &add("Library"); // the shelf of lines and sounds (D338)
         library->onClick = [this] { editor.openLibrary(); };
+        options = &add("Options"); // the options' own window (D349), lit while it is open
+        options->isOn = [this] { return editor.optionsOpen(); };
+        options->onClick = [this] { editor.toggleOptions(); };
         play = &add("Play");
         play->textOf = [&p = p] { return juce::String(p.isPlaying() ? "Stop" : "Play"); };
         play->isOn = [&p = p] { return p.isPlaying(); };
@@ -71,6 +74,7 @@ namespace cs303::ui
             x += 62;
         }
         library->setBounds(x + 6, y, 72, h);
+        options->setBounds(library->getRight() + 6, y, 72, h);
         int r = getWidth() - 16;
         mods->setBounds(r - 60, y, 60, h);
         r -= 68;

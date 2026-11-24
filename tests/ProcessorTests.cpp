@@ -145,6 +145,38 @@ namespace
                 expect(ra.left == rb.left);
             }
 
+            beginTest("the_accuracy_levels_sound_alike_cost_less_and_an_offline_render_plays_at_best");
+            {
+                // D349: Light (the host's rate, the looser solve) as loud as Best within 1 dB and cheaper; a host's
+                // offline render at Best whatever the setting.
+                Rendered r[2];
+                for (int level = 0; level < 2; ++level)
+                {
+                    auto p = prepared();
+                    p->setAccuracy(level);
+                    expectEquals(p->accuracyInUse(), level);
+                    p->setPlaying(true);
+                    r[level] = render(*p, 3.0);
+                    expect(allFinite(r[level].left));
+                }
+                const double loudness = juce::Decibels::gainToDecibels(rms(r[1].left, 0, r[1].left.size()) / rms(r[0].left, 0, r[0].left.size()));
+                expectLessThan(std::abs(loudness), 1.0, "Light as loud as Best");
+                if (juce::SystemStats::getEnvironmentVariable("CI", {}).isEmpty())
+                    expectLessThan(r[1].seconds, r[0].seconds * 0.8, "Light costs less");
+                logMessage("the first line: Best " + juce::String(100.0 * r[0].seconds / 3.0, 1) + " % of real time, Light "
+                           + juce::String(100.0 * r[1].seconds / 3.0, 1) + " % (" + juce::String(loudness, 2) + " dB louder)");
+
+                auto offline = std::make_unique<Processor>();
+                offline->setNonRealtime(true);
+                offline->setPlayConfigDetails(0, 2, 48000.0, 480);
+                offline->setAccuracy(1);
+                offline->prepareToPlay(48000.0, 480);
+                expectEquals(offline->accuracy(), 1);
+                expectEquals(offline->accuracyInUse(), 0);
+                offline->setPlaying(true);
+                expect(render(*offline, 3.0).left == r[0].left, "an offline render is Best's, sample for sample");
+            }
+
             beginTest("it_plays_at_44_1_khz_too");
             {
                 auto p = prepared(44100.0, 441);
