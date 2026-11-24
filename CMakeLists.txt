@@ -32,7 +32,8 @@ juce_add_binary_data(CoolSynth303Data
         resources/fonts/Archivo-ExtraBold.ttf
         resources/fonts/IBMPlexMono-Medium.ttf
         resources/fonts/IBMPlexMono-SemiBold.ttf
-        resources/lid/tb303-sheet.json)
+        resources/lid/tb303-sheet.json
+        resources/library/library303.json)
 
 # A JUCE audio plugin: the standalone app first, as CoolSynth 808 (D267), and a VST3 for a DAW (CoolSynth's D296, D305).
 juce_add_plugin(CoolSynth303
@@ -60,7 +61,9 @@ set(COOLSYNTH303_SOURCES
     src/ui/SequencerView.cpp
     src/ui/LidView.cpp
     src/mcp/McpServer.cpp
-    src/mcp/Tools303.cpp)
+    src/mcp/Tools303.cpp
+    src/Library.cpp
+    src/ui/LibraryShelf.cpp)
 
 target_sources(CoolSynth303 PRIVATE ${COOLSYNTH303_SOURCES})
 target_include_directories(CoolSynth303 PRIVATE src)
@@ -91,6 +94,7 @@ if(BUILD_TESTING)
             tests/EditorTests.cpp
             tests/HostingTests.cpp
             tests/McpTests.cpp
+            tests/LibraryTests.cpp
             ${COOLSYNTH303_SOURCES})
     target_include_directories(CoolSynth303Tests PRIVATE src tests)
     target_compile_features(CoolSynth303Tests PUBLIC cxx_std_20)

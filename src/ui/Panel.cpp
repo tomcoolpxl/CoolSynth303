@@ -31,11 +31,14 @@ namespace cs303::ui
         };
         add("Open").onClick = [this] { openProject(); };
         add("Save").onClick = [this] { saveProject(); };
+        library = &add("Library"); // the shelf of lines and sounds (D338)
+        library->onClick = [this] { editor.openLibrary(); };
         play = &add("Play");
         play->textOf = [&p = p] { return juce::String(p.isPlaying() ? "Stop" : "Play"); };
         play->isOn = [&p = p] { return p.isPlaying(); };
         play->onClick = [this] { editor.togglePlay(); };
-        add("Tap").onClick = [this] { tap(); };
+        tapKey = &add("Tap");
+        tapKey->onClick = [this] { tap(); };
         rec = &add("Rec");
         rec->isOn = [&p = p] { return p.isRecording(); };
         rec->onClick = [&p = p] { p.setRecording(! p.isRecording()); };
@@ -67,6 +70,7 @@ namespace cs303::ui
             keys[static_cast<size_t>(i)]->setBounds(x, y, 56, h);
             x += 62;
         }
+        library->setBounds(x + 6, y, 72, h);
         int r = getWidth() - 16;
         mods->setBounds(r - 60, y, 60, h);
         r -= 68;
@@ -74,7 +78,7 @@ namespace cs303::ui
         r -= 66;
         rec->setBounds(r - 50, y, 50, h);
         r -= 58;
-        keys[6]->setBounds(r - 50, y, 50, h); // Tap
+        tapKey->setBounds(r - 50, y, 50, h);
         r -= 58;
         tempoBox = { r - 104, y, 104, h };
         r -= 112;

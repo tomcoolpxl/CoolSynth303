@@ -71,6 +71,12 @@ The Devil Fish is the same circuit with the parts Whittle changed set to his val
 control for tracking and FM, and a sustain on the volume envelope; Soft Attack and the Muffler, whose circuits he
 never published, are simple stand-ins after the VCA.
 
+The Library key opens a shelf of lines and sounds: 30 original lines in ten styles (Chicago 87 to rolling sub) and
+12 sounds, four of them Devil Fish ones. Audition plays a line in place of the pattern you edit, or your pattern with
+a sound; Load puts it in, one undo step; Keep a copy puts one among yours (kept in
+`%APPDATA%\CoolSynth303\Library`), which you can rename or send to the Recycle Bin. `tools/library/make_library.py`
+writes the built-in ones.
+
 The output ends in a soft saturation: untouched up to -3 dBFS, above it rounded off toward full scale, so a pushed
 Devil Fish never clips digitally.
 

@@ -1,7 +1,9 @@
 #include "Editor.h"
 
+#include "Library.h"
 #include "Processor.h"
 #include "ui/Keyboard.h"
+#include "ui/LibraryShelf.h"
 #include "ui/LidView.h"
 #include "ui/Panel.h"
 #include "ui/SequencerView.h"
@@ -86,6 +88,8 @@ namespace cs303
     Editor::~Editor()
     {
         stopTimer();
+        stopAudition(); // the project as it was, before the window goes
+        library = nullptr;
         lid->setOpen(false);
         processor.audition(-1);
     }
@@ -122,6 +126,159 @@ namespace cs303
             lid->toFront(true);
         else
             grabKeyboardFocus();
+    }
+
+    void Editor::openLibrary()
+    {
+        if (library != nullptr)
+            return;
+        library = std::make_unique<ui::LibraryShelf>();
+        const auto two = juce::String(editPattern + 1).paddedLeft('0', 2) + (editB ? "B" : "A");
+        library->loadTarget = two;
+        library->onClose = [this]
+        {
+            // Let go after the shelf's own callback has returned, never inside it.
+            juce::MessageManager::callAsync([safe = juce::Component::SafePointer<Editor>(this)] { if (safe != nullptr) safe->closeLibrary(); });
+        };
+        library->onLoadLine = [this](const LibraryLine& l) { loadLine(l); };
+        library->onLoadSound = [this](const LibrarySound& s) { loadSound(s); };
+        library->onAuditionLine = [this](const LibraryLine* l) { auditionLine(l); };
+        library->onAuditionSound = [this](const LibrarySound* s) { auditionSound(s); };
+        library->currentLine = [this]
+        {
+            LibraryLine l;
+            l.name = "Pattern " + juce::String(editPattern + 1).paddedLeft('0', 2) + (editB ? "B" : "A");
+            l.style = "My lines";
+            l.bpm = processor.project().bpm;
+            l.pattern = edited();
+            return l;
+        };
+        library->currentSound = [this]
+        {
+            LibrarySound s;
+            s.name = "My sound";
+            s.family = "My sounds";
+            s.values = soundValuesOf(processor.project().panel);
+            return s;
+        };
+        boardHolder->addAndMakeVisible(*library);
+        library->setBounds(0, 0, baseWidth, baseHeight);
+        library->toFront(true);
+        library->grabKeyboardFocus();
+    }
+
+    void Editor::closeLibrary()
+    {
+        stopAudition();
+        library = nullptr;
+        grabKeyboardFocus();
+        refreshAll();
+    }
+
+    void Editor::beginAudition()
+    {
+        // The first entry heard keeps the project as it was; another after it starts again from that.
+        if (auditionSaved == nullptr)
+        {
+            auditionSaved = std::make_unique<Project>(processor.project());
+            auditionStartedPlaying = ! processor.isPlaying();
+        }
+        else
+        {
+            const Project back = *auditionSaved;
+            processor.edit([&back](Project& p) { p = back; }, false);
+        }
+    }
+
+    void Editor::stopAudition()
+    {
+        if (auditionSaved == nullptr)
+            return;
+        const Project back = *auditionSaved;
+        processor.edit([&back](Project& p) { p = back; }, false);
+        if (auditionStartedPlaying)
+            processor.setPlaying(false);
+        auditionSaved.reset();
+        auditionStartedPlaying = false;
+        if (library != nullptr)
+            library->auditionEnded();
+        refreshAll();
+    }
+
+    void Editor::auditionLine(const LibraryLine* line)
+    {
+        if (line == nullptr)
+        {
+            stopAudition();
+            return;
+        }
+        beginAudition();
+        const int index = editPattern;
+        const bool b = editB;
+        const Pattern pattern = line->pattern;
+        const double bpm = line->bpm;
+        processor.edit([&](Project& p) { p.pattern(index, b) = pattern; p.bpm = bpm; }, false);
+        processor.hearPattern(index, b);
+        if (! processor.isPlaying())
+            processor.setPlaying(true);
+        refreshAll();
+    }
+
+    void Editor::auditionSound(const LibrarySound* sound)
+    {
+        if (sound == nullptr)
+        {
+            stopAudition();
+            return;
+        }
+        beginAudition();
+        const auto values = sound->values;
+        processor.edit([&values](Project& p) { p.panel = applySound(p.panel, values); }, false);
+        if (! processor.isPlaying())
+            processor.setPlaying(true);
+        refreshAll();
+    }
+
+    void Editor::loadLine(const LibraryLine& line)
+    {
+        // An audition gives yours back first, so the load is the one undo step from what you had; a transport the
+        // audition started stops, as the 808's does.
+        if (auditionSaved != nullptr)
+        {
+            const Project back = *auditionSaved;
+            processor.edit([&back](Project& p) { p = back; }, false);
+            auditionSaved.reset();
+            if (auditionStartedPlaying)
+                processor.setPlaying(false);
+            auditionStartedPlaying = false;
+        }
+        const int index = editPattern;
+        const bool b = editB;
+        const Pattern pattern = line.pattern;
+        const double bpm = line.bpm;
+        processor.edit([&](Project& p) { p.pattern(index, b) = pattern; p.bpm = bpm; });
+        pick = std::min(pick, pattern.length - 1);
+        if (library != nullptr)
+            library->auditionEnded();
+        refreshAll();
+    }
+
+    void Editor::loadSound(const LibrarySound& sound)
+    {
+        if (auditionSaved != nullptr)
+        {
+            const Project back = *auditionSaved;
+            processor.edit([&back](Project& p) { p = back; }, false);
+            auditionSaved.reset();
+            if (auditionStartedPlaying)
+                processor.setPlaying(false);
+            auditionStartedPlaying = false;
+        }
+        const auto values = sound.values;
+        processor.edit([&values](Project& p) { p.panel = applySound(p.panel, values); });
+        if (library != nullptr)
+            library->auditionEnded();
+        refreshAll();
     }
 
     const Pattern& Editor::edited() const { return processor.project().pattern(editPattern, editB); }

@@ -18,7 +18,10 @@ namespace cs303
         class SequencerSection;
         class TopBar;
         class LidView;
+        class LibraryShelf;
     }
+    struct LibraryLine;
+    struct LibrarySound;
 
     /*
         CoolSynth 303's window: the layout the user picked, 2.3 (CoolSynth's D302): the top bar, the synth's sections
@@ -53,6 +56,17 @@ namespace cs303
         /** Under the Lid (D310): the circuit over the whole window, at the screen's own pixels. */
         void setLidOpen(bool open);
         [[nodiscard]] ui::LidView& lidView() noexcept { return *lid; }
+        /** The library (D338): the shelf over the board; closing it ends an audition and gives yours back. */
+        void openLibrary();
+        void closeLibrary();
+        [[nodiscard]] ui::LibraryShelf* libraryShelf() noexcept { return library.get(); }
+        /** A line into the pattern you edit, with its tempo; a sound onto the panel. One undo step each. */
+        void loadLine(const LibraryLine& line);
+        void loadSound(const LibrarySound& sound);
+        /** An audition (null ends it): what plays is the library's, without an undo step, until stopped or loaded. */
+        void auditionLine(const LibraryLine* line);
+        void auditionSound(const LibrarySound* sound);
+        [[nodiscard]] bool isAuditioning() const noexcept { return auditionSaved != nullptr; }
         Knob motionKnob = Knob::cutoff;
         MutateWhat mutateWhat {};
         std::optional<Pattern> clipboard; // a pattern copied from a pattern key's menu
@@ -85,6 +99,11 @@ namespace cs303
         std::unique_ptr<ui::KeyboardSection> keys;
         std::unique_ptr<ui::SequencerSection> sequencer;
         std::unique_ptr<ui::LidView> lid;
+        std::unique_ptr<ui::LibraryShelf> library;
+        std::unique_ptr<Project> auditionSaved; // the project as it was before an audition
+        bool auditionStartedPlaying = false;
+        void stopAudition();
+        void beginAudition();
         std::uint32_t lastEdits = 0;
         int lastStep = -2, lastPattern = -1, lastQueued = -2, lastSounding = -2;
         bool lastPlaying = false;

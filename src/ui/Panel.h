@@ -29,7 +29,7 @@ namespace cs303::ui
     private:
         Editor& editor;
         std::vector<std::unique_ptr<Key>> keys;
-        Key *prev = nullptr, *next = nullptr, *play = nullptr, *rec = nullptr, *mods = nullptr, *lid = nullptr;
+        Key *prev = nullptr, *next = nullptr, *play = nullptr, *rec = nullptr, *mods = nullptr, *lid = nullptr, *library = nullptr, *tapKey = nullptr;
         juce::Rectangle<int> nameBox, tempoBox;
         double dragStartBpm = 0.0;
         std::vector<double> taps;
