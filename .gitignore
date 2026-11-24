@@ -1,0 +1,9 @@
+build/
+*.pdb
+*.ilk
+.vs/
+__pycache__/
+listening/
+build_*.log
+snapshots/
+test_run.log
