@@ -279,7 +279,9 @@ namespace cs303::ui
 
     namespace
     {
-        /** The Devil Fish's red Accent button: every note accented while it is held. */
+        /** The Devil Fish's red Accent button, as on Whittle's panel: a round red cap in a flat silver ring, the word
+            under it, the cap darker while held (the user's pick of six mockups, D309). Every note accented while it is
+            held. */
         class AccentButton final : public juce::Component
         {
         public:
@@ -287,16 +289,20 @@ namespace cs303::ui
             std::function<bool()> enabled;
             void paint(juce::Graphics& g) override
             {
-                const bool on = enabled == nullptr || enabled();
-                const auto r = juce::Rectangle<float>(0.0f, 0.0f, 30.0f, 30.0f).withCentre({ getWidth() * 0.5f, 17.0f });
-                g.setColour(juce::Colours::black.withAlpha(0.5f));
-                g.fillEllipse(r.translated(0.0f, 1.5f));
-                const auto red = juce::Colour(0xffd8261c).withMultipliedBrightness(held ? 0.75f : 1.0f);
-                g.setColour(on ? red : red.withSaturation(0.25f).withMultipliedBrightness(0.5f));
-                g.fillEllipse(r);
-                g.setColour(juce::Colours::white.withAlpha(0.18f));
-                g.fillEllipse(r.reduced(6.0f).translated(-3.0f, -4.0f));
-                g.setColour(on ? colour::label : colour::dim);
+                const float alpha = enabled == nullptr || enabled() ? 1.0f : 0.45f;
+                const auto ring = juce::Rectangle<float>(37.0f, 37.0f).withCentre({ getWidth() * 0.5f, 19.5f });
+                g.setColour(juce::Colours::black.withMultipliedAlpha(alpha));
+                g.fillEllipse(ring.translated(0.0f, 1.5f));
+                g.setColour(juce::Colour(0xff9a9ca1).withMultipliedAlpha(alpha));
+                g.fillEllipse(ring);
+                g.setColour(juce::Colour(0xffc9cacc).withMultipliedAlpha(alpha));
+                g.drawEllipse(ring.reduced(0.5f), 1.0f);
+                const auto cap = ring.reduced(5.5f);
+                g.setColour(juce::Colour(0xff2a1210).withMultipliedAlpha(alpha));
+                g.fillEllipse(cap.expanded(1.0f));
+                g.setColour(juce::Colour(held ? 0xff902a20 : 0xffc8392b).withMultipliedAlpha(alpha));
+                g.fillEllipse(cap);
+                g.setColour(colour::label.withMultipliedAlpha(alpha));
                 g.setFont(labelFont(10.5f));
                 g.drawText("ACCENT", getLocalBounds().removeFromBottom(14), juce::Justification::centred, false);
             }
@@ -335,7 +341,7 @@ namespace cs303::ui
 
         auto accent = std::make_unique<AccentButton>(p);
         accent->enabled = fishOn;
-        accent->setBounds(fishX + 10, faceTop + 76, 66, 50);
+        accent->setBounds(fishX + 10, faceTop + 68, 66, 58); // under On
         addAndMakeVisible(*accent);
         parts.push_back(std::move(accent));
 
