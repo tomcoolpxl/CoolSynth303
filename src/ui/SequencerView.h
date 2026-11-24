@@ -32,6 +32,8 @@ namespace cs303::ui
     private:
         Editor& editor;
         static constexpr int maxShown = 8;
+        /** Right-click on a pattern key: copy, paste, clear, A to B, rename. */
+        void patternMenu(int index);
     };
 
     /** The tools, each group named: a new line (Generate, Mutate and what it may change), the key, Move, Pitch,

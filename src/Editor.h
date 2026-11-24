@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
@@ -50,6 +51,7 @@ namespace cs303
         void setModsOpen(bool open);
         Knob motionKnob = Knob::cutoff;
         MutateWhat mutateWhat {};
+        std::optional<Pattern> clipboard; // a pattern copied from a pattern key's menu
         std::uint32_t nextSeed = 0x303u;
 
         [[nodiscard]] const Pattern& edited() const;

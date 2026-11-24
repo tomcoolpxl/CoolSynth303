@@ -102,7 +102,11 @@ namespace cs303::ui
         for (int i = 0; i < 16; ++i)
         {
             const auto r = slotBounds(i).toFloat();
-            const bool has = proj.pattern(i, false).step != Pattern {}.step || proj.pattern(i, true).step != Pattern {}.step;
+            const auto notes = [](const Pattern& pat) {
+                const Pattern blank;
+                return pat.step != blank.step && std::any_of(pat.step.begin(), pat.step.end(), [](const Step& s) { return s.gate == Gate::note; });
+            };
+            const bool has = notes(proj.pattern(i, false)) || notes(proj.pattern(i, true));
             const bool hearing = playing && p.playingPattern() == i;
             const bool queued = playing && p.queuedPattern() == i;
             juce::Colour fill = hearing ? colour::orange : has ? juce::Colour(0xff45474c) : juce::Colour(0xff333438);
@@ -176,7 +180,10 @@ namespace cs303::ui
         for (int i = 0; i < 16; ++i)
             if (slotBounds(i).contains(pos))
             {
-                editor.choosePattern(i, editor.editB);
+                if (e.mods.isPopupMenu())
+                    patternMenu(i);
+                else
+                    editor.choosePattern(i, editor.editB);
                 return;
             }
         for (bool b : { false, true })
@@ -221,6 +228,50 @@ namespace cs303::ui
             p.edit([](Project& pr) { pr.loop = ! pr.loop; });
             editor.refreshAll();
         }
+    }
+
+    void PatternRow::patternMenu(int index)
+    {
+        auto& p = editor.processor;
+        const bool b = editor.editB;
+        const juce::String here = two(index) + (b ? "B" : "A");
+        juce::PopupMenu m;
+        m.addSectionHeader("Pattern " + here);
+        m.addItem("Copy", [this, index, b] { editor.clipboard = editor.processor.project().pattern(index, b); });
+        m.addItem("Paste", editor.clipboard.has_value(), false, [this, index, b] {
+            const auto copied = *editor.clipboard;
+            editor.processor.edit([&](Project& pr) { pr.pattern(index, b) = copied; });
+            editor.refreshAll();
+        });
+        m.addItem("Clear", [this, index, b] {
+            editor.processor.edit([&](Project& pr) {
+                auto& pat = pr.pattern(index, b);
+                pat = Pattern {};
+                for (auto& s : pat.step)
+                    s.gate = Gate::rest;
+            });
+            editor.refreshAll();
+        });
+        m.addItem(b ? "Copy B to A" : "Copy A to B", [this, index, b] {
+            editor.processor.edit([&](Project& pr) { pr.pattern(index, ! b) = pr.pattern(index, b); });
+            editor.refreshAll();
+        });
+        m.addItem("Rename...", [this, index, b, &p] {
+            auto* w = new juce::AlertWindow("Rename the pattern", {}, juce::MessageBoxIconType::NoIcon);
+            w->addTextEditor("name", juce::String(p.project().pattern(index, b).name));
+            w->addButton("Rename", 1, juce::KeyPress(juce::KeyPress::returnKey));
+            w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+            w->enterModalState(true, juce::ModalCallbackFunction::create([this, w, index, b](int result) {
+                if (result == 1)
+                {
+                    const auto name = w->getTextEditorContents("name").trim().substring(0, 40).toStdString();
+                    editor.processor.edit([&](Project& pr) { pr.pattern(index, b).name = name; });
+                    editor.refreshAll();
+                }
+            }), true);
+        });
+        juce::ignoreUnused(p);
+        m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(this));
     }
 
     void PatternRow::mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& w)
