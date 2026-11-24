@@ -108,6 +108,8 @@ namespace cs303
         [[nodiscard]] float liveKnob(Knob k) const noexcept { return liveKnobs[static_cast<size_t>(k)].load(); }
         /** Whether an incoming MIDI clock runs the transport now, and the tempo it plays at. */
         [[nodiscard]] bool isFollowingClock() const noexcept { return clockFollowed.load(); }
+        /** In a DAW: whether the host's transport runs it now. */
+        [[nodiscard]] bool isFollowingHost() const noexcept { return hostFollowed.load(); }
         [[nodiscard]] double tempoNow() const noexcept { return bpmNow.load(); }
         /** How much of the time the audio thread spent rendering, smoothed (0..1 of the block's own time). */
         [[nodiscard]] float load() const noexcept { return loadNow.load(); }
@@ -158,7 +160,7 @@ namespace cs303
         std::vector<float> voiceBuffer, driveScratch;
         juce::AudioBuffer<float> stereo;
         double hostRate = 48000.0, voiceRate = 96000.0;
-        bool playing = false, playingByClock = false, endedUnderClock = false;
+        bool playing = false, playingByClock = false, playingByHost = false, endedUnderClock = false;
         ClockFollower clock;
         std::int64_t samplesSoFar = 0;
         double blockBpm = 128.0; // the tempo this block plays at: the project's, or the clock's
@@ -179,7 +181,7 @@ namespace cs303
         double loadFollow = 0.0;
 
         // audio thread to the panel
-        std::atomic<bool> playingNow { false }, clockFollowed { false };
+        std::atomic<bool> playingNow { false }, clockFollowed { false }, hostFollowed { false };
         std::atomic<double> bpmNow { 128.0 };
         std::atomic<int> patternNow { 0 }, stepNow { -1 }, queuedNow { -1 }, chainNow { 0 }, soundingNow { -1 };
         std::atomic<bool> variationBNow { false };

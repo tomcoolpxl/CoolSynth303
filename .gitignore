@@ -7,3 +7,4 @@ listening/
 build_*.log
 snapshots/
 test_run.log
+engine_*.log

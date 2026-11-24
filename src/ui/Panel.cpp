@@ -92,13 +92,14 @@ namespace cs303::ui
         g.drawText(name, nameBox.reduced(8, 0), juce::Justification::centred, true);
 
         // following an incoming MIDI clock, its tempo, named so
-        const bool byClock = editor.processor.isFollowingClock();
+        const bool byHost = editor.processor.isFollowingHost();
+        const bool byClock = byHost || editor.processor.isFollowingClock();
         g.setColour(colour::orange);
         g.setFont(monoFont(17.0f));
         g.drawText(juce::String(byClock ? editor.processor.tempoNow() : proj.bpm, 1), tempoBox.withTrimmedRight(40), juce::Justification::centredRight, false);
         g.setColour(byClock ? colour::orange : colour::hint);
         g.setFont(labelFont(10.5f));
-        g.drawText(byClock ? "CLOCK" : "BPM", tempoBox.withTrimmedLeft(68), juce::Justification::centredLeft, false);
+        g.drawText(byHost ? "HOST" : byClock ? "CLOCK" : "BPM", tempoBox.withTrimmedLeft(68), juce::Justification::centredLeft, false);
 
         // the audio thread's share of its time, small, at the far left of the transport
         const float load = editor.processor.load();

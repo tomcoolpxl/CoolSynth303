@@ -334,8 +334,8 @@ namespace cs303
             midi.addEvent(juce::MidiMessage::midiStop(), 0);
             clockStopPending = false;
         }
-        if (! playing || playingByClock)
-            return; // following a clock, it does not send one of its own
+        if (! playing || playingByClock || playingByHost)
+            return; // following a clock or a host, it does not send one of its own
         const double perSample = juce::jlimit(20.0, 400.0, blockBpm) / 60.0 / hostRate;
         const double startBeat = beat - perSample * numSamples; // the block's start: beat has moved on in renderSpan
         for (int i = 0; i < numSamples; ++i)
@@ -388,13 +388,32 @@ namespace cs303
             sequencer.requestPattern(pr / 2, (pr & 1) != 0);
         sequencer.setTranspose(transposeRequest.load());
 
-        // Following a clock, it plays while the clock plays; a clock gone while it played stops it (as the 808's)
-        const bool byClock = clock.present(samplesSoFar);
+        // In a DAW, its transport runs the sequencer: it plays while the host plays, from where the host is, at its
+        // tempo. Standalone, a MIDI clock does: it plays while the clock plays; a clock gone while it played stops it
+        // (as the 808's).
+        bool byHost = false;
+        double hostBeat = 0.0, hostBpm = 0.0;
+        if (wrapperType != wrapperType_Standalone)
+            if (auto* head = getPlayHead())
+                if (const auto position = head->getPosition())
+                {
+                    if (const auto b = position->getBpm())
+                        hostBpm = *b;
+                    if (const auto ppq = position->getPpqPosition(); ppq && position->getIsPlaying())
+                    {
+                        byHost = true;
+                        hostBeat = *ppq;
+                    }
+                }
+        const bool byClock = ! byHost && clock.present(samplesSoFar);
         clockFollowed.store(byClock);
+        hostFollowed.store(byHost);
         const int request = playRequest.exchange(-1);
-        bool wantPlay = byClock ? clock.isPlaying() : (request < 0 ? playing : request == 1);
+        bool wantPlay = byHost ? true : byClock ? clock.isPlaying() : (request < 0 ? playing : request == 1);
         if (! byClock && playing && playingByClock)
             wantPlay = false;
+        if (! byHost && playing && playingByHost)
+            wantPlay = false; // the host stopped
         // a chain played once through under a clock stays stopped until that clock stops or starts again
         if (! byClock || ! clock.isPlaying())
             endedUnderClock = false;
@@ -404,17 +423,24 @@ namespace cs303
         blockBpm = juce::jlimit(40.0, 300.0, audio->bpm);
         if (byClock)
             clock.block(samplesSoFar, numSamples, clockBeat, blockBpm);
+        if (byHost)
+        {
+            clockBeat = hostBeat;
+            if (hostBpm > 0.0)
+                blockBpm = juce::jlimit(20.0, 400.0, hostBpm);
+        }
         if (wantPlay != playing)
         {
             playing = wantPlay;
             if (playing)
             {
                 playingByClock = byClock;
+                playingByHost = byHost;
                 sequencer.reset();
-                beat = byClock ? clockBeat : 0.0;
+                beat = byClock || byHost ? clockBeat : 0.0;
                 sixteenth = -1;
                 clockBeatSent = beat;
-                clockStartPending = ! byClock;
+                clockStartPending = ! byClock && ! byHost;
                 auditionKey.store(-1);
                 lastAudition = -1;
             }
@@ -424,12 +450,20 @@ namespace cs303
                 applyPanel(audio->panel, nullptr);
                 stepNow.store(-1);
                 soundingNow.store(-1);
-                clockStopPending = ! playingByClock;
-                playingByClock = false;
+                clockStopPending = ! playingByClock && ! playingByHost;
+                playingByClock = playingByHost = false;
             }
         }
-        else if (playing && playingByClock)
-            beat = clockBeat; // where the clock puts this block's start
+        else if (playing && (playingByClock || playingByHost))
+        {
+            // where the clock or the host puts this block's start; the host looping back starts the pattern afresh
+            if (playingByHost && std::floor(clockBeat * 4.0) < static_cast<double>(sixteenth))
+            {
+                sequencer.reset();
+                sixteenth = -1;
+            }
+            beat = clockBeat;
+        }
         bpmNow.store(blockBpm);
         for (int done = 0; done < numSamples;)
         {

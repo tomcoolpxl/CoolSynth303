@@ -227,6 +227,51 @@ namespace
                 expect(turned->project().panel == Panel {});
             }
 
+            beginTest("in_a_daw_the_host_transport_runs_it_and_a_loop_back_starts_the_pattern_again");
+            {
+                struct Head final : juce::AudioPlayHead
+                {
+                    bool isPlaying = false;
+                    double ppq = 0.0, bpm = 90.0;
+                    juce::Optional<PositionInfo> getPosition() const override
+                    {
+                        PositionInfo info;
+                        info.setIsPlaying(isPlaying);
+                        info.setPpqPosition(ppq);
+                        info.setBpm(bpm);
+                        return info;
+                    }
+                };
+                auto p = prepared();
+                Head head;
+                p->setPlayHead(&head);
+                juce::AudioBuffer<float> buffer(2, 480);
+                const auto run = [&](double seconds) {
+                    for (int b = 0; b < static_cast<int>(seconds * 100.0); ++b)
+                    {
+                        juce::MidiBuffer midi;
+                        p->processBlock(buffer, midi);
+                        if (head.isPlaying)
+                            head.ppq += 480.0 / 48000.0 * head.bpm / 60.0;
+                    }
+                };
+                run(0.2);
+                expect(! p->isPlaying(), "the host stopped, it waits");
+                head.isPlaying = true;
+                head.ppq = 8.0;
+                run(1.0); // 1.5 beats at 90 BPM: six steps
+                expect(p->isPlaying() && p->isFollowingHost());
+                expectWithinAbsoluteError(p->tempoNow(), 90.0, 1e-6);
+                expectEquals(p->playingStep(), 5);
+                head.ppq = 8.0; // the host's loop comes round
+                run(0.05);
+                expectEquals(p->playingStep(), 0);
+                head.isPlaying = false;
+                run(0.1);
+                expect(! p->isPlaying(), "the host's stop stops it");
+                p->setPlayHead(nullptr);
+            }
+
             beginTest("a_held_key_sounds_while_stopped");
             {
                 auto p = prepared();

@@ -68,6 +68,10 @@ ctest --test-dir CoolSynth303/build -C Debug --output-on-failure
 ```
 
 The Debug build is compiled optimised (the engine's `cmake/CoolSynthFlags.cmake`). The app is
-`build/CoolSynth303_artefacts/Debug/Standalone/CoolSynth 303.exe`.
+`build/CoolSynth303_artefacts/Debug/Standalone/CoolSynth 303.exe`; the plugin is
+`build/CoolSynth303_artefacts/Debug/VST3/CoolSynth 303.vst3` (copy it to `C:\Program Files\Common Files\VST3`).
+
+In a DAW the host's transport runs the sequencer: it plays while the host plays, from where it is, at its tempo
+(the top bar shows HOST), and a loop in the host starts the pattern again; the save file is the host's project.
 
 MIT licence. The fonts are Archivo and IBM Plex Mono, under the SIL Open Font License (`resources/fonts`).
