@@ -371,7 +371,7 @@ namespace cs303::ui
         redo.onClick = [this, &p = p] { p.redo(); editor.refreshAll(); };
         endGroup();
         auto midi = std::make_unique<MidiKey>(editor);
-        midi->setBounds(x, 1, 92, 24);
+        midi->setBounds(std::min(x, 1186 - 92), 1, 92, 24); // its right edge on the row's, never past it
         x += 97;
         addAndMakeVisible(*midi);
         parts.push_back(std::move(midi));
@@ -532,7 +532,7 @@ namespace cs303::ui
             g.setColour(colour::rowName);
             g.setFont(labelFont(11.0f).withExtraKerningFactor(0.08f));
             g.drawText("MOTION", juce::Rectangle<float>(4.0f, r.getY() - 2.0f, 80.0f, 14.0f), juce::Justification::centredLeft, false);
-            drawWell(g, juce::Rectangle<float>(4.0f, r.getY() + 14.0f, 80.0f, 20.0f), knobName(editor.motionKnob), colour::orange);
+            drawWell(g, juce::Rectangle<float>(4.0f, r.getY() + 14.0f, 62.0f, 20.0f), knobName(editor.motionKnob), colour::amber); // clear of the screen's edge
         }
 
         for (int i = 0; i < 16; ++i)

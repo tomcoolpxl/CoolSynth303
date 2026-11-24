@@ -146,9 +146,25 @@ namespace cs303::ui
         // the name: the arc shows the value, so no 0 and 10 under it
         if (name.isNotEmpty())
         {
+            const juce::Rectangle<float> line(0.0f, c.y + r + 8.0f, static_cast<float>(getWidth()), 14.0f);
+            const auto nameFont = labelFont(11.0f);
+            const auto text = name.toUpperCase();
+            g.setFont(nameFont);
             g.setColour(colour::label);
-            g.setFont(labelFont(11.0f));
-            g.drawText(name.toUpperCase(), juce::Rectangle<float>(0.0f, c.y + r + 8.0f, static_cast<float>(getWidth()), 14.0f), juce::Justification::centred, false);
+            if (! valueText)
+                g.drawText(text, line, juce::Justification::centred, false);
+            else
+            {
+                // the name and its value side by side, centred together
+                const auto shownValue = valueText();
+                const auto valueFont = fontOf(Face::monoBold, 11.5f);
+                const float nw = juce::GlyphArrangement::getStringWidth(nameFont, text), vw = juce::GlyphArrangement::getStringWidth(valueFont, shownValue);
+                const float x = line.getCentreX() - (nw + 6.0f + vw) * 0.5f;
+                g.drawText(text, line.withX(x).withWidth(nw + 2.0f), juce::Justification::centredLeft, false);
+                g.setFont(valueFont);
+                g.setColour(colour::amber);
+                g.drawText(shownValue, line.withX(x + nw + 6.0f).withWidth(vw + 2.0f), juce::Justification::centredLeft, false);
+            }
         }
     }
 

@@ -546,7 +546,7 @@ namespace cs303::ui
         };
 
         // the oscillator
-        plainKnob(knob("Tuning", 44.0f, 6, 50, 28), &Panel::tuning);
+        plainKnob(knob("Tuning", 44.0f, 6, 50, 40), &Panel::tuning);
         {
             // the waveform: two keys in one bay, each with its wave drawn on it, the names under them
             for (const bool square : { false, true })
@@ -577,15 +577,15 @@ namespace cs303::ui
             auto& on = key("On", 804, 18, 120, 0);
             on.isOn = [&p = p] { return p.project().panel.driveOn; };
             on.onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.driveOn = ! pr.panel.driveOn; }); };
-            plainKnob(knob("Amount", 40.0f, 804, 16, 36), &Panel::drive);
-            plainKnob(knob("Tone", 40.0f, 804, 94, 36), &Panel::tone);
+            plainKnob(knob("Amount", 40.0f, 804, 16, 44), &Panel::drive);
+            plainKnob(knob("Tone", 40.0f, 804, 94, 44), &Panel::tone);
         }
         // the delay
         {
             auto& on = key("On", 996, 14, 120, 0);
             on.isOn = [&p = p] { return p.project().panel.delayOn; };
             on.onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.delayOn = ! pr.panel.delayOn; }); };
-            auto& time = knob("Time", 40.0f, 996, 10, 36);
+            auto& time = knob("Time", 40.0f, 996, 10, 44);
             time.get = [&p = p] { return static_cast<float>(p.project().panel.delayDivision) / 3.0f; };
             time.set = [&p = p](float v) {
                 const int d = juce::roundToInt(v * 3.0f);
@@ -593,13 +593,8 @@ namespace cs303::ui
                     p.edit([d](Project& pr) { pr.panel.delayDivision = d; });
             };
             time.defaultValue = 1.0f / 3.0f;
-            auto value = std::make_unique<Caption>();
-            value->text = [&p = p] { return juce::String(delayDivisionName(p.project().panel.delayDivision)); };
-            value->font = fontOf(Face::monoBold, 12.0f);
-            value->ink = colour::amber;
-            value->setBounds(996 + 62, faceTop + 128, 40, 24);
-            addAndMakeVisible(*value);
-            parts.push_back(std::move(value));
+            // the division beside the knob's name, in the displays' amber
+            time.valueText = [&p = p] { return juce::String(delayDivisionName(p.project().panel.delayDivision)); };
             for (auto [name, field, x] : { std::tuple { "Feedback", &Panel::feedback, 96 }, std::tuple { "Mix", &Panel::mix, 150 } })
             {
                 auto f = std::make_unique<Fader>(name);

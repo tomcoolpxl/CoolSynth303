@@ -23,6 +23,7 @@ namespace cs303::ui
         std::function<void()> gestureStart, gestureEnd;
         std::function<float()> follow;          // when set and >= 0: the value the pattern moves it to, drawn
         std::function<bool()> dimmed;           // drawn as not holding its own value (a lock not set)
+        std::function<juce::String()> valueText; // when set: a value shown beside the name (the delay's division)
         float defaultValue = 0.5f;
         bool showRange = true;
         bool accentRim = false;                 // an orange body: the accent's lock knob
