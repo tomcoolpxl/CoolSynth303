@@ -259,6 +259,35 @@ namespace
                 expect(turned->project().panel == Panel {});
             }
 
+            beginTest("pushed_to_the_top_the_output_rounds_off_below_full_scale");
+            {
+                // The output stage (D332): the user's own loud setting (Devil Fish, Overdrive full, Filter FM 0.77, the
+                // Drive and the Delay on) went past full scale; now it rounds off under it, and a quiet line is untouched.
+                auto loud = prepared();
+                loud->edit([](Project& pr)
+                {
+                    pr.panel.devilFish = true;
+                    pr.panel.overdrive = 1.0f;
+                    pr.panel.filterFm = 0.77f;
+                    pr.panel.volume = 1.0f;
+                    pr.panel.accent = 1.0f;
+                });
+                render(*loud, 0.2);
+                loud->setPlaying(true);
+                const auto out = render(*loud, 4.0).left;
+                float peak = 0.0f;
+                size_t above = 0;
+                for (const float v : out)
+                {
+                    peak = std::max(peak, std::abs(v));
+                    above += std::abs(v) > 0.7079458f ? 1u : 0u;
+                }
+                logMessage("pushed: peak " + juce::String(juce::Decibels::gainToDecibels(peak), 2) + " dBFS, "
+                           + juce::String(100.0 * static_cast<double>(above) / static_cast<double>(out.size()), 2) + " % of samples rounded off");
+                expectLessThan(peak, 1.0f, "never at full scale");
+                expectGreaterThan(above, size_t { 0 }, "the setting does reach the knee, so the stage is tried");
+            }
+
             beginTest("the_devil_fish_switch_plays_the_modded_voice_and_off_brings_the_stock_one_back");
             {
                 const auto play = [](Processor& p) {

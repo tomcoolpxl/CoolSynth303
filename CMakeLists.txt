@@ -5,6 +5,14 @@ project(CoolSynth303 VERSION 0.1.0 LANGUAGES C CXX) # C as well: JUCE 9 builds z
 # The settings every CoolSynth program shares (the C++ runtime, a Debug build compiled optimised), from the engine.
 include(external/coolsynth-engine/cmake/CoolSynthFlags.cmake)
 
+# A Release build optimised across all its code at link time (whole-program optimisation: /GL with /LTCG on MSVC), the
+# engine's and JUCE's too, as CoolSynth 808's (its D327). Not AVX2: CoolSynth's own test found it no faster and bit for
+# bit the same, and it would shut out every PC from before 2013. The everyday Debug build is not touched. A build may
+# pass -DCMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE=OFF to time it without.
+if(NOT DEFINED CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+endif()
+
 add_subdirectory(external/JUCE)
 include(CTest)
 # The engine's own tests run in its repository's CI; here only this app's.
@@ -50,7 +58,9 @@ set(COOLSYNTH303_SOURCES
     src/ui/Panel.cpp
     src/ui/Keyboard.cpp
     src/ui/SequencerView.cpp
-    src/ui/LidView.cpp)
+    src/ui/LidView.cpp
+    src/mcp/McpServer.cpp
+    src/mcp/Tools303.cpp)
 
 target_sources(CoolSynth303 PRIVATE ${COOLSYNTH303_SOURCES})
 target_include_directories(CoolSynth303 PRIVATE src)
@@ -80,6 +90,7 @@ if(BUILD_TESTING)
             tests/ProcessorTests.cpp
             tests/EditorTests.cpp
             tests/HostingTests.cpp
+            tests/McpTests.cpp
             ${COOLSYNTH303_SOURCES})
     target_include_directories(CoolSynth303Tests PRIVATE src tests)
     target_compile_features(CoolSynth303Tests PUBLIC cxx_std_20)

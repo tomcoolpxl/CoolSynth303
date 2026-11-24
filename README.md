@@ -71,6 +71,12 @@ The Devil Fish is the same circuit with the parts Whittle changed set to his val
 control for tracking and FM, and a sustain on the volume envelope; Soft Attack and the Muffler, whose circuits he
 never published, are simple stand-ins after the VCA.
 
+The output ends in a soft saturation: untouched up to -3 dBFS, above it rounded off toward full scale, so a pushed
+Devil Fish never clips digitally.
+
+The standalone app serves Claude over MCP on 127.0.0.1:47633 (`src/mcp`, as CoolSynth's): read and set the panel, run
+the sequencer, hold keys, record the output into a WAV file, picture the window. The plugin opens no port.
+
 `tools/listening-pass` plays the stock voice through Din Sync's 25 recorded sets of a real TB-303 (each knob from
 25 to 100 %, the others at five settings) and serves a page that switches between the real unit and ours while both
 play. The recordings are not in the repository; they come from dinsync.info.

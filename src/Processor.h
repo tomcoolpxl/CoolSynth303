@@ -22,6 +22,10 @@ namespace coolsynth::synth::v3
     class Tb303Voice;
     class DriveProcessor;
 }
+namespace coolsynth::mcp
+{
+    class Server;
+}
 
 /*
     CoolSynth 303's processor: the 303's circuit (the engine's Tb303Voice, CoolSynth's D295) played by the app's
@@ -136,6 +140,20 @@ namespace cs303
         /** Renders while stopped from a key, for tests: the voice's own path without the sequencer. */
         static constexpr int maxBlock = 4096;
 
+        // ---------------------------------------------------------------- Claude's way in (the MCP server)
+        /** The output's left channel kept from now for so many seconds (at most 60), for the record tool: the buffer
+            is made here, on the message thread, and the audio thread only fills it. */
+        void startCapture(double seconds);
+        /** Samples captured so far, and the rate they were taken at; capture() holds them. */
+        [[nodiscard]] int captured() const noexcept { return captureCount.load(std::memory_order_acquire); }
+        [[nodiscard]] double captureRate() const noexcept { return hostRate; }
+        [[nodiscard]] const std::vector<float>& capture() const noexcept { return captureBuffer; }
+        /** The loudest output sample since the last call, 0..1, for the play tool. */
+        [[nodiscard]] float takeLoudest() noexcept { return loudest.exchange(0.0f); }
+        /** Starts the app's MCP server (the standalone does, at its start): 127.0.0.1 only. */
+        void startMcpServer();
+        [[nodiscard]] juce::String mcpStatus() const { return mcpStatusText; }
+
     private:
         struct AudioCopy
         {
@@ -152,6 +170,15 @@ namespace cs303
         void renderVoice(float* v, int n, int key, double beatPerVoiceSample, double secondsPerStep, const Panel& panel) noexcept;
         void finishSpan(float* out, int start, int count, const Panel& panel) noexcept;
         void sendClock(juce::MidiBuffer& midi, int numSamples) noexcept;
+
+        // the MCP server (message thread); stopped first when the processor goes
+        std::shared_ptr<std::atomic<bool>> alive = std::make_shared<std::atomic<bool>>(true);
+        std::unique_ptr<coolsynth::mcp::Server> mcp;
+        juce::String mcpStatusText = "Off";
+        std::vector<float> captureBuffer;
+        std::atomic<bool> captureArmed { false };
+        std::atomic<int> captureCount { 0 };
+        std::atomic<float> loudest { 0.0f };
 
         // message thread
         std::unique_ptr<Project> model;

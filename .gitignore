@@ -9,3 +9,4 @@ snapshots/
 test_run.log
 engine_*.log
 tools/listening-pass/marks.json
+build-rel-*/

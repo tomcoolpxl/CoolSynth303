@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "Editor.h"
+#include "mcp/Tools303.h"
 #include "synth/GlobalDelay.h"
 #include "synth/HalfBand2x.h"
 #include "synth/v3/ShaperProcessors.h"
@@ -22,6 +23,17 @@ namespace cs303
 
         /** The Volume knob: silent at 0, unity near three quarters, +6 dB at the top. */
         double volumeGain(double v) noexcept { return 2.0 * v * v * v; }
+
+        /** The output stage's soft saturation: straight up to the knee (-3 dBFS), then a tanh from there toward full
+            scale, its slope 1 at the knee so nothing below it changes and nothing above it jumps. */
+        float outputStage(float x) noexcept
+        {
+            constexpr float knee = 0.7079458f, room = 1.0f - knee;
+            const float a = std::abs(x);
+            if (a <= knee)
+                return x;
+            return std::copysign(knee + room * std::tanh((a - knee) / room), x);
+        }
     }
 
     Processor::Processor()
@@ -40,11 +52,59 @@ namespace cs303
             k.store(0.0f);
         lidRing.assign(static_cast<size_t>(lidFrames) * static_cast<size_t>(lidStride()), 0.0f);
         push();
+        // Claude's way in, in the standalone app only (a plugin in a DAW opens no port).
+        if (wrapperType == wrapperType_Standalone)
+            startMcpServer();
     }
 
     int Processor::lidSeries() noexcept { return coolsynth::synth::v3::Tb303Lid::count(); }
 
-    Processor::~Processor() = default;
+    Processor::~Processor()
+    {
+        alive->store(false); // a tool's job still queued finds the processor gone and does nothing
+        mcp = nullptr;
+    }
+
+    void Processor::startCapture(double seconds)
+    {
+        captureArmed.store(false, std::memory_order_release);
+        // The audio thread may still be inside its last copy: wait out a block before the buffer is touched.
+        juce::Thread::sleep(static_cast<int>(1000.0 * maxBlock / std::max(1.0, hostRate)) + 5);
+        captureBuffer.assign(static_cast<size_t>(juce::jlimit(0.1, 60.0, seconds) * hostRate), 0.0f);
+        captureCount.store(0, std::memory_order_release);
+        captureArmed.store(true, std::memory_order_release);
+    }
+
+    void Processor::startMcpServer()
+    {
+        if (mcp != nullptr)
+            return;
+        // A tool runs on the message thread, as the panel's own edits do, and the server waits for it (10 s at most).
+        coolsynth::mcp::Server::Runner runner = [alive = alive](std::function<void()> job)
+        {
+            if (juce::MessageManager::getInstance()->isThisTheMessageThread())
+            {
+                job();
+                return;
+            }
+            auto done = std::make_shared<juce::WaitableEvent>();
+            juce::MessageManager::callAsync([alive, done, job = std::move(job)]
+            {
+                if (alive->load())
+                    job();
+                done->signal();
+            });
+            done->wait(10000);
+        };
+        mcp = std::make_unique<coolsynth::mcp::Server>("CoolSynth 303", "0.1", tools303(*this, runner), runner);
+        if (mcp->start(mcpPort))
+            mcpStatusText = "On: Claude reaches this app at http://127.0.0.1:" + juce::String(mcpPort) + "/mcp.";
+        else
+        {
+            mcp = nullptr;
+            mcpStatusText = "Could not start: port " + juce::String(mcpPort) + " is taken (another CoolSynth 303?).";
+        }
+    }
 
     bool Processor::isBusesLayoutSupported(const BusesLayout& layouts) const
     {
@@ -556,6 +616,15 @@ namespace cs303
         dp.pingPong = false;
         delay->process(view, dp);
 
+        // The output stage (D332): untouched up to -3 dBFS, above it rounded off toward full scale as an analogue
+        // stage runs out of voltage, so a pushed Devil Fish never meets the sound card's flat digital clip.
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            float* s = stereo.getWritePointer(ch);
+            for (int i = 0; i < numSamples; ++i)
+                s[i] = outputStage(s[i]);
+        }
+
         for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
             buffer.copyFrom(ch, 0, stereo, std::min(ch, 1), 0, numSamples);
 
@@ -564,6 +633,20 @@ namespace cs303
         float peak = 0.0f;
         for (int i = 0; i < numSamples; ++i)
             peak = std::max(peak, std::abs(stereo.getSample(0, i)));
+        // The MCP tools' measures: the loudest sample since asked, and the output kept while a capture is armed.
+        for (float was = loudest.load(); peak > was && ! loudest.compare_exchange_weak(was, peak);)
+        {
+        }
+        if (captureArmed.load(std::memory_order_acquire))
+        {
+            const int have = captureCount.load(std::memory_order_relaxed);
+            const int take = std::min(numSamples, static_cast<int>(captureBuffer.size()) - have);
+            if (take > 0)
+            {
+                std::copy_n(stereo.getReadPointer(0), take, captureBuffer.data() + have);
+                captureCount.store(have + take, std::memory_order_release);
+            }
+        }
         levelFollow = std::max(static_cast<double>(peak), levelFollow * 0.85);
         levelNow.store(static_cast<float>(levelFollow));
         const double seconds = juce::Time::highResolutionTicksToSeconds(juce::Time::getHighResolutionTicks() - started);
