@@ -134,6 +134,18 @@ namespace
                 expect(rms(r.left, 0, r.left.size()) > 0.01);
             }
 
+            beginTest("at_96_khz_the_voice_runs_at_the_device_rate_and_keeps_up");
+            {
+                auto p = prepared(96000.0, 960);
+                p->setPlaying(true);
+                const auto r = render(*p, 2.0, 96000.0, 960);
+                expect(allFinite(r.left));
+                expect(rms(r.left, 0, r.left.size()) > 0.01);
+                logMessage("at 96 kHz: rendering took " + juce::String(100.0 * r.seconds / 2.0, 1) + " % of the time it plays");
+                if (juce::SystemStats::getEnvironmentVariable("CI", {}).isEmpty())
+                    expect(r.seconds < 2.0, "it renders faster than it plays");
+            }
+
             beginTest("its_transport_sends_midi_clock_24_a_beat");
             {
                 auto p = prepared();

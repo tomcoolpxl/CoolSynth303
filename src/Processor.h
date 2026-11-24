@@ -160,6 +160,7 @@ namespace cs303
         std::vector<float> voiceBuffer, driveScratch;
         juce::AudioBuffer<float> stereo;
         double hostRate = 48000.0, voiceRate = 96000.0;
+        int factor = 2; // voice samples a host sample
         bool playing = false, playingByClock = false, playingByHost = false, endedUnderClock = false;
         ClockFollower clock;
         std::int64_t samplesSoFar = 0;

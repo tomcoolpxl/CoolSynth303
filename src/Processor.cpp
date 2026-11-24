@@ -49,7 +49,8 @@ namespace cs303
     void Processor::prepareToPlay(double sampleRate, int samplesPerBlock)
     {
         hostRate = sampleRate > 0.0 ? sampleRate : 48000.0;
-        voiceRate = 2.0 * hostRate;
+        factor = hostRate < 80000.0 ? 2 : 1; // the voice near 96 kHz (D294): twice 44.1 or 48 kHz, a fast device's own rate
+        voiceRate = factor * hostRate;
         const int block = std::max(samplesPerBlock, maxBlock);
         voiceBuffer.assign(static_cast<size_t>(2 * block), 0.0f);
         driveScratch.assign(static_cast<size_t>(2 * block), 0.0f);
@@ -208,7 +209,7 @@ namespace cs303
         const double beatPerVoiceSample = bpm / 60.0 / voiceRate;
         const double secondsPerStep = 15.0 / bpm;
         float* v = voiceBuffer.data();
-        const int n = 2 * count;
+        const int n = factor * count;
         const int key = auditionKey.load();
         if (! playing && key != lastAudition)
         {
@@ -302,7 +303,7 @@ namespace cs303
     void Processor::finishSpan(float* out, int start, int count, const Panel& panel) noexcept
     {
         float* v = voiceBuffer.data();
-        const int n = 2 * count;
+        const int n = factor * count;
         if (panel.driveOn)
         {
             coolsynth::synth::v3::SlotParams sp;
@@ -318,7 +319,8 @@ namespace cs303
         for (int i = 0; i < count; ++i)
         {
             gainNow += gainStep;
-            out[start + i] = static_cast<float>(decimator->process(v[2 * i], v[2 * i + 1]) * gainNow);
+            const float y = factor == 2 ? decimator->process(v[2 * i], v[2 * i + 1]) : v[i];
+            out[start + i] = static_cast<float>(y * gainNow);
         }
     }
 
