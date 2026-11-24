@@ -232,6 +232,7 @@ namespace cs303
         static constexpr double restAfterSeconds = 4.0; // silent this long while stopped: the circuit rests
         std::int64_t quietVoiceSamples = 0;
         bool resting = false;
+        bool restSettled = false; // settled whole while resting, since the last change (D340)
         double levelFollow = 0.0;
         double loadFollow = 0.0;
 

@@ -189,7 +189,12 @@ namespace
                 expect(idle.seconds < 0.1, "resting costs next to nothing");
                 expect(peak(idle.left) < 1.0e-4f, "silent");
                 p->setPlaying(true);
+                const auto first = render(*p, 0.01);
                 const auto r = render(*p, 1.0);
+                // D340: the circuit settles while it rests, so the first block after rest carries the attack's own work
+                // (its Newton steps) and not a settle's millisecond on top
+                logMessage("the first block after rest took " + juce::String(1000.0 * first.seconds, 2) + " ms; the next hundred "
+                           + juce::String(1000.0 * r.seconds / 100.0, 2) + " ms each on average");
                 expect(allFinite(r.left));
                 expect(rms(r.left, 0, r.left.size()) > 0.01, "it wakes and plays");
                 juce::ignoreUnused(quiet);

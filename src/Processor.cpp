@@ -287,6 +287,7 @@ namespace cs303
             fishVoice->setDevilFish(f);
         applyPanel(audio->panel, playing ? &sequencer.current() : nullptr); // a knob turned takes effect at once
         chooseVoice(pn.devilFish);
+        restSettled = false; // a change while resting: the circuit settles again before it wakes (D340)
     }
 
     void Processor::chooseVoice(bool devilFish) noexcept
@@ -336,10 +337,18 @@ namespace cs303
             soundingNow.store(key);
         }
         // At rest: stopped, no key held and silent for a while, the circuit is not solved (it would cost most of a
-        // core for nothing); the next note settles it again first.
+        // core for nothing). It settles whole while it rests, where that costs nothing (on resting, and again after
+        // any change), and the next note only wakes it: the oscillator settles at its pitch (D340). Settled on the
+        // note instead, the settle's millisecond fell into the note's first block, on top of the attack's own work,
+        // and took it over its time at the start of playback.
         const bool wanted = playing || key >= 0;
         if (! wanted && quietVoiceSamples > static_cast<std::int64_t>(restAfterSeconds * voiceRate))
         {
+            if (! resting || ! restSettled)
+            {
+                active->settle(auditionVolts);
+                restSettled = true;
+            }
             resting = true;
             std::fill(v, v + n, 0.0f);
             dcIn = dcState = 0.0;
@@ -348,7 +357,10 @@ namespace cs303
         {
             if (resting)
             {
-                active->settle(playing ? sequencer.current().volts : auditionVolts);
+                if (restSettled)
+                    active->wake(playing ? sequencer.current().volts : auditionVolts);
+                else
+                    active->settle(playing ? sequencer.current().volts : auditionVolts);
                 resting = false;
                 quietVoiceSamples = 0;
             }
