@@ -29,7 +29,7 @@ namespace cs303::ui
     private:
         Editor& editor;
         std::vector<std::unique_ptr<Key>> keys;
-        Key *prev = nullptr, *next = nullptr, *play = nullptr, *rec = nullptr;
+        Key *prev = nullptr, *next = nullptr, *play = nullptr, *rec = nullptr, *mods = nullptr;
         juce::Rectangle<int> nameBox, tempoBox;
         double dragStartBpm = 0.0;
         std::vector<double> taps;
@@ -38,6 +38,20 @@ namespace cs303::ui
         void openProject();
         void saveProject();
         void tap();
+    };
+
+    /** The Mods panel, over the synth's sections while open (CoolSynth's D296): the trimmers inside the case, as
+        fitted to a real unit, and Stock to set them back. The Devil Fish's controls are not in the engine yet. */
+    class ModsPanel final : public juce::Component
+    {
+    public:
+        explicit ModsPanel(Editor&);
+        void paint(juce::Graphics&) override;
+        void refresh();
+
+    private:
+        Editor& editor;
+        std::vector<std::unique_ptr<juce::Component>> parts;
     };
 
     /** The synth's sections in the signal's order with arrows between: oscillator, filter, envelope, amplifier,

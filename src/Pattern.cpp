@@ -213,6 +213,10 @@ namespace cs303
         k->setProperty("delayDivision", pn.delayDivision);
         k->setProperty("feedback", pn.feedback);
         k->setProperty("mix", pn.mix);
+        k->setProperty("tm3", pn.tm3);
+        k->setProperty("tm4", pn.tm4);
+        k->setProperty("tm5", pn.tm5);
+        k->setProperty("c11", pn.c11);
         o->setProperty("panel", juce::var(k));
         return juce::var(o);
     }
@@ -265,6 +269,10 @@ namespace cs303
         pn.delayDivision = clampInt(k["delayDivision"], 0, 3, d.delayDivision);
         pn.feedback = clamp01(k["feedback"], d.feedback);
         pn.mix = clamp01(k["mix"], d.mix);
+        pn.tm3 = clamp01(k["tm3"], d.tm3);
+        pn.tm4 = clamp01(k["tm4"], d.tm4);
+        pn.tm5 = clamp01(k["tm5"], d.tm5);
+        pn.c11 = k["c11"].isVoid() ? d.c11 : juce::jlimit(c11Lowest, c11Highest, static_cast<float>(static_cast<double>(k["c11"])));
         return p;
     }
 

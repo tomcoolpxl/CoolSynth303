@@ -103,6 +103,9 @@ namespace
                 e->transposeMode = true;
                 snapshot(*e, dir, "panel-transpose");
                 e->transposeMode = false;
+                e->setModsOpen(true);
+                snapshot(*e, dir, "panel-mods");
+                e->setModsOpen(false);
                 p->setPlaying(false);
                 playFor(*p, 0.05);
                 expect(true);

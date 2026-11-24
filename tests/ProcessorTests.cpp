@@ -207,6 +207,26 @@ namespace
                 expect(! p->isPlaying(), "the clock's stop stops it");
             }
 
+            beginTest("a_trimmer_turned_changes_the_voice_and_stock_sets_it_back");
+            {
+                const auto hold = [](Processor& p) {
+                    render(p, 0.2);
+                    p.audition(21); // the middle A, 110 Hz with the trimmers at stock
+                    return render(p, 0.5).left;
+                };
+                auto stock = prepared();
+                auto turned = prepared();
+                turned->edit([](Project& pr) { pr.panel.tm4 = 0.3f; });
+                const auto a = hold(*stock);
+                const auto b = hold(*turned);
+                double difference = 0.0;
+                for (size_t i = 0; i < a.size(); ++i)
+                    difference += std::abs(static_cast<double>(a[i]) - b[i]);
+                expect(difference / static_cast<double>(a.size()) > 1.0e-3, "TM4 retunes the oscillator");
+                turned->undo();
+                expect(turned->project().panel == Panel {});
+            }
+
             beginTest("a_held_key_sounds_while_stopped");
             {
                 auto p = prepared();

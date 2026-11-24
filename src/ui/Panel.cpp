@@ -36,6 +36,9 @@ namespace cs303::ui
         rec = &add("Rec");
         rec->isOn = [&p] { return p.isRecording(); };
         rec->onClick = [&p] { p.setRecording(! p.isRecording()); };
+        mods = &add("Mods");
+        mods->isOn = [this] { return editor.modsOpen; };
+        mods->onClick = [this] { editor.setModsOpen(! editor.modsOpen); };
     }
 
     Key& TopBar::add(const juce::String& text)
@@ -60,6 +63,8 @@ namespace cs303::ui
             x += 62;
         }
         int r = getWidth() - 16;
+        mods->setBounds(r - 60, y, 60, h);
+        r -= 76;
         rec->setBounds(r - 50, y, 50, h);
         r -= 58;
         keys[6]->setBounds(r - 50, y, 50, h); // Tap
@@ -181,6 +186,101 @@ namespace cs303::ui
         repaint();
         for (auto& k : keys)
             k->repaint();
+    }
+
+    // ---------------------------------------------------------------- the Mods panel
+    ModsPanel::ModsPanel(Editor& e) : editor(e)
+    {
+        auto& p = editor.processor;
+        struct Trim
+        {
+            const char* name;
+            float Panel::*field;
+            float lo, hi, stock;
+        };
+        const Panel stock;
+        const Trim trims[] = { { "TM3 range", &Panel::tm3, 0.0f, 1.0f, stock.tm3 },
+                               { "TM4 tune", &Panel::tm4, 0.0f, 1.0f, stock.tm4 },
+                               { "TM5 width", &Panel::tm5, 0.0f, 1.0f, stock.tm5 },
+                               { "C11", &Panel::c11, c11Lowest, c11Highest, stock.c11 } };
+        int x = 28;
+        for (const auto& t : trims)
+        {
+            auto k = std::make_unique<Knob>(t.name, 40.0f);
+            const auto field = t.field;
+            const float lo = t.lo, hi = t.hi;
+            k->get = [&p, field, lo, hi] { return ((p.project().panel.*field) - lo) / (hi - lo); };
+            k->set = [&p, field, lo, hi](float v) { p.edit([&](Project& pr) { pr.panel.*field = lo + v * (hi - lo); }); };
+            k->defaultValue = (t.stock - lo) / (hi - lo);
+            k->showRange = false;
+            k->gestureStart = [&p] { p.beginGesture(); };
+            k->gestureEnd = [&p] { p.endGesture(); };
+            const auto b = k->preferredBounds(0, 0);
+            k->setBounds(x, faceTop + 30, b.getWidth() + 20, b.getHeight());
+            addAndMakeVisible(*k);
+            parts.push_back(std::move(k));
+            auto value = std::make_unique<Caption>();
+            const bool isC11 = field == &Panel::c11;
+            value->text = [&p, field, isC11] {
+                const float v = p.project().panel.*field;
+                return isC11 ? juce::String(v, 2) + " uF" : juce::String(v, 3);
+            };
+            value->font = monoFont(11.0f);
+            value->ink = colour::orange;
+            value->justification = juce::Justification::centred;
+            value->setBounds(x, faceTop + 30 + b.getHeight() + 2, b.getWidth() + 20, 16);
+            addAndMakeVisible(*value);
+            parts.push_back(std::move(value));
+            x += 110;
+        }
+        auto stockKey = std::make_unique<Key>("Stock", true);
+        stockKey->onClick = [&p] {
+            p.edit([](Project& pr) {
+                const Panel s;
+                pr.panel.tm3 = s.tm3;
+                pr.panel.tm4 = s.tm4;
+                pr.panel.tm5 = s.tm5;
+                pr.panel.c11 = s.c11;
+            });
+        };
+        stockKey->isOn = [&p] {
+            const Panel s;
+            const auto& pn = p.project().panel;
+            return pn.tm3 == s.tm3 && pn.tm4 == s.tm4 && pn.tm5 == s.tm5 && pn.c11 == s.c11;
+        };
+        stockKey->setBounds(28 + 4 * 110 + 8, faceTop + 112, 70, 24 + Key::lampRoom);
+        addAndMakeVisible(*stockKey);
+        parts.push_back(std::move(stockKey));
+        auto close = std::make_unique<Key>("Close", false);
+        close->onClick = [this] { editor.setModsOpen(false); };
+        close->setBounds(1210 - 100, faceTop + 128, 80, 24);
+        addAndMakeVisible(*close);
+        parts.push_back(std::move(close));
+        auto note = std::make_unique<Caption>();
+        note->multiline = true;
+        note->font = bodyFont(11.5f);
+        note->ink = colour::hint;
+        note->justification = juce::Justification::topLeft;
+        note->text = [] {
+            return juce::String("The trimmers inside the case, as fitted to a real unit: TM3 sets how far the cutoff reaches, "
+                                "TM4 tunes it, TM5 sets the width of an octave (turned, the octaves are no longer 2:1), C11 is the "
+                                "square's shaper's capacitor. Stock sets them back. The Devil Fish's controls come later.");
+        };
+        note->setBounds(600, faceTop + 28, 480, 90);
+        addAndMakeVisible(*note);
+        parts.push_back(std::move(note));
+    }
+
+    void ModsPanel::paint(juce::Graphics& g)
+    {
+        g.fillAll(colour::face);
+        drawSection(g, juce::Rectangle<int>(6, faceTop, 1198, sectionHeight).toFloat(), "Mods " + juce::String::charToString(0xb7) + " trimmers", colour::face);
+    }
+
+    void ModsPanel::refresh()
+    {
+        for (auto& c : parts)
+            c->repaint();
     }
 
     // ---------------------------------------------------------------- the synth's sections

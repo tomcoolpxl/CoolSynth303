@@ -62,6 +62,8 @@ namespace cs303
         for (juce::Component* c : { static_cast<juce::Component*>(top.get()), static_cast<juce::Component*>(synth.get()),
                                     static_cast<juce::Component*>(keys.get()), static_cast<juce::Component*>(sequencer.get()) })
             boardHolder->addAndMakeVisible(*c);
+        mods = std::make_unique<ui::ModsPanel>(*this);
+        boardHolder->addChildComponent(*mods);
         layOut();
         setWantsKeyboardFocus(true);
         setResizable(true, true);
@@ -81,6 +83,7 @@ namespace cs303
         boardHolder->setBounds(0, 0, baseWidth, baseHeight);
         top->setBounds(0, 0, baseWidth, 42);
         synth->setBounds(60, 52, 1210, 186);
+        mods->setBounds(60, 52, 1210, 186);
         keys->setBounds(60, 246, 1210, 130);
         sequencer->setBounds(60, 384, 1210, 392);
     }
@@ -161,10 +164,20 @@ namespace cs303
         processor.setPlaying(! processor.isPlaying());
     }
 
+    void Editor::setModsOpen(bool open)
+    {
+        modsOpen = open;
+        mods->setVisible(open);
+        if (open)
+            mods->toFront(false);
+        refreshAll();
+    }
+
     void Editor::refreshAll()
     {
         top->refresh();
         synth->refresh();
+        mods->refresh();
         keys->refresh();
         sequencer->refresh();
     }
@@ -176,20 +189,20 @@ namespace cs303
             togglePlay();
             return true;
         }
-        const auto mods = key.getModifiers();
-        if (mods.isCommandDown() && (key.getKeyCode() == 'Z' || key.getKeyCode() == 'z'))
+        const auto held = key.getModifiers();
+        if (held.isCommandDown() && (key.getKeyCode() == 'Z' || key.getKeyCode() == 'z'))
         {
-            mods.isShiftDown() ? processor.redo() : processor.undo();
+            held.isShiftDown() ? processor.redo() : processor.undo();
             refreshAll();
             return true;
         }
-        if (mods.isCommandDown() && (key.getKeyCode() == 'Y' || key.getKeyCode() == 'y'))
+        if (held.isCommandDown() && (key.getKeyCode() == 'Y' || key.getKeyCode() == 'y'))
         {
             processor.redo();
             refreshAll();
             return true;
         }
-        if (mods.isAnyModifierKeyDown())
+        if (held.isAnyModifierKeyDown())
             return false;
         const int k = keyForCharacter(key.getKeyCode());
         if (k >= 0 && k != heldComputerKey)

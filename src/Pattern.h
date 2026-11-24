@@ -78,8 +78,13 @@ namespace cs303
         bool delayOn = true;
         int delayDivision = 1; // 0 1/16, 1 1/8, 2 3/16, 3 1/4
         float feedback = 0.35f, mix = 0.22f;
+        // the Mods panel: the trimmers as fitted to a real unit (CoolSynth's D275), C11 in microfarads
+        float tm3 = 0.35f, tm4 = 0.5687f, tm5 = 0.7389f, c11 = 0.82f;
         bool operator==(const Panel&) const = default;
     };
+
+    /** C11's range on the Mods panel, microfarads: the service notes' 1 uF part within its tolerance and past it. */
+    inline constexpr float c11Lowest = 0.47f, c11Highest = 1.5f;
 
     /** The delay's time in beats for a division index. */
     [[nodiscard]] double delayBeats(int division) noexcept;

@@ -12,6 +12,7 @@ namespace cs303
     namespace ui
     {
         class SynthPanel;
+        class ModsPanel;
         class KeyboardSection;
         class SequencerSection;
         class TopBar;
@@ -45,6 +46,8 @@ namespace cs303
         int editPattern = 0;
         bool editB = false;
         bool transposeMode = false;
+        bool modsOpen = false;        // the Mods panel over the synth's sections
+        void setModsOpen(bool open);
         Knob motionKnob = Knob::cutoff;
         MutateWhat mutateWhat {};
         std::uint32_t nextSeed = 0x303u;
@@ -72,6 +75,7 @@ namespace cs303
         std::unique_ptr<juce::Component> boardHolder;
         std::unique_ptr<ui::TopBar> top;
         std::unique_ptr<ui::SynthPanel> synth;
+        std::unique_ptr<ui::ModsPanel> mods;
         std::unique_ptr<ui::KeyboardSection> keys;
         std::unique_ptr<ui::SequencerSection> sequencer;
         std::uint32_t lastEdits = 0;

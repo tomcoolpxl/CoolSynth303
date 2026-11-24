@@ -172,6 +172,15 @@ namespace cs303
         *pending = *audio; // the next push writes over a copy; nothing is allocated here
         dirty.store(false);
         sequencer.setBank(audio->bank);
+        const auto& pn = audio->panel;
+        Tb303Voice::Trimmers t;
+        t.tm3 = pn.tm3;
+        t.tm4 = pn.tm4;
+        t.tm5 = pn.tm5;
+        t.c11 = pn.c11 * 1.0e-6;
+        const auto& was = voice->trimmers();
+        if (t.tm3 != was.tm3 || t.tm4 != was.tm4 || t.tm5 != was.tm5 || t.c11 != was.c11)
+            voice->setTrimmers(t);
         applyPanel(audio->panel, playing ? &sequencer.current() : nullptr); // a knob turned takes effect at once
     }
 
