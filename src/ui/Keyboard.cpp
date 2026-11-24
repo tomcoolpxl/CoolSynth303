@@ -129,14 +129,14 @@ namespace cs303::ui
         auto& trans = key("Transpose", rx + 160, 76, 86);
         trans.isOn = [this] { return editor.transposeMode; };
         trans.onClick = [this] { editor.transposeMode = true; editor.refreshAll(); };
-        trans.onRightClick = [this, &p] { p.setTranspose(0); editor.refreshAll(); };
+        trans.onRightClick = [this, &p = p] { p.setTranspose(0); editor.refreshAll(); };
 
         auto hint = std::make_unique<Caption>();
         hint->multiline = true;
         hint->font = bodyFont(11.5f);
         hint->ink = colour::hint;
         hint->justification = juce::Justification::topLeft;
-        hint->text = [this, &p] {
+        hint->text = [this, &p = p] {
             if (editor.transposeMode)
                 return juce::String("Transpose: a key shifts the running pattern; the middle C plays it as written.")
                        + (p.transposition() != 0 ? juce::String(" Now ") + (p.transposition() > 0 ? "+" : "") + juce::String(p.transposition()) + "." : juce::String());

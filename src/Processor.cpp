@@ -21,6 +21,14 @@ namespace cs303
         constexpr double dcCornerHz = 8.0; // C38 into the mixer's input: the output's DC taken off
         constexpr int midiNoteAsWritten = 60; // a key or MIDI note at middle C plays the pattern as written
 
+        /** A crash in the standalone leaves its call stack in %TEMP%\CoolSynth303\crash.txt, named by the symbols. */
+        void writeCrashStack(void*)
+        {
+            const auto file = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("CoolSynth303").getChildFile("crash.txt");
+            file.getParentDirectory().createDirectory();
+            file.appendText(juce::Time::getCurrentTime().toString(true, true, true, true) + "\n" + juce::SystemStats::getStackBacktrace() + "\n");
+        }
+
         /** The Volume knob: silent at 0, unity near three quarters, +6 dB at the top. */
         double volumeGain(double v) noexcept { return 2.0 * v * v * v; }
 
@@ -54,7 +62,11 @@ namespace cs303
         push();
         // Claude's way in, in the standalone app only (a plugin in a DAW opens no port).
         if (wrapperType == wrapperType_Standalone)
-            startMcpServer();
+        {
+            juce::SystemStats::setApplicationCrashHandler(writeCrashStack);
+            if (juce::SystemStats::getEnvironmentVariable("COOLSYNTH303_NO_MCP", {}).isEmpty())
+                startMcpServer();
+        }
     }
 
     int Processor::lidSeries() noexcept { return coolsynth::synth::v3::Tb303Lid::count(); }

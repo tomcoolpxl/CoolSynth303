@@ -24,7 +24,7 @@ namespace cs303::ui
         prev->onClick = [this] { editor.choosePattern((editor.editPattern + 15) % 16, editor.editB); };
         next = &add(">");
         next->onClick = [this] { editor.choosePattern((editor.editPattern + 1) % 16, editor.editB); };
-        add("New").onClick = [this, &p] {
+        add("New").onClick = [this, &p = p] {
             p.edit([](Project& pr) { pr = defaultProject(); }); // one undo step: a stray click loses nothing
             editor.pick = 0;
             editor.choosePattern(0, false);
@@ -32,13 +32,13 @@ namespace cs303::ui
         add("Open").onClick = [this] { openProject(); };
         add("Save").onClick = [this] { saveProject(); };
         play = &add("Play");
-        play->textOf = [&p] { return juce::String(p.isPlaying() ? "Stop" : "Play"); };
-        play->isOn = [&p] { return p.isPlaying(); };
+        play->textOf = [&p = p] { return juce::String(p.isPlaying() ? "Stop" : "Play"); };
+        play->isOn = [&p = p] { return p.isPlaying(); };
         play->onClick = [this] { editor.togglePlay(); };
         add("Tap").onClick = [this] { tap(); };
         rec = &add("Rec");
-        rec->isOn = [&p] { return p.isRecording(); };
-        rec->onClick = [&p] { p.setRecording(! p.isRecording()); };
+        rec->isOn = [&p = p] { return p.isRecording(); };
+        rec->onClick = [&p = p] { p.setRecording(! p.isRecording()); };
         mods = &add("Mods");
         mods->isOn = [this] { return editor.modsOpen; };
         mods->onClick = [this] { editor.setModsOpen(! editor.modsOpen); };
@@ -217,19 +217,19 @@ namespace cs303::ui
             auto k = std::make_unique<Knob>(t.name, 34.0f);
             const auto field = t.field;
             const float lo = t.lo, hi = t.hi;
-            k->get = [&p, field, lo, hi] { return ((p.project().panel.*field) - lo) / (hi - lo); };
-            k->set = [&p, field, lo, hi](float v) { p.edit([&](Project& pr) { pr.panel.*field = lo + v * (hi - lo); }); };
+            k->get = [&p = p, field, lo, hi] { return ((p.project().panel.*field) - lo) / (hi - lo); };
+            k->set = [&p = p, field, lo, hi](float v) { p.edit([&](Project& pr) { pr.panel.*field = lo + v * (hi - lo); }); };
             k->defaultValue = (t.stock - lo) / (hi - lo);
             k->showRange = false;
-            k->gestureStart = [&p] { p.beginGesture(); };
-            k->gestureEnd = [&p] { p.endGesture(); };
+            k->gestureStart = [&p = p] { p.beginGesture(); };
+            k->gestureEnd = [&p = p] { p.endGesture(); };
             const auto b = k->preferredBounds(0, 0);
             k->setBounds(x, faceTop + 22, b.getWidth() + 14, b.getHeight());
             addAndMakeVisible(*k);
             parts.push_back(std::move(k));
             auto value = std::make_unique<Caption>();
             const bool isC11 = field == &Panel::c11;
-            value->text = [&p, field, isC11] {
+            value->text = [&p = p, field, isC11] {
                 const float v = p.project().panel.*field;
                 return isC11 ? juce::String(v, 2) + " uF" : juce::String(v, 3);
             };
@@ -242,7 +242,7 @@ namespace cs303::ui
             x += 76;
         }
         auto stockKey = std::make_unique<Key>("Stock", true);
-        stockKey->onClick = [&p] {
+        stockKey->onClick = [&p = p] {
             p.edit([](Project& pr) {
                 const Panel s;
                 pr.panel.tm3 = s.tm3;
@@ -251,7 +251,7 @@ namespace cs303::ui
                 pr.panel.c11 = s.c11;
             });
         };
-        stockKey->isOn = [&p] {
+        stockKey->isOn = [&p = p] {
             const Panel s;
             const auto& pn = p.project().panel;
             return pn.tm3 == s.tm3 && pn.tm4 == s.tm4 && pn.tm5 == s.tm5 && pn.c11 == s.c11;
@@ -334,11 +334,11 @@ namespace cs303::ui
     void ModsPanel::buildDevilFish()
     {
         auto& p = editor.processor;
-        const auto fishOn = [&p] { return p.project().panel.devilFish; };
+        const auto fishOn = [&p = p] { return p.project().panel.devilFish; };
 
         auto onKey = std::make_unique<Key>("On", true);
         onKey->isOn = fishOn;
-        onKey->onClick = [&p] { p.edit([](Project& pr) { pr.panel.devilFish = !pr.panel.devilFish; }); };
+        onKey->onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.devilFish = !pr.panel.devilFish; }); };
         onKey->setBounds(fishX + 14, faceTop + 22, 58, 24 + Key::lampRoom);
         addAndMakeVisible(*onKey);
         parts.push_back(std::move(onKey));
@@ -379,20 +379,20 @@ namespace cs303::ui
         {
             auto knob = std::make_unique<Knob>(k.name, 34.0f);
             const auto field = k.field;
-            knob->get = [&p, field] { return p.project().panel.*field; };
-            knob->set = [&p, field](float v) { p.edit([&](Project& pr) { pr.panel.*field = v; }); };
+            knob->get = [&p = p, field] { return p.project().panel.*field; };
+            knob->set = [&p = p, field](float v) { p.edit([&](Project& pr) { pr.panel.*field = v; }); };
             knob->defaultValue = stock.*field;
             knob->showRange = false;
             knob->dimmed = [fishOn] { return !fishOn(); };
-            knob->gestureStart = [&p] { p.beginGesture(); };
-            knob->gestureEnd = [&p] { p.endGesture(); };
+            knob->gestureStart = [&p = p] { p.beginGesture(); };
+            knob->gestureEnd = [&p = p] { p.endGesture(); };
             const auto b = knob->preferredBounds(0, 0);
             knob->setBounds(x, faceTop + 22, b.getWidth() + 18, b.getHeight());
             addAndMakeVisible(*knob);
             parts.push_back(std::move(knob));
             auto value = std::make_unique<Caption>();
             const auto shown = k.value;
-            value->text = [&p, field, shown] { return shown(p.project().panel.*field); };
+            value->text = [&p = p, field, shown] { return shown(p.project().panel.*field); };
             value->font = monoFont(11.0f);
             value->ink = colour::orange;
             value->justification = juce::Justification::centred;
@@ -421,11 +421,11 @@ namespace cs303::ui
             const auto field = s.field;
             const juce::String name = s.name;
             const auto positions = s.positions;
-            key->textOf = [&p, field, name, positions] {
+            key->textOf = [&p = p, field, name, positions] {
                 return name + ": " + positions[static_cast<size_t>(juce::jlimit(0, 2, p.project().panel.*field))];
             };
-            key->onClick = [&p, field] { p.edit([&](Project& pr) { pr.panel.*field = (pr.panel.*field + 1) % 3; }); };
-            key->onRightClick = [&p, field] { p.edit([&](Project& pr) { pr.panel.*field = (pr.panel.*field + 2) % 3; }); };
+            key->onClick = [&p = p, field] { p.edit([&](Project& pr) { pr.panel.*field = (pr.panel.*field + 1) % 3; }); };
+            key->onRightClick = [&p = p, field] { p.edit([&](Project& pr) { pr.panel.*field = (pr.panel.*field + 2) % 3; }); };
             key->enabled = fishOn;
             key->setBounds(fishRight - 196, y, 184, 26);
             addAndMakeVisible(*key);
@@ -434,7 +434,7 @@ namespace cs303::ui
         }
 
         auto fishStock = std::make_unique<Key>("Stock", true);
-        fishStock->onClick = [&p] {
+        fishStock->onClick = [&p = p] {
             p.edit([](Project& pr) {
                 const Panel s;
                 auto& pn = pr.panel;
@@ -451,7 +451,7 @@ namespace cs303::ui
                 pn.decay = 0.5f; // a Devil Fish's DECAY is the volume envelope's: the TB-303's at half
             });
         };
-        fishStock->isOn = [&p] {
+        fishStock->isOn = [&p = p] {
             const Panel s;
             const auto& pn = p.project().panel;
             return pn.overdrive == s.overdrive && pn.slideTime == s.slideTime && pn.softAttack == s.softAttack
@@ -513,34 +513,34 @@ namespace cs303::ui
         sections = { { "Oscillator", 6, 150 }, { "Filter", 178, 280 }, { "Envelope", 480, 176 }, { "Amplifier", 678, 104 },
                      { "Drive", 804, 170 }, { "Delay", 996, 214 } };
 
-        const auto panelKnob = [this, &p](Knob& k, Knob_t which) {
+        const auto panelKnob = [this, &p = p](Knob& k, Knob_t which) {
             const auto i = static_cast<int>(which);
-            k.get = [&p, i] {
+            k.get = [&p = p, i] {
                 const auto& pn = p.project().panel;
                 const float v[] = { pn.cutoff, pn.resonance, pn.envMod, pn.decay, pn.accent };
                 return v[i];
             };
-            k.set = [&p, which](float v) { p.knobMoved(which, v); };
-            k.follow = [&p, which] { return p.isPlaying() ? p.liveKnob(which) : -1.0f; };
-            k.gestureStart = [&p] { p.beginGesture(); };
-            k.gestureEnd = [&p] { p.endGesture(); };
+            k.set = [&p = p, which](float v) { p.knobMoved(which, v); };
+            k.follow = [&p = p, which] { return p.isPlaying() ? p.liveKnob(which) : -1.0f; };
+            k.gestureStart = [&p = p] { p.beginGesture(); };
+            k.gestureEnd = [&p = p] { p.endGesture(); };
         };
-        const auto plainKnob = [&p](Knob& k, float Panel::*field, bool undoable = true) {
-            k.get = [&p, field] { return p.project().panel.*field; };
-            k.set = [&p, field, undoable](float v) { p.edit([&](Project& pr) { pr.panel.*field = v; }, undoable); };
-            k.gestureStart = [&p] { p.beginGesture(); };
-            k.gestureEnd = [&p] { p.endGesture(); };
+        const auto plainKnob = [&p = p](Knob& k, float Panel::*field, bool undoable = true) {
+            k.get = [&p = p, field] { return p.project().panel.*field; };
+            k.set = [&p = p, field, undoable](float v) { p.edit([&](Project& pr) { pr.panel.*field = v; }, undoable); };
+            k.gestureStart = [&p = p] { p.beginGesture(); };
+            k.gestureEnd = [&p = p] { p.endGesture(); };
         };
 
         // the oscillator
         plainKnob(knob("Tuning", 44.0f, 6, 50, 28), &Panel::tuning);
         {
             auto& saw = key("Saw", 6, 16, 120, 0);
-            saw.isOn = [&p] { return ! p.project().panel.square; };
-            saw.onClick = [&p] { p.edit([](Project& pr) { pr.panel.square = false; }); };
+            saw.isOn = [&p = p] { return ! p.project().panel.square; };
+            saw.onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.square = false; }); };
             auto& sq = key("Square", 6, 16 + saw.getWidth() + 6, 120, 0);
-            sq.isOn = [&p] { return p.project().panel.square; };
-            sq.onClick = [&p] { p.edit([](Project& pr) { pr.panel.square = true; }); };
+            sq.isOn = [&p = p] { return p.project().panel.square; };
+            sq.onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.square = true; }); };
         }
         // the filter
         {
@@ -557,26 +557,26 @@ namespace cs303::ui
         // the drive
         {
             auto& on = key("On", 804, 18, 120, 0);
-            on.isOn = [&p] { return p.project().panel.driveOn; };
-            on.onClick = [&p] { p.edit([](Project& pr) { pr.panel.driveOn = ! pr.panel.driveOn; }); };
+            on.isOn = [&p = p] { return p.project().panel.driveOn; };
+            on.onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.driveOn = ! pr.panel.driveOn; }); };
             plainKnob(knob("Amount", 40.0f, 804, 16, 36), &Panel::drive);
             plainKnob(knob("Tone", 40.0f, 804, 94, 36), &Panel::tone);
         }
         // the delay
         {
             auto& on = key("On", 996, 14, 120, 0);
-            on.isOn = [&p] { return p.project().panel.delayOn; };
-            on.onClick = [&p] { p.edit([](Project& pr) { pr.panel.delayOn = ! pr.panel.delayOn; }); };
+            on.isOn = [&p = p] { return p.project().panel.delayOn; };
+            on.onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.delayOn = ! pr.panel.delayOn; }); };
             auto& time = knob("Time", 40.0f, 996, 10, 36);
-            time.get = [&p] { return static_cast<float>(p.project().panel.delayDivision) / 3.0f; };
-            time.set = [&p](float v) {
+            time.get = [&p = p] { return static_cast<float>(p.project().panel.delayDivision) / 3.0f; };
+            time.set = [&p = p](float v) {
                 const int d = juce::roundToInt(v * 3.0f);
                 if (d != p.project().panel.delayDivision)
                     p.edit([d](Project& pr) { pr.panel.delayDivision = d; });
             };
             time.defaultValue = 1.0f / 3.0f;
             auto value = std::make_unique<Caption>();
-            value->text = [&p] { return juce::String(delayDivisionName(p.project().panel.delayDivision)); };
+            value->text = [&p = p] { return juce::String(delayDivisionName(p.project().panel.delayDivision)); };
             value->font = monoFont(12.0f);
             value->ink = colour::orange;
             value->setBounds(996 + 62, faceTop + 128, 40, 24);
@@ -585,10 +585,10 @@ namespace cs303::ui
             for (auto [name, field, x] : { std::tuple { "Feedback", &Panel::feedback, 96 }, std::tuple { "Mix", &Panel::mix, 150 } })
             {
                 auto f = std::make_unique<Fader>(name);
-                f->get = [&p, field = field] { return p.project().panel.*field; };
-                f->set = [&p, field = field](float v) { p.edit([&](Project& pr) { pr.panel.*field = v; }); };
-                f->gestureStart = [&p] { p.beginGesture(); };
-                f->gestureEnd = [&p] { p.endGesture(); };
+                f->get = [&p = p, field = field] { return p.project().panel.*field; };
+                f->set = [&p = p, field = field](float v) { p.edit([&](Project& pr) { pr.panel.*field = v; }); };
+                f->gestureStart = [&p = p] { p.beginGesture(); };
+                f->gestureEnd = [&p = p] { p.endGesture(); };
                 f->setBounds(996 + x - 15, faceTop + 18, 60, 140); // wide enough for its name under it
                 addAndMakeVisible(*f);
                 parts.push_back(std::move(f));

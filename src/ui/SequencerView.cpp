@@ -256,7 +256,7 @@ namespace cs303::ui
             editor.processor.edit([&](Project& pr) { pr.pattern(index, ! b) = pr.pattern(index, b); });
             editor.refreshAll();
         });
-        m.addItem("Rename...", [this, index, b, &p] {
+        m.addItem("Rename...", [this, index, b, &p = p] {
             auto* w = new juce::AlertWindow("Rename the pattern", {}, juce::MessageBoxIconType::NoIcon);
             w->addTextEditor("name", juce::String(p.project().pattern(index, b).name));
             w->addButton("Rename", 1, juce::KeyPress(juce::KeyPress::returnKey));
@@ -321,13 +321,13 @@ namespace cs303::ui
         endGroup();
         group("Key");
         auto& root = box(34);
-        root.text = [&p] { return juce::String(letters[p.project().root]); };
-        root.onClick = [&p] { p.edit([](Project& pr) { pr.root = (pr.root + 1) % 12; }, false); };
-        root.onRightClick = [&p] { p.edit([](Project& pr) { pr.root = (pr.root + 11) % 12; }, false); };
-        root.onWheel = [&p](int d) { p.edit([d](Project& pr) { pr.root = (pr.root + 12 + d) % 12; }, false); };
+        root.text = [&p = p] { return juce::String(letters[p.project().root]); };
+        root.onClick = [&p = p] { p.edit([](Project& pr) { pr.root = (pr.root + 1) % 12; }, false); };
+        root.onRightClick = [&p = p] { p.edit([](Project& pr) { pr.root = (pr.root + 11) % 12; }, false); };
+        root.onWheel = [&p = p](int d) { p.edit([d](Project& pr) { pr.root = (pr.root + 12 + d) % 12; }, false); };
         auto& scale = box(86);
-        scale.text = [&p] { return juce::String(scaleName(p.project().scale)); };
-        const auto nextScale = [&p](int d) {
+        scale.text = [&p = p] { return juce::String(scaleName(p.project().scale)); };
+        const auto nextScale = [&p = p](int d) {
             p.edit([d](Project& pr) { pr.scale = static_cast<Scale>((static_cast<int>(pr.scale) + d + static_cast<int>(Scale::count)) % static_cast<int>(Scale::count)); }, false);
         };
         scale.onClick = [nextScale] { nextScale(1); };
@@ -356,11 +356,11 @@ namespace cs303::ui
         len.onRightClick = [this] { editor.editPatternWith([](Pattern& pat) { pat.length = 16; }); };
         endGroup();
         auto& undo = button("Undo", 56);
-        undo.enabled = [&p] { return p.canUndo(); };
-        undo.onClick = [this, &p] { p.undo(); editor.refreshAll(); };
+        undo.enabled = [&p = p] { return p.canUndo(); };
+        undo.onClick = [this, &p = p] { p.undo(); editor.refreshAll(); };
         auto& redo = button("Redo", 56);
-        redo.enabled = [&p] { return p.canRedo(); };
-        redo.onClick = [this, &p] { p.redo(); editor.refreshAll(); };
+        redo.enabled = [&p = p] { return p.canRedo(); };
+        redo.onClick = [this, &p = p] { p.redo(); editor.refreshAll(); };
         endGroup();
         auto midi = std::make_unique<MidiKey>(editor);
         midi->setBounds(x, 1, 92, 24);
@@ -795,7 +795,7 @@ namespace cs303::ui
             auto k = std::make_unique<Knob>(name, 28.0f);
             k->showRange = false;
             k->accentRim = which == Knob_t::accent;
-            k->get = [this, &p, i] {
+            k->get = [this, &p = p, i] {
                 const float lock = editor.edited().step[static_cast<size_t>(editor.pick)].lock[i];
                 const auto& pn = p.project().panel;
                 const float panel[] = { pn.cutoff, pn.resonance, pn.envMod, pn.decay, pn.accent };
@@ -807,8 +807,8 @@ namespace cs303::ui
                 editor.editPatternWith([step, i, v](Pattern& pat) { pat.step[static_cast<size_t>(step)].lock[i] = v; });
                 editor.refreshAll();
             };
-            k->gestureStart = [&p] { p.beginGesture(); };
-            k->gestureEnd = [&p] { p.endGesture(); };
+            k->gestureStart = [&p = p] { p.beginGesture(); };
+            k->gestureEnd = [&p = p] { p.endGesture(); };
             const auto b = k->preferredBounds(0, 0);
             k->setBounds((j % 2) * 66 + 8, 34 + (j / 2) * 62, b.getWidth(), b.getHeight());
             addAndMakeVisible(*k);

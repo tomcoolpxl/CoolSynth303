@@ -526,10 +526,10 @@ namespace cs303::ui
         c.time->setRange(0.0, 1.0);
         c.time->setColour(juce::Slider::trackColourId, colour::orange.withAlpha(0.8f));
         c.time->setColour(juce::Slider::backgroundColourId, juce::Colour(0xff34332f));
-        c.time->onValueChange = [this, &c] {
+        c.time->onValueChange = [this] {
             if (! impl->replay)
                 setReplay(true);
-            impl->pos = c.time->getValue();
+            impl->pos = impl->time->getValue();
             impl->replayPlaying = false;
         };
         c.footer->addChildComponent(*c.time);

@@ -60,14 +60,14 @@ namespace cs303
                           "0 fast 1 normal 2 slow, accentSweep 2 stock 1 high res 0 off, muffler 0 off 1 soft 2 hard); the "
                           "tempo, whether it plays, the pattern, and the output's level now.",
                           objectSchema({}),
-                          [&processor](const juce::var&) { return textResult(juce::JSON::toString(describe(processor), false)); } });
+                          [&processor = processor](const juce::var&) { return textResult(juce::JSON::toString(describe(processor), false)); } });
 
         tools.push_back({ "set_values",
                           "Sets panel values by the names get_sound gives (as the knobs and switches would), and bpm; "
                           "anything out of range is held to its range. One undo step. Answers with the panel afterwards.",
                           objectSchema({ { "values", typeSchema("object", "e.g. {\"cutoff\": 0.3, \"devilFish\": true, \"muffler\": 1, \"bpm\": 125}") } },
                                        { "values" }),
-                          [&processor](const juce::var& args)
+                          [&processor = processor](const juce::var& args)
                           {
                               const auto* values = args["values"].getDynamicObject();
                               if (values == nullptr)
@@ -100,7 +100,7 @@ namespace cs303
                           objectSchema({ { "play", typeSchema("boolean", "true starts, false stops") },
                                          { "pattern", typeSchema("integer", "1 to 16, optional") },
                                          { "variation", typeSchema("string", "'A' or 'B', optional") } }),
-                          [&processor](const juce::var& args)
+                          [&processor = processor](const juce::var& args)
                           {
                               if (args.hasProperty("pattern"))
                                   processor.hearPattern(juce::jlimit(1, 16, static_cast<int>(args["pattern"])) - 1,
@@ -121,7 +121,7 @@ namespace cs303
                                          { "accent", typeSchema("boolean", "Hold the Devil Fish's Accent button") },
                                          { "release", typeSchema("number", "Seconds listened to after the last key, 0.5 by default") } },
                                        { "keys" }),
-                          [&processor, runner](const juce::var& args)
+                          [&processor = processor, runner](const juce::var& args)
                           {
                               const auto* keys = args["keys"].getArray();
                               if (keys == nullptr || keys->isEmpty())
@@ -130,21 +130,21 @@ namespace cs303
                               const double gap = juce::jlimit(0.0, 5.0, args.hasProperty("gap") ? static_cast<double>(args["gap"]) : 0.1);
                               const double after = juce::jlimit(0.0, 10.0, args.hasProperty("release") ? static_cast<double>(args["release"]) : 0.5);
                               const bool accent = static_cast<bool>(args["accent"]);
-                              runOn(runner, [&processor, accent] { processor.setPlaying(false); processor.holdAccent(accent); });
+                              runOn(runner, [&processor = processor, accent] { processor.setPlaying(false); processor.holdAccent(accent); });
                               (void) processor.takeLoudest();
                               float loudHeld = 0.0f;
                               for (const auto& k : *keys)
                               {
                                   const int key = juce::jlimit(0, 36, static_cast<int>(k));
-                                  runOn(runner, [&processor, key] { processor.audition(key); });
+                                  runOn(runner, [&processor = processor, key] { processor.audition(key); });
                                   juce::Thread::sleep(static_cast<int>(held * 1000.0));
                                   loudHeld = std::max(loudHeld, processor.takeLoudest());
-                                  runOn(runner, [&processor] { processor.audition(-1); });
+                                  runOn(runner, [&processor = processor] { processor.audition(-1); });
                                   juce::Thread::sleep(static_cast<int>(gap * 1000.0));
                               }
                               juce::Thread::sleep(static_cast<int>(after * 1000.0));
                               const float loudAfter = processor.takeLoudest();
-                              runOn(runner, [&processor] { processor.holdAccent(false); });
+                              runOn(runner, [&processor = processor] { processor.holdAccent(false); });
                               return textResult("Played " + juce::String(keys->size()) + " keys, " + juce::String(held, 2) + " s each: loudest while held "
                                                 + db(loudHeld) + ", after " + db(loudAfter) + ".");
                           },
@@ -162,14 +162,14 @@ namespace cs303
                                          { "accent", typeSchema("boolean", "With keys: the Devil Fish's Accent button held") },
                                          { "file", typeSchema("string", "Optional path for the WAV; a temporary file by default") } },
                                        { "seconds" }),
-                          [&processor, runner](const juce::var& args)
+                          [&processor = processor, runner](const juce::var& args)
                           {
                               const double seconds = juce::jlimit(0.1, 60.0, static_cast<double>(args["seconds"]));
                               const bool play = static_cast<bool>(args["play"]);
                               const auto* keys = args["keys"].getArray();
                               const double keySeconds = juce::jlimit(0.02, 5.0, args.hasProperty("keySeconds") ? static_cast<double>(args["keySeconds"]) : 0.5);
                               const bool accent = static_cast<bool>(args["accent"]);
-                              runOn(runner, [&processor, seconds, play, accent, keys]
+                              runOn(runner, [&processor = processor, seconds, play, accent, keys]
                               {
                                   if (keys != nullptr)
                                       processor.setPlaying(false);
@@ -183,16 +183,16 @@ namespace cs303
                                   for (const auto& k : *keys)
                                   {
                                       const int key = juce::jlimit(0, 36, static_cast<int>(k));
-                                      runOn(runner, [&processor, key] { processor.audition(key); });
+                                      runOn(runner, [&processor = processor, key] { processor.audition(key); });
                                       juce::Thread::sleep(static_cast<int>(keySeconds * 1000.0));
-                                      runOn(runner, [&processor] { processor.audition(-1); });
+                                      runOn(runner, [&processor = processor] { processor.audition(-1); });
                                       if (juce::Time::getMillisecondCounterHiRes() * 0.001 - started > seconds)
                                           break;
                                   }
                               const int wanted = static_cast<int>(processor.capture().size());
                               while (processor.captured() < wanted && juce::Time::getMillisecondCounterHiRes() * 0.001 - started < seconds + 5.0)
                                   juce::Thread::sleep(20);
-                              runOn(runner, [&processor, play, keys]
+                              runOn(runner, [&processor = processor, play, keys]
                               {
                                   if (play)
                                       processor.setPlaying(false);
@@ -239,7 +239,7 @@ namespace cs303
         tools.push_back({ "screenshot",
                           "A picture of CoolSynth 303's window as the player sees it now.",
                           objectSchema({}),
-                          [&processor](const juce::var&)
+                          [&processor = processor](const juce::var&)
                           {
                               auto* editor = processor.getActiveEditor();
                               if (editor == nullptr || editor->getWidth() <= 0)
