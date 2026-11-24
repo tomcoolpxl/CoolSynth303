@@ -8,6 +8,8 @@
 
 #include "Editor.h"
 #include "Processor.h"
+#include "ui/Keyboard.h"
+#include "ui/SequencerView.h"
 
 namespace
 {
@@ -21,6 +23,41 @@ namespace
             juce::MidiBuffer midi;
             p.processBlock(buffer, midi);
         }
+    }
+
+    /** The first component of a kind in the panel. */
+    template <class T>
+    T* find(juce::Component& root)
+    {
+        if (auto* t = dynamic_cast<T*>(&root))
+            return t;
+        for (auto* child : root.getChildren())
+            if (auto* t = find<T>(*child))
+                return t;
+        return nullptr;
+    }
+
+    /** A click as a player's: at a place on the board, on whatever is drawn on top there. Returns what it hit. */
+    juce::Component* click(juce::Component& board, juce::Point<float> at, bool right = false)
+    {
+        auto* target = board.getComponentAt(at.roundToInt());
+        if (target == nullptr)
+            return nullptr;
+        const auto local = target->getLocalPoint(&board, at);
+        const auto now = juce::Time::getCurrentTime();
+        const juce::MouseEvent e(juce::Desktop::getInstance().getMainMouseSource(), local,
+                                 right ? juce::ModifierKeys(juce::ModifierKeys::rightButtonModifier | juce::ModifierKeys::popupMenuClickModifier)
+                                       : juce::ModifierKeys(juce::ModifierKeys::leftButtonModifier),
+                                 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, target, target, now, local, now, 1, false);
+        target->mouseDown(e);
+        target->mouseUp(e.withNewPosition(local));
+        return target;
+    }
+
+    template <class T>
+    juce::Point<float> onBoard(juce::Component& board, T& part, juce::Point<float> local)
+    {
+        return board.getLocalPoint(&part, local);
     }
 
     void snapshot(Editor& e, const juce::File& folder, const juce::String& name)
@@ -87,6 +124,56 @@ namespace
                 expectEquals(e->editPattern, 2);
                 expect(e->editB);
                 e->choosePattern(0, false);
+            }
+
+            beginTest("clicks_land_where_the_panel_draws_them");
+            {
+                auto& board = e->board();
+                auto* grid = find<ui::StepGrid>(board);
+                auto* piano = find<ui::Piano>(board);
+                auto* row = find<ui::PatternRow>(board);
+                expect(grid != nullptr && piano != nullptr && row != nullptr);
+                if (grid != nullptr && piano != nullptr && row != nullptr)
+                {
+                    using R = ui::StepGrid::Row;
+                    const bool accentBefore = p->project().pattern(0, false).step[3].accent;
+                    expect(click(board, onBoard(board, *grid, grid->cell(R::accent, 3).getCentre())) == grid);
+                    expect(p->project().pattern(0, false).step[3].accent != accentBefore, "the accent key of step 4");
+                    expectEquals(e->pick, 3);
+
+                    click(board, onBoard(board, *grid, grid->cell(R::gate, 7).getCentre()));
+                    expect(p->project().pattern(0, false).step[7].gate != defaultProject().pattern(0, false).step[7].gate, "the gate key of step 8");
+
+                    // a drag on the pitch lane sets the note from its height: the top row is the C above
+                    const auto lane = grid->cell(R::pitch, 9);
+                    click(board, onBoard(board, *grid, juce::Point<float>(lane.getCentreX(), lane.getY() + 2.0f)));
+                    expectEquals(p->project().pattern(0, false).step[9].note, 12);
+                    click(board, onBoard(board, *grid, juce::Point<float>(lane.getCentreX(), lane.getBottom() - 2.0f)));
+                    expectEquals(p->project().pattern(0, false).step[9].note, 0);
+
+                    // a black key of the piano, over the white ones: the middle C sharp, written at the pick
+                    e->pick = 2;
+                    expect(click(board, onBoard(board, *piano, piano->keyBounds(13).getCentre())) == piano);
+                    expectEquals(p->project().pattern(0, false).step[2].key(), 13);
+                    expectEquals(e->pick, 3);
+                    // the top C, the last white key
+                    e->pick = 2;
+                    click(board, onBoard(board, *piano, piano->keyBounds(36).getCentre().translated(0.0f, 30.0f)));
+                    expectEquals(p->project().pattern(0, false).step[2].key(), 36);
+
+                    // a pattern key: pattern 05 to edit
+                    click(board, onBoard(board, *row, row->slotBounds(4).toFloat().getCentre()));
+                    expectEquals(e->editPattern, 4);
+                    click(board, onBoard(board, *row, row->variationBounds(true).toFloat().getCentre()));
+                    expect(e->editB);
+                    e->choosePattern(0, false);
+                    // + adds the pattern edited to the chain
+                    const auto chainBefore = p->project().chain.size();
+                    click(board, onBoard(board, *row, row->addBounds().toFloat().getCentre()));
+                    expectEquals(static_cast<int>(p->project().chain.size()), static_cast<int>(chainBefore) + 1);
+                    p->undo();
+                }
+                playFor(*p, 0.05);
             }
 
             const auto folder = juce::SystemStats::getEnvironmentVariable("COOLSYNTH303_SNAPSHOTS", {});
