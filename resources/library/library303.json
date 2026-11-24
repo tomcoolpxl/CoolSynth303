@@ -1,0 +1,4000 @@
+{
+ "format": "CoolSynth303 library",
+ "version": 1,
+ "lines": [
+  {
+   "name": "Warehouse 87",
+   "style": "Chicago 87",
+   "bpm": 122,
+   "sound": "Classic Acid",
+   "about": "Sparse, the accents up an octave, a slide into each half.",
+   "pattern": {
+    "name": "Warehouse 87",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 7,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Jack Step",
+   "style": "Chicago 87",
+   "bpm": 124,
+   "sound": "Classic Acid",
+   "about": "A jacking root with one leap up and a slide down at the end.",
+   "pattern": {
+    "name": "Jack Step",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": -1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Sixteen Strong",
+   "style": "Chicago 87",
+   "bpm": 120,
+   "sound": "Squelch",
+   "about": "Every step a note, the blue note sliding into the fifth.",
+   "pattern": {
+    "name": "Sixteen Strong",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 6,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Basement Hook",
+   "style": "Acid house",
+   "bpm": 125,
+   "sound": "Squelch",
+   "about": "Root and octave trading, a chromatic slide in the middle.",
+   "pattern": {
+    "name": "Basement Hook",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 2,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": -1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Downstairs",
+   "style": "Acid house",
+   "bpm": 124,
+   "sound": "Classic Acid",
+   "about": "Up the minor scale to the octave and back down.",
+   "pattern": {
+    "name": "Downstairs",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 6,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 2,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Strobe Corridor",
+   "style": "Acid house",
+   "bpm": 126,
+   "sound": "Warehouse Drive",
+   "about": "Low and high C in turns, the low ones accented.",
+   "pattern": {
+    "name": "Strobe Corridor",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Long Glide",
+   "style": "Long slides",
+   "bpm": 133,
+   "sound": "Classic Acid",
+   "about": "Gliding up and down the octave on G, barely a hard step.",
+   "pattern": {
+    "name": "Long Glide",
+    "length": 16,
+    "steps": [
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 1,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 2,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Rolling G",
+   "style": "Long slides",
+   "bpm": 134,
+   "sound": "Squelch",
+   "about": "Every other step slides, the accents on the turns.",
+   "pattern": {
+    "name": "Rolling G",
+    "length": 16,
+    "steps": [
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Bounce Glide",
+   "style": "Long slides",
+   "bpm": 132,
+   "sound": "Warehouse Drive",
+   "about": "A bouncing root that slides up through the fifth to the octave.",
+   "pattern": {
+    "name": "Bounce Glide",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Twelve Cycle",
+   "style": "Acid techno",
+   "bpm": 136,
+   "sound": "Warehouse Drive",
+   "about": "Twelve steps: the accent falls somewhere new each bar.",
+   "pattern": {
+    "name": "Twelve Cycle",
+    "length": 12,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": -1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Rave Engine",
+   "style": "Acid techno",
+   "bpm": 138,
+   "sound": "Squelch",
+   "about": "A driving root with the tritone, accents pushing the off-beats.",
+   "pattern": {
+    "name": "Rave Engine",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 6,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Hammer Twelve",
+   "style": "Acid techno",
+   "bpm": 140,
+   "sound": "Devil Screamer",
+   "about": "Twelve low steps hammered, the octave jumping in.",
+   "pattern": {
+    "name": "Hammer Twelve",
+    "length": 12,
+    "steps": [
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Nine",
+   "style": "Hypnotic",
+   "bpm": 126,
+   "sound": "Minimal Click",
+   "about": "Nine steps, so it lands differently every bar.",
+   "pattern": {
+    "name": "Nine",
+    "length": 9,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Eleven",
+   "style": "Hypnotic",
+   "bpm": 126,
+   "sound": "Minimal Click",
+   "about": "Eleven steps, an octave leap and a slide into the fifth.",
+   "pattern": {
+    "name": "Eleven",
+    "length": 11,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Thirteen",
+   "style": "Hypnotic",
+   "bpm": 124,
+   "sound": "Classic Acid",
+   "about": "Thirteen steps with room between the notes.",
+   "pattern": {
+    "name": "Thirteen",
+    "length": 13,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Higher Stabs",
+   "style": "Trance",
+   "bpm": 138,
+   "sound": "Trance Stab",
+   "about": "Every sixteenth, the accents jumping the octave.",
+   "pattern": {
+    "name": "Higher Stabs",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Gate Runner",
+   "style": "Trance",
+   "bpm": 140,
+   "sound": "Trance Stab",
+   "about": "Octave stabs running, the accents walking down.",
+   "pattern": {
+    "name": "Gate Runner",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Rising Four",
+   "style": "Trance",
+   "bpm": 136,
+   "sound": "Trance Stab",
+   "about": "Four notes a beat, the root climbing each beat.",
+   "pattern": {
+    "name": "Rising Four",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 1,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Night Gallop",
+   "style": "Psy",
+   "bpm": 145,
+   "sound": "Minimal Click",
+   "about": "The rolling gallop: rests on the beat, where the kick sits.",
+   "pattern": {
+    "name": "Night Gallop",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Forest Floor",
+   "style": "Psy",
+   "bpm": 145,
+   "sound": "Minimal Click",
+   "about": "The gallop with the flat second, accents after the kick.",
+   "pattern": {
+    "name": "Forest Floor",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 1,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Phrygian Roll",
+   "style": "Psy",
+   "bpm": 143,
+   "sound": "Devil Grit",
+   "about": "Rolling on C and D flat, a turn down at the end.",
+   "pattern": {
+    "name": "Phrygian Roll",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 1,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 1,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 1,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Robot Steps",
+   "style": "Electro",
+   "bpm": 118,
+   "sound": "Rolling Sub",
+   "about": "Syncopated and dry, held notes against rests.",
+   "pattern": {
+    "name": "Robot Steps",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 7,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 10,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Breakdance",
+   "style": "Electro",
+   "bpm": 116,
+   "sound": "Liquid Lead",
+   "about": "Broken rhythm, a slide into the fourth.",
+   "pattern": {
+    "name": "Breakdance",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 10,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Planet Wire",
+   "style": "Electro",
+   "bpm": 120,
+   "sound": "Rolling Sub",
+   "about": "Pairs of notes climbing, each with a held accent.",
+   "pattern": {
+    "name": "Planet Wire",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Liquid Glide",
+   "style": "Liquid lead",
+   "bpm": 128,
+   "sound": "Liquid Lead",
+   "about": "Up the minor chord to the octave and gliding back.",
+   "pattern": {
+    "name": "Liquid Glide",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Mercury",
+   "style": "Liquid lead",
+   "bpm": 126,
+   "sound": "Liquid Lead",
+   "about": "Long held notes joined by slides.",
+   "pattern": {
+    "name": "Mercury",
+    "length": 16,
+    "steps": [
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Night Drive",
+   "style": "Liquid lead",
+   "bpm": 124,
+   "sound": "Devil Sustain",
+   "about": "Falling from the high octave, sliding between the steps.",
+   "pattern": {
+    "name": "Night Drive",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 0,
+      "octave": 1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": true,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 7,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": 0,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Deep Roll",
+   "style": "Rolling sub",
+   "bpm": 124,
+   "sound": "Rolling Sub",
+   "about": "Low C rolling, a lift to the middle C now and then.",
+   "pattern": {
+    "name": "Deep Roll",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": -1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 10,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Low Ride",
+   "style": "Rolling sub",
+   "bpm": 122,
+   "sound": "Devil Muffled Bass",
+   "about": "A riding sub with rests to breathe.",
+   "pattern": {
+    "name": "Low Ride",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": true,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": 0,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": true,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "rest"
+     },
+     {
+      "note": 3,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  },
+  {
+   "name": "Underground",
+   "style": "Rolling sub",
+   "bpm": 120,
+   "sound": "Rolling Sub",
+   "about": "Held low notes walking up and down the scale.",
+   "pattern": {
+    "name": "Underground",
+    "length": 16,
+    "steps": [
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 5,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 5,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 3,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 0,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 7,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "tie"
+     },
+     {
+      "note": 5,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     },
+     {
+      "note": 3,
+      "octave": -1,
+      "accent": false,
+      "slide": false,
+      "gate": "note"
+     }
+    ],
+    "motion": {}
+   }
+  }
+ ],
+ "sounds": [
+  {
+   "name": "Classic Acid",
+   "family": "Stock",
+   "about": "Saw, the filter low and resonant, a medium envelope: the classic squelch.",
+   "panel": {
+    "square": false,
+    "driveOn": false,
+    "delayOn": false,
+    "devilFish": false,
+    "cutoff": 0.32,
+    "resonance": 0.8,
+    "envMod": 0.55,
+    "decay": 0.5,
+    "accent": 0.7
+   }
+  },
+  {
+   "name": "Squelch",
+   "family": "Stock",
+   "about": "Darker and more resonant, a wide envelope that the accents fling open.",
+   "panel": {
+    "square": false,
+    "driveOn": false,
+    "delayOn": false,
+    "devilFish": false,
+    "cutoff": 0.2,
+    "resonance": 0.9,
+    "envMod": 0.75,
+    "decay": 0.35,
+    "accent": 0.85
+   }
+  },
+  {
+   "name": "Warehouse Drive",
+   "family": "Stock",
+   "about": "The classic squelch through the drive, pushed.",
+   "panel": {
+    "square": false,
+    "driveOn": true,
+    "delayOn": false,
+    "devilFish": false,
+    "cutoff": 0.4,
+    "resonance": 0.72,
+    "envMod": 0.6,
+    "decay": 0.55,
+    "accent": 0.7,
+    "drive": 0.6,
+    "tone": 0.55
+   }
+  },
+  {
+   "name": "Minimal Click",
+   "family": "Stock",
+   "about": "A short decay and the filter open: clicks and plucks for odd lengths.",
+   "panel": {
+    "square": false,
+    "driveOn": false,
+    "delayOn": false,
+    "devilFish": false,
+    "cutoff": 0.55,
+    "resonance": 0.5,
+    "envMod": 0.4,
+    "decay": 0.1,
+    "accent": 0.5
+   }
+  },
+  {
+   "name": "Rolling Sub",
+   "family": "Stock",
+   "about": "The square with the filter nearly closed and little resonance: a round sub.",
+   "panel": {
+    "square": true,
+    "driveOn": false,
+    "delayOn": false,
+    "devilFish": false,
+    "cutoff": 0.12,
+    "resonance": 0.2,
+    "envMod": 0.2,
+    "decay": 0.6,
+    "accent": 0.4
+   }
+  },
+  {
+   "name": "Liquid Lead",
+   "family": "Stock",
+   "about": "The square, half open, a little delay: a gliding lead.",
+   "panel": {
+    "square": true,
+    "driveOn": false,
+    "delayOn": true,
+    "devilFish": false,
+    "cutoff": 0.45,
+    "resonance": 0.6,
+    "envMod": 0.35,
+    "decay": 0.7,
+    "accent": 0.5,
+    "feedback": 0.35,
+    "mix": 0.25
+   }
+  },
+  {
+   "name": "FX Chirp",
+   "family": "Stock",
+   "about": "Resonance full and a short sweep: chirps and zaps.",
+   "panel": {
+    "square": false,
+    "driveOn": false,
+    "delayOn": false,
+    "devilFish": false,
+    "cutoff": 0.3,
+    "resonance": 1.0,
+    "envMod": 0.8,
+    "decay": 0.3,
+    "accent": 0.9
+   }
+  },
+  {
+   "name": "Trance Stab",
+   "family": "Stock",
+   "about": "Short and bright with drive and an eighth-note delay: stabs.",
+   "panel": {
+    "square": false,
+    "driveOn": true,
+    "delayOn": true,
+    "devilFish": false,
+    "cutoff": 0.5,
+    "resonance": 0.65,
+    "envMod": 0.65,
+    "decay": 0.2,
+    "accent": 0.8,
+    "drive": 0.4,
+    "delayDivision": 1,
+    "feedback": 0.3,
+    "mix": 0.25
+   }
+  },
+  {
+   "name": "Devil Screamer",
+   "family": "Devil Fish",
+   "about": "Overdrive and the high-resonance accent sweep: it screams on the accents.",
+   "panel": {
+    "square": false,
+    "driveOn": false,
+    "delayOn": false,
+    "devilFish": true,
+    "cutoff": 0.35,
+    "resonance": 0.85,
+    "envMod": 0.6,
+    "decay": 0.5,
+    "accent": 0.8,
+    "overdrive": 0.7,
+    "accentSweep": 1,
+    "filterFm": 0.3
+   }
+  },
+  {
+   "name": "Devil Sustain",
+   "family": "Devil Fish",
+   "about": "Long decays, a soft attack and slow slides: notes that sing.",
+   "panel": {
+    "square": false,
+    "driveOn": false,
+    "delayOn": false,
+    "devilFish": true,
+    "cutoff": 0.4,
+    "resonance": 0.7,
+    "envMod": 0.4,
+    "decay": 0.9,
+    "accent": 0.6,
+    "normalDecay": 0.9,
+    "accentDecay": 0.5,
+    "softAttack": 0.3,
+    "slideTime": 0.4
+   }
+  },
+  {
+   "name": "Devil Grit",
+   "family": "Devil Fish",
+   "about": "Heavy Filter FM and tracking: bright and gritty, as Whittle's own.",
+   "panel": {
+    "square": false,
+    "driveOn": false,
+    "delayOn": false,
+    "devilFish": true,
+    "cutoff": 0.5,
+    "resonance": 0.9,
+    "envMod": 0.3,
+    "decay": 0.6,
+    "accent": 0.6,
+    "overdrive": 0.5,
+    "filterFm": 0.8,
+    "tracking": 0.5
+   }
+  },
+  {
+   "name": "Devil Muffled Bass",
+   "family": "Devil Fish",
+   "about": "Overdriven into the Muffler: a fat, squashed bass.",
+   "panel": {
+    "square": false,
+    "driveOn": false,
+    "delayOn": false,
+    "devilFish": true,
+    "cutoff": 0.25,
+    "resonance": 0.6,
+    "envMod": 0.5,
+    "decay": 0.4,
+    "accent": 0.7,
+    "overdrive": 0.9,
+    "muffler": 1
+   }
+  }
+ ]
+}
