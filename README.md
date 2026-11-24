@@ -71,6 +71,10 @@ The Devil Fish is the same circuit with the parts Whittle changed set to his val
 control for tracking and FM, and a sustain on the volume envelope; Soft Attack and the Muffler, whose circuits he
 never published, are simple stand-ins after the VCA.
 
+`tools/listening-pass` plays the stock voice through Din Sync's 25 recorded sets of a real TB-303 (each knob from
+25 to 100 %, the others at five settings) and serves a page that switches between the real unit and ours while both
+play. The recordings are not in the repository; they come from dinsync.info.
+
 ## Building from source
 
 Windows, Visual Studio 2022, CMake 3.22 or later.

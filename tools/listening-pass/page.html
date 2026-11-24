@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>303 Listening Pass</title>
+<style>
+  :root {
+    --bg: #17181a; --panel: #212326; --line: #34373b; --text: #e6e4df; --dim: #9a9890;
+    --real: #e0a64a; --ours: #5fb3a8; --mark: #3a3d42; --bad: #d0624f; --good: #6fae63;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 20px 16px 80px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  p { margin: 4px 0; color: var(--dim); }
+  .player { position: sticky; top: 0; z-index: 2; background: var(--panel); border: 1px solid var(--line);
+            border-radius: 10px; padding: 14px; margin: 16px 0; }
+  .now { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; }
+  .now b { font-size: 18px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  button { font: inherit; color: var(--text); background: var(--mark); border: 1px solid var(--line);
+           border-radius: 7px; padding: 8px 14px; cursor: pointer; }
+  button:hover { border-color: var(--dim); }
+  button:disabled { opacity: .45; cursor: default; }
+  .side { min-width: 150px; font-weight: 600; }
+  .side.on.real { background: var(--real); color: #1b1a17; border-color: var(--real); }
+  .side.on.ours { background: var(--ours); color: #10201e; border-color: var(--ours); }
+  .notes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .pos { border: 1px solid var(--line); border-radius: 8px; padding: 6px; }
+  .pos div { color: var(--dim); font-size: 13px; margin-bottom: 4px; }
+  .pos button { display: block; width: 100%; padding: 5px 6px; margin: 3px 0; font-size: 13px; text-align: left; }
+  .pos button.playing { outline: 2px solid var(--text); }
+  .marks { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .marks button.on { background: var(--text); color: var(--bg); }
+  input[type=text] { flex: 1; min-width: 220px; font: inherit; color: var(--text); background: var(--bg);
+                     border: 1px solid var(--line); border-radius: 7px; padding: 8px; }
+  .status { color: var(--dim); font-size: 13px; min-height: 1.4em; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  td, th { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; }
+  th { color: var(--dim); font-weight: 500; }
+  td button { padding: 4px 10px; }
+  td.mark { color: var(--dim); }
+  tr.current td { background: #26292d; }
+  @media (max-width: 640px) { .notes { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<main>
+  <h1>CoolSynth 303 against a real TB-303</h1>
+  <p>Din Sync's recordings of their real 303, beside our stock voice playing the same notes at the same knobs.</p>
+  <p>Both play at once; the switch swaps which one you hear, so you can flip mid-note.</p>
+  <p>Space plays or stops, B switches. Click a note to hear just that one.</p>
+
+  <section class="player" id="player">
+    <div class="now"><b id="title">Pick a set below</b><span id="what"></span></div>
+    <div class="controls">
+      <button id="play" disabled>Play the set</button>
+      <button class="side real on" id="sideReal" disabled>Real 303</button>
+      <button class="side ours" id="sideOurs" disabled>CoolSynth 303</button>
+      <button id="next" disabled>Next set</button>
+    </div>
+    <div class="notes" id="notes"></div>
+    <div class="marks" id="marks">
+      <button data-v="same" disabled>Can't tell them apart</button>
+      <button data-v="close" disabled>Close, a small difference</button>
+      <button data-v="different" disabled>Clearly different</button>
+      <input type="text" id="note" placeholder="What differs, if anything (optional)" disabled>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <table>
+    <thead><tr><th>Set</th><th>Turned 25 to 100 %</th><th>The other knobs</th><th>Your mark</th><th></th></tr></thead>
+    <tbody id="list"></tbody>
+  </table>
+</main>
+<script>
+const LABEL = { same: "Can't tell them apart", close: "Close, a small difference", different: "Clearly different" };
+const NOTE_KIND = ["saw", "saw, accented", "square", "square, accented"];
+let sets = [], marks = {}, current = null, buffers = {}, side = "real";
+let ctx = null, gains = null, sources = [], startedAt = 0, offset = 0, clipEnd = null, tick = null;
+const $ = id => document.getElementById(id);
+
+async function load() {
+  sets = await (await fetch("/sets")).json();
+  marks = await (await fetch("/marks")).json();
+  drawList();
+}
+
+function drawList() {
+  $("list").innerHTML = "";
+  for (const s of sets) {
+    const tr = document.createElement("tr");
+    if (current && current.id === s.id) tr.className = "current";
+    const m = marks[s.id];
+    tr.innerHTML = `<td>${s.id}</td><td>${s.knob}</td><td>at ${s.base} %</td>` +
+      `<td class="mark">${m && m.v ? LABEL[m.v] + (m.note ? ": " + m.note : "") : ""}</td><td><button>Open</button></td>`;
+    tr.querySelector("button").onclick = () => openSet(s);
+    $("list").appendChild(tr);
+  }
+}
+
+async function getBuffer(url) {
+  if (!buffers[url]) buffers[url] = fetch(url).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b));
+  return buffers[url];
+}
+
+async function openSet(s) {
+  stop();
+  if (!ctx) ctx = new AudioContext();
+  current = s;
+  $("title").textContent = s.id;
+  $("what").textContent = `${s.knob} turned from 25 to 100 %, the other knobs at ${s.base} %`;
+  $("status").textContent = "Loading both recordings...";
+  setEnabled(false);
+  drawNotes();
+  drawList();
+  const m = marks[s.id] || {};
+  $("note").value = m.note || "";
+  for (const b of $("marks").querySelectorAll("button")) b.classList.toggle("on", b.dataset.v === m.v);
+  try {
+    current.real = await getBuffer(`/audio/${s.id}-real.wav`);
+    current.ours = await getBuffer(`/audio/${s.id}-coolsynth.wav`);
+    if (current !== s) return;
+    $("status").textContent = "";
+    setEnabled(true);
+    $("player").scrollIntoView({ block: "nearest" });
+  } catch (e) {
+    $("status").textContent = "Could not load this set: " + e;
+  }
+}
+
+function setEnabled(on) {
+  for (const id of ["play", "sideReal", "sideOurs", "next", "note"]) $(id).disabled = !on;
+  for (const b of $("marks").querySelectorAll("button")) b.disabled = !on;
+}
+
+function drawNotes() {
+  $("notes").innerHTML = "";
+  for (let p = 0; p < 4; ++p) {
+    const box = document.createElement("div");
+    box.className = "pos";
+    box.innerHTML = `<div>${current.knob} at ${25 * (p + 1)} %</div>`;
+    for (let k = 0; k < 4; ++k) {
+      const n = 4 * p + k, b = document.createElement("button");
+      b.textContent = NOTE_KIND[k];
+      b.dataset.n = n;
+      b.onclick = () => playFrom(1.14 + 3 * n - 0.15, 1.14 + 3 * n + 2.0);
+      box.appendChild(b);
+    }
+    $("notes").appendChild(box);
+  }
+}
+
+function playFrom(from, to) {
+  stop();
+  if (!current || !current.real) return;
+  gains = { real: ctx.createGain(), ours: ctx.createGain() };
+  gains.real.gain.value = side === "real" ? 1 : 0;
+  gains.ours.gain.value = side === "ours" ? 1 : 0;
+  const when = ctx.currentTime + 0.05;
+  for (const k of ["real", "ours"]) {
+    const src = ctx.createBufferSource();
+    src.buffer = current[k];
+    src.connect(gains[k]).connect(ctx.destination);
+    src.start(when, from, to ? to - from : undefined);
+    sources.push(src);
+  }
+  sources[0].onended = () => { if (sources.length) stop(); };
+  startedAt = when; offset = from; clipEnd = to;
+  $("play").textContent = "Stop";
+  tick = setInterval(showPlaying, 100);
+}
+
+function stop() {
+  for (const s of sources) { try { s.onended = null; s.stop(); } catch (e) {} }
+  sources = [];
+  clearInterval(tick);
+  $("play").textContent = "Play the set";
+  for (const b of $("notes").querySelectorAll("button")) b.classList.remove("playing");
+}
+
+function showPlaying() {
+  const t = offset + ctx.currentTime - startedAt;
+  const n = Math.floor((t - 1.14 + 0.5) / 3);
+  for (const b of $("notes").querySelectorAll("button")) b.classList.toggle("playing", +b.dataset.n === n);
+}
+
+function setSide(s) {
+  side = s;
+  $("sideReal").classList.toggle("on", s === "real");
+  $("sideOurs").classList.toggle("on", s === "ours");
+  if (gains) {
+    const t = ctx.currentTime;
+    for (const k of ["real", "ours"]) {
+      gains[k].gain.cancelScheduledValues(t);
+      gains[k].gain.setValueAtTime(gains[k].gain.value, t);
+      gains[k].gain.linearRampToValueAtTime(k === s ? 1 : 0, t + 0.005);
+    }
+  }
+}
+
+async function saveMark(v) {
+  const note = $("note").value.trim();
+  if (v === undefined) v = (marks[current.id] || {}).v || "";
+  marks[current.id] = { v, note };
+  for (const b of $("marks").querySelectorAll("button")) b.classList.toggle("on", b.dataset.v === v);
+  try {
+    await fetch("/marks", { method: "POST", body: JSON.stringify({ id: current.id, v, note }) });
+    $("status").textContent = "Saved.";
+  } catch (e) {
+    $("status").textContent = "Not saved: the listening-pass server is not answering.";
+  }
+  drawList();
+}
+
+$("play").onclick = () => sources.length ? stop() : playFrom(0, null);
+$("sideReal").onclick = () => setSide("real");
+$("sideOurs").onclick = () => setSide("ours");
+$("next").onclick = () => { const i = sets.indexOf(current); if (i + 1 < sets.length) openSet(sets[i + 1]); };
+for (const b of $("marks").querySelectorAll("button")) b.onclick = () => saveMark(b.dataset.v);
+$("note").onchange = () => saveMark();
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || !current || !current.real) return;
+  if (e.code === "Space") { e.preventDefault(); $("play").click(); }
+  if (e.code === "KeyB") setSide(side === "real" ? "ours" : "real");
+});
+load();
+</script>
+</body>
+</html>
