@@ -42,6 +42,7 @@ set(COOLSYNTH303_SOURCES
     src/Pattern.cpp
     src/Sequencer.cpp
     src/Processor.cpp
+    src/MidiExport.cpp
     src/Editor.cpp
     src/ui/Theme.cpp
     src/ui/Widgets.cpp

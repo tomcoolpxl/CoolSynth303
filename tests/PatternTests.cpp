@@ -1,7 +1,9 @@
 // The pattern model: keys and octaves, JSON, and the tools.
 
+#include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_core/juce_core.h>
 
+#include "MidiExport.h"
 #include "Pattern.h"
 
 namespace
@@ -112,6 +114,40 @@ namespace
                 semitone(p, -1);
                 semitone(p, -1);
                 expectEquals(p.step[1].key(), 0);
+            }
+
+            beginTest("a_pattern_as_midi_holds_ties_overlaps_slides_and_marks_accents");
+            {
+                Pattern p;
+                p.length = 4;
+                for (auto& s : p.step)
+                    s.gate = Gate::rest;
+                p.step[0].setKey(12); // the middle C: MIDI 36
+                p.step[0].gate = Gate::note;
+                p.step[0].accent = true;
+                p.step[1].gate = Gate::tie;
+                p.step[1].slide = true;
+                p.step[2].setKey(21);
+                p.step[2].gate = Gate::note;
+                const auto file = patternToMidi(p, 120.0);
+                const auto* track = file.getTrack(0);
+                std::vector<std::tuple<int, int, int, int>> notes; // note, velocity, on, off
+                for (int i = 0; i < track->getNumEvents(); ++i)
+                {
+                    const auto* e = track->getEventPointer(i);
+                    if (e->message.isNoteOn())
+                        notes.emplace_back(e->message.getNoteNumber(), e->message.getVelocity(), juce::roundToInt(e->message.getTimeStamp()),
+                                           e->noteOffObject != nullptr ? juce::roundToInt(e->noteOffObject->message.getTimeStamp()) : -1);
+                }
+                expectEquals(static_cast<int>(notes.size()), 2);
+                expectEquals(std::get<0>(notes[0]), 36);
+                expectEquals(std::get<1>(notes[0]), 127);
+                expectEquals(std::get<2>(notes[0]), 0);
+                expect(std::get<3>(notes[0]) > 2 * 240, "the tie and the slide hold it into the third step");
+                expectEquals(std::get<0>(notes[1]), 45);
+                expectEquals(std::get<1>(notes[1]), 100);
+                expectEquals(std::get<2>(notes[1]), 480);
+                expectEquals(std::get<3>(notes[1]), 600, "half its step");
             }
 
             beginTest("mutate_changes_only_what_it_may");

@@ -1,5 +1,7 @@
 #include "ui/SequencerView.h"
 
+#include "MidiExport.h"
+
 #include "Editor.h"
 #include "Processor.h"
 #include "ui/Theme.h"
@@ -21,6 +23,60 @@ namespace cs303::ui
             g.setColour(fill.withMultipliedAlpha(alpha));
             g.fillRoundedRectangle(r, 2.0f);
         }
+
+        /** Drag MIDI: dragged out, the edited pattern goes along as a MIDI file; clicked, it is saved as one. */
+        class MidiKey final : public juce::Component
+        {
+        public:
+            explicit MidiKey(Editor& e) : editor(e) {}
+
+            void paint(juce::Graphics& g) override { drawKey(g, getLocalBounds().toFloat(), "Drag MIDI", dragging, false); }
+
+            void mouseDrag(const juce::MouseEvent& e) override
+            {
+                if (dragging || e.getDistanceFromDragStart() < 5)
+                    return;
+                const auto file = writePatternMidi(editor.edited(), editor.processor.project().bpm, fileName());
+                if (! file.existsAsFile())
+                    return;
+                dragging = true;
+                repaint();
+                juce::DragAndDropContainer::performExternalDragDropOfFiles({ file.getFullPathName() }, false, this, [this] {
+                    dragging = false;
+                    repaint();
+                });
+            }
+
+            void mouseUp(const juce::MouseEvent& e) override
+            {
+                if (dragging || e.mouseWasDraggedSinceMouseDown())
+                    return;
+                chooser = std::make_unique<juce::FileChooser>("Save the pattern as MIDI", juce::File::getSpecialLocation(juce::File::userMusicDirectory)
+                                                                  .getChildFile(fileName() + ".mid"), "*.mid");
+                chooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [this](const juce::FileChooser& c)
+                {
+                    auto f = c.getResult();
+                    if (f == juce::File())
+                        return;
+                    f = f.withFileExtension("mid");
+                    f.deleteFile();
+                    juce::FileOutputStream out(f);
+                    if (out.openedOk())
+                        patternToMidi(editor.edited(), editor.processor.project().bpm).writeTo(out);
+                });
+            }
+
+        private:
+            Editor& editor;
+            bool dragging = false;
+            std::unique_ptr<juce::FileChooser> chooser;
+
+            juce::String fileName() const
+            {
+                const auto& pat = editor.edited();
+                return "CoolSynth303 " + two(editor.editPattern) + (editor.editB ? "B" : "A") + (pat.name.empty() ? juce::String() : " " + juce::String(pat.name));
+            }
+        };
     }
 
     // ---------------------------------------------------------------- the pattern row
@@ -254,6 +310,12 @@ namespace cs303::ui
         auto& redo = button("Redo", 56);
         redo.enabled = [&p] { return p.canRedo(); };
         redo.onClick = [this, &p] { p.redo(); editor.refreshAll(); };
+        endGroup();
+        auto midi = std::make_unique<MidiKey>(editor);
+        midi->setBounds(x, 1, 92, 24);
+        x += 97;
+        addAndMakeVisible(*midi);
+        parts.push_back(std::move(midi));
     }
 
     void ToolRow::group(const juce::String& name)

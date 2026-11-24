@@ -35,6 +35,11 @@ The panel, from the top:
     left edge. Below it each step's octave, accent, slide and gate (note, tie or rest). Right-click a step for more.
   - The motion lane: the recorded moves of one knob (click its name for the next); draw them, right-click to clear.
   - Locks, on the right: turn a knob there to hold its value on the picked step.
+  - Drag MIDI: drag it into your music software and the edited pattern goes along as a MIDI file (ties held, a slide
+    as an overlap, accents at full velocity); click it to save the file instead.
+- Mods, at the top right, opens the trimmers inside the case over the synth's sections: TM3 (how far the cutoff
+  reaches), TM4 (the tune), TM5 (the width of an octave) and C11 (the square's shaper), as fitted to a real unit;
+  Stock sets them back.
 
 MIDI: while stopped, a note plays the voice (the middle C at MIDI note 36); while playing, a note transposes the
 pattern from middle C (note 60). It follows a MIDI clock when one comes in (its start, stop, continue, song position
