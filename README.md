@@ -37,8 +37,9 @@ The panel, from the top:
   - Locks, on the right: turn a knob there to hold its value on the picked step.
 
 MIDI: while stopped, a note plays the voice (the middle C at MIDI note 36); while playing, a note transposes the
-pattern from middle C (note 60). It sends MIDI clock while it plays. The audio and MIDI settings are in the Options
-menu of the window.
+pattern from middle C (note 60). It follows a MIDI clock when one comes in (its start, stop, continue, song position
+and tempo, the top bar then showing CLOCK), and sends its own while it plays when none does. The audio and MIDI
+settings are in the Options menu of the window.
 
 ## How the sound is made
 

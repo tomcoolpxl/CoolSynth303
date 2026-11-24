@@ -60,6 +60,9 @@ namespace cs303
         coolsynth::synth::v3::SlotMemory memory;
         drive->prepare(voiceRate, block, memory);
         delay->prepare(hostRate, block, 2);
+        clock.prepare(hostRate);
+        samplesSoFar = 0;
+        playingByClock = endedUnderClock = false;
         sequencer.reset();
         dcState = dcIn = 0.0;
         playing = false;
@@ -192,7 +195,7 @@ namespace cs303
     void Processor::renderSpan(float* out, int start, int count) noexcept
     {
         const auto& panel = audio->panel;
-        const double bpm = juce::jlimit(40.0, 300.0, audio->bpm);
+        const double bpm = juce::jlimit(20.0, 400.0, blockBpm);
         const double beatPerVoiceSample = bpm / 60.0 / voiceRate;
         const double secondsPerStep = 15.0 / bpm;
         float* v = voiceBuffer.data();
@@ -237,10 +240,14 @@ namespace cs303
             if (playing)
             {
                 const auto s = static_cast<std::int64_t>(std::floor(beat * 4.0));
-                if (s != sixteenth)
+                // a clock's bend can put the beat a hair back across a step's line: the step stays; forward, every
+                // step in between is taken in order (a far jump starts afresh)
+                if (s > sixteenth)
                 {
-                    sixteenth = s;
-                    sequencer.stepTo(s);
+                    if (s - sixteenth > 64 || sixteenth < 0)
+                        sixteenth = s - 1;
+                    while (sixteenth < s)
+                        sequencer.stepTo(++sixteenth);
                     const auto& cur = sequencer.current();
                     applyPanel(panel, &cur);
                     stepNow.store(sequencer.playingStep());
@@ -251,7 +258,7 @@ namespace cs303
                     soundingNow.store(cur.sounds ? juce::roundToInt((cur.volts - 1.0) * 12.0) : -1);
                 }
                 const auto& cur = sequencer.current();
-                const double fraction = beat * 4.0 - static_cast<double>(s);
+                const double fraction = juce::jlimit(0.0, 1.0, beat * 4.0 - static_cast<double>(sixteenth));
                 gate = sequencer.gateAt(fraction, secondsPerStep);
                 accent = cur.accent && cur.sounds;
                 slide = cur.slide;
@@ -318,10 +325,9 @@ namespace cs303
             midi.addEvent(juce::MidiMessage::midiStop(), 0);
             clockStopPending = false;
         }
-        if (! playing)
-            return;
-        const double bpm = juce::jlimit(40.0, 300.0, audio->bpm);
-        const double perSample = bpm / 60.0 / hostRate;
+        if (! playing || playingByClock)
+            return; // following a clock, it does not send one of its own
+        const double perSample = juce::jlimit(20.0, 400.0, blockBpm) / 60.0 / hostRate;
         const double startBeat = beat - perSample * numSamples; // the block's start: beat has moved on in renderSpan
         for (int i = 0; i < numSamples; ++i)
         {
@@ -341,11 +347,23 @@ namespace cs303
         pullFromUi();
         const int numSamples = buffer.getNumSamples();
 
-        // MIDI in: while playing a note transposes the pattern from middle C; while stopped it plays the voice
+        // MIDI in: a clock runs the transport; while playing a note transposes the pattern from middle C; while
+        // stopped it plays the voice
         for (const auto m : midi)
         {
             const auto msg = m.getMessage();
-            if (msg.isNoteOn())
+            const auto at = samplesSoFar + m.samplePosition;
+            if (msg.isMidiClock())
+                clock.pulse(at);
+            else if (msg.isMidiStart())
+                clock.start(at);
+            else if (msg.isMidiContinue())
+                clock.resume();
+            else if (msg.isMidiStop())
+                clock.stop();
+            else if (msg.isSongPositionPointer())
+                clock.songPosition(msg.getSongPositionPointerMidiBeat());
+            else if (msg.isNoteOn())
             {
                 if (playing)
                     transposeRequest.store(juce::jlimit(-12, 24, msg.getNoteNumber() - midiNoteAsWritten));
@@ -360,16 +378,34 @@ namespace cs303
         if (const int pr = patternRequest.exchange(-1); pr >= 0)
             sequencer.requestPattern(pr / 2, (pr & 1) != 0);
         sequencer.setTranspose(transposeRequest.load());
-        if (const int request = playRequest.exchange(-1); request >= 0 && (request == 1) != playing)
+
+        // Following a clock, it plays while the clock plays; a clock gone while it played stops it (as the 808's)
+        const bool byClock = clock.present(samplesSoFar);
+        clockFollowed.store(byClock);
+        const int request = playRequest.exchange(-1);
+        bool wantPlay = byClock ? clock.isPlaying() : (request < 0 ? playing : request == 1);
+        if (! byClock && playing && playingByClock)
+            wantPlay = false;
+        // a chain played once through under a clock stays stopped until that clock stops or starts again
+        if (! byClock || ! clock.isPlaying())
+            endedUnderClock = false;
+        if (byClock && endedUnderClock)
+            wantPlay = false;
+        double clockBeat = beat;
+        blockBpm = juce::jlimit(40.0, 300.0, audio->bpm);
+        if (byClock)
+            clock.block(samplesSoFar, numSamples, clockBeat, blockBpm);
+        if (wantPlay != playing)
         {
-            playing = request == 1;
+            playing = wantPlay;
             if (playing)
             {
+                playingByClock = byClock;
                 sequencer.reset();
-                beat = 0.0;
+                beat = byClock ? clockBeat : 0.0;
                 sixteenth = -1;
-                clockBeatSent = 0.0;
-                clockStartPending = true;
+                clockBeatSent = beat;
+                clockStartPending = ! byClock;
                 auditionKey.store(-1);
                 lastAudition = -1;
             }
@@ -379,9 +415,13 @@ namespace cs303
                 applyPanel(audio->panel, nullptr);
                 stepNow.store(-1);
                 soundingNow.store(-1);
-                clockStopPending = true;
+                clockStopPending = ! playingByClock;
+                playingByClock = false;
             }
         }
+        else if (playing && playingByClock)
+            beat = clockBeat; // where the clock puts this block's start
+        bpmNow.store(blockBpm);
         for (int done = 0; done < numSamples;)
         {
             const int span = std::min(maxBlock, numSamples - done);
@@ -394,7 +434,9 @@ namespace cs303
             sequencer.reset();
             stepNow.store(-1);
             soundingNow.store(-1);
-            clockStopPending = true;
+            clockStopPending = ! playingByClock;
+            endedUnderClock = playingByClock;
+            playingByClock = false;
         }
         playingNow.store(playing);
 
@@ -403,7 +445,7 @@ namespace cs303
         const auto& panel = audio->panel;
         coolsynth::synth::DelayParametersV2 dp;
         dp.enabled = panel.delayOn;
-        dp.timeMs = static_cast<float>(delayBeats(panel.delayDivision) * 60000.0 / juce::jlimit(40.0, 300.0, audio->bpm));
+        dp.timeMs = static_cast<float>(delayBeats(panel.delayDivision) * 60000.0 / juce::jlimit(40.0, 300.0, blockBpm));
         dp.feedback = panel.feedback * coolsynth::synth::GlobalDelay::maxFeedback;
         dp.mix = panel.mix;
         dp.pingPong = false;
@@ -422,6 +464,7 @@ namespace cs303
         const double seconds = juce::Time::highResolutionTicksToSeconds(juce::Time::getHighResolutionTicks() - started);
         loadFollow = 0.9 * loadFollow + 0.1 * (seconds * hostRate / std::max(1, numSamples));
         loadNow.store(static_cast<float>(loadFollow));
+        samplesSoFar += numSamples;
     }
 
     juce::AudioProcessorEditor* Processor::createEditor() { return new Editor(*this); }

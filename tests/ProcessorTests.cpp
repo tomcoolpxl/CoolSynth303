@@ -161,6 +161,50 @@ namespace
                 juce::ignoreUnused(quiet);
             }
 
+            beginTest("an_incoming_clock_starts_it_sets_its_tempo_and_stops_it");
+            {
+                auto p = prepared();
+                juce::AudioBuffer<float> buffer(2, 480);
+                const double pulseSamples = 48000.0 * 60.0 / 100.0 / 24.0; // 100 BPM
+                double nextPulse = 0.0;
+                std::int64_t now = 0;
+                bool sentStart = false;
+                int clocksOut = 0;
+                const auto run = [&](double seconds, bool pulses, bool stopAtEnd) {
+                    for (int b = 0; b < static_cast<int>(seconds * 100.0); ++b)
+                    {
+                        juce::MidiBuffer midi;
+                        if (pulses)
+                        {
+                            if (! sentStart)
+                            {
+                                midi.addEvent(juce::MidiMessage::midiStart(), 0);
+                                sentStart = true;
+                            }
+                            while (nextPulse < static_cast<double>(now + 480))
+                            {
+                                midi.addEvent(juce::MidiMessage::midiClock(), static_cast<int>(nextPulse - static_cast<double>(now)));
+                                nextPulse += pulseSamples;
+                            }
+                        }
+                        if (stopAtEnd && b == static_cast<int>(seconds * 100.0) - 1)
+                            midi.addEvent(juce::MidiMessage::midiStop(), 0);
+                        p->processBlock(buffer, midi);
+                        for (const auto m : midi)
+                            clocksOut += m.getMessage().isMidiClock() ? 1 : 0;
+                        now += 480;
+                    }
+                };
+                run(2.0, true, false);
+                expect(p->isFollowingClock());
+                expect(p->isPlaying(), "the clock's start plays it");
+                expectWithinAbsoluteError(p->tempoNow(), 100.0, 1.0);
+                expectEquals(clocksOut, 0, "it sends no clock of its own while it follows one");
+                run(0.2, true, true);
+                run(0.1, true, false);
+                expect(! p->isPlaying(), "the clock's stop stops it");
+            }
+
             beginTest("a_held_key_sounds_while_stopped");
             {
                 auto p = prepared();
@@ -227,8 +271,8 @@ namespace
                 beginTest("listening_files");
                 const juce::File dir(folder);
                 dir.createDirectory();
-                const auto write = [&](const juce::String& name, const std::vector<float>& left) {
-                    auto file = dir.getChildFile(name + ".wav");
+                const auto write = [&](const juce::String& fileName, const std::vector<float>& left) {
+                    auto file = dir.getChildFile(fileName + ".wav");
                     file.deleteFile();
                     juce::WavAudioFormat wav;
                     std::unique_ptr<juce::OutputStream> stream = std::make_unique<juce::FileOutputStream>(file);
