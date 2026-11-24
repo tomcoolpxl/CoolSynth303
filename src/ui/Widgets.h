@@ -57,6 +57,8 @@ namespace cs303::ui
         std::function<juce::String()> textOf;
         std::function<bool()> enabled;
         bool lamp;
+        bool hot = false;                       // the panel's one orange action (Generate)
+        int glyph = 0;                          // 1 a saw, 2 a square drawn in place of the name
 
         /** Lamp keys sit 8 px below their place, the lamp in that room above them, as the mockup lays them out. */
         static constexpr int lampRoom = 8;
@@ -94,7 +96,7 @@ namespace cs303::ui
         std::function<juce::String()> text;
         std::function<void()> onClick, onRightClick;
         std::function<void(int)> onWheel; // +1 up, -1 down
-        juce::Colour ink { 0xffe8742a };
+        juce::Colour ink { 0xffffb35c }; // amber, as the displays
         void paint(juce::Graphics&) override;
         void mouseDown(const juce::MouseEvent&) override;
         void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;

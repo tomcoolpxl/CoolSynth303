@@ -77,6 +77,7 @@ namespace cs303::ui
         Editor& editor;
         std::vector<std::unique_ptr<juce::Component>> parts;
         std::vector<SectionPlace> sections;
+        const juce::Rectangle<int> waveBay { 20, 134, 120, 32 }; // the waveform's two keys (the mockup's 80, 186 on the board)
         Knob& knob(const juce::String& name, float size, int sectionX, int x, int y);
         Key& key(const juce::String& text, int sectionX, int x, int y, int w);
     };

@@ -52,28 +52,58 @@ namespace cs303::ui
             const auto r = keyBounds(k);
             const bool white = isWhite(k);
             const bool hit = editor.transposeMode ? k == transposed : k == sounding;
-            if (hit)
-                g.setGradientFill(juce::ColourGradient(juce::Colour(0xffffb67a), r.getX(), r.getY(), colour::orange, r.getX(), r.getBottom(), false));
-            else if (white)
-                g.setGradientFill(juce::ColourGradient(k % 12 == 0 ? juce::Colour(0xfff6f6f4) : juce::Colour(0xfff1f1ef), r.getX(), r.getY(),
-                                                       k % 12 == 0 ? juce::Colour(0xffd6d7d9) : juce::Colour(0xffcfd0d2), r.getX(), r.getBottom(), false));
-            else
-                g.setGradientFill(juce::ColourGradient(juce::Colour(0xff3a3b3f), r.getX(), r.getY(), juce::Colour(0xff121315), r.getX(), r.getBottom(), false));
-            g.fillRoundedRectangle(r.withTrimmedTop(-4.0f).reduced(white ? 0.5f : 0.0f, 0.0f), white ? 3.0f : 2.0f);
-            g.setColour(juce::Colours::black.withAlpha(white ? 0.18f : 0.5f));
-            g.fillRect(r.withTop(r.getBottom() - 3.0f).reduced(1.0f, 0.0f));
-            g.setColour(juce::Colour(0xff111111));
-            g.drawRoundedRectangle(r.withTrimmedTop(-4.0f).reduced(0.5f), white ? 3.0f : 2.0f, 1.0f);
-            if (k == picked)
-            {
-                g.setColour(colour::orange);
-                g.drawRoundedRectangle(r.reduced(white ? 2.0f : 1.5f), 2.0f, 2.0f);
-            }
+            const bool pick = k == picked;
             if (white)
             {
-                g.setColour(hit ? colour::orangeInk : juce::Colour(0xff4a4c51));
+                // ivory, a shadow along its foot and its right edge; the picked key warm, the one sounding orange
+                const auto body = r.withTrimmedTop(-4.0f).withTrimmedBottom(2.0f).reduced(0.5f, 0.0f);
+                g.setColour(juce::Colours::black.withAlpha(0.5f));
+                g.fillRoundedRectangle(body.translated(0.0f, 2.0f), 4.0f);
+                juce::ColourGradient grad(juce::Colour(0xfff7f5ef), 0.0f, body.getY(), juce::Colour(0xffcfccc3), 0.0f, body.getBottom(), false);
+                grad.addColour(0.7, juce::Colour(0xffe6e3da));
+                if (hit)
+                    grad = juce::ColourGradient(juce::Colour(0xffffb67a), 0.0f, body.getY(), colour::orange, 0.0f, body.getBottom(), false);
+                else if (pick)
+                {
+                    grad = juce::ColourGradient(juce::Colour(0xfffff8f0), 0.0f, body.getY(), juce::Colour(0xfff0a065), 0.0f, body.getBottom(), false);
+                    grad.addColour(0.7, juce::Colour(0xffffd9b5));
+                }
+                g.setGradientFill(grad);
+                g.fillRoundedRectangle(body, 4.0f);
+                g.setColour(juce::Colours::black.withAlpha(0.12f));
+                g.fillRect(body.withTop(body.getBottom() - 3.0f).reduced(2.0f, 0.0f));
+                g.setColour(juce::Colours::black.withAlpha(0.25f));
+                g.fillRect(body.getRight() - 1.0f, body.getY(), 1.0f, body.getHeight() - 2.0f);
+                g.setColour(hit ? colour::orangeInk : pick ? juce::Colour(0xff8a3e10) : juce::Colour(0xff8a877e));
                 g.setFont(labelFont(9.5f));
-                g.drawText(letters[k % 12], r.withTop(r.getBottom() - 18.0f), juce::Justification::centred, false);
+                g.drawText(letters[k % 12], r.withTop(r.getBottom() - 20.0f), juce::Justification::centred, false);
+            }
+            else
+            {
+                // gloss black, lit along its middle, a lip at its foot
+                const auto body = r.withTrimmedTop(-4.0f);
+                g.setColour(juce::Colours::black.withAlpha(0.6f));
+                g.fillRoundedRectangle(body.translated(0.0f, 3.0f), 3.0f);
+                juce::ColourGradient grad(juce::Colour(0xff0d0d0e), body.getX(), 0.0f, juce::Colour(0xff111213), body.getRight(), 0.0f, false);
+                grad.addColour(0.45, juce::Colour(0xff2b2c30));
+                if (hit || pick)
+                {
+                    const auto mid = hit ? colour::orange : juce::Colour(0xff8a4a20);
+                    grad = juce::ColourGradient(mid.darker(0.6f), body.getX(), 0.0f, mid.darker(0.5f), body.getRight(), 0.0f, false);
+                    grad.addColour(0.45, mid);
+                }
+                g.setGradientFill(grad);
+                g.fillRoundedRectangle(body, 3.0f);
+                g.setColour(juce::Colour(0xff050505));
+                g.fillRect(body.withTop(body.getBottom() - 5.0f).reduced(1.0f, 0.0f));
+                g.setColour(juce::Colours::white.withAlpha(0.12f));
+                g.fillRect(body.getX() + 1.0f, body.getBottom() - 6.0f, body.getWidth() - 2.0f, 1.0f);
+            }
+            if (pick && white)
+            {
+                // the picked key glows from below
+                g.setColour(colour::orange.withAlpha(0.35f));
+                g.fillRect(r.withTop(r.getBottom() - 4.0f).reduced(2.0f, 0.0f));
             }
         };
         for (int k = 0; k < keys; ++k)
@@ -154,7 +184,7 @@ namespace cs303::ui
             const juce::String text(name);
             c->text = [text] { return text.toUpperCase(); };
             c->font = labelFont(9.5f).withExtraKerningFactor(0.1f);
-            c->ink = juce::Colour(0xff8c8e93);
+            c->ink = juce::Colour(0xff77797e);
             c->justification = juce::Justification::centredBottom;
             c->setBounds(104 + span.first * Piano::whiteWidth + 3, top + 100, span.second * Piano::whiteWidth - 6, 14);
             addAndMakeVisible(*c);
@@ -175,10 +205,18 @@ namespace cs303::ui
     void KeyboardSection::paint(juce::Graphics& g)
     {
         drawSection(g, juce::Rectangle<int>(0, top, getWidth(), getHeight() - top).toFloat(), "Keyboard", colour::face);
-        // the line over each octave's name
-        g.setColour(juce::Colour(0xff55575c));
+        // the keys' bed
+        drawScreen(g, juce::Rectangle<float>(104.0f - 6.0f, top + 12.0f, Piano::whites * Piano::whiteWidth + 12.0f, 88.0f), 5.0f);
+        // the line over each octave's name, fading at its ends
         for (const auto& [from, n] : { std::pair { 0, 7 }, std::pair { 7, 7 }, std::pair { 14, 8 } })
-            g.drawHorizontalLine(top + 100, 104.0f + from * Piano::whiteWidth + 3.0f, 104.0f + (from + n) * Piano::whiteWidth - 3.0f);
+        {
+            const float x0 = 104.0f + from * Piano::whiteWidth + 3.0f, x1 = 104.0f + (from + n) * Piano::whiteWidth - 3.0f;
+            juce::ColourGradient line(juce::Colour(0x004a4c51), x0, 0.0f, juce::Colour(0x004a4c51), x1, 0.0f, false);
+            line.addColour(0.12, juce::Colour(0xff4a4c51));
+            line.addColour(0.88, juce::Colour(0xff4a4c51));
+            g.setGradientFill(line);
+            g.fillRect(x0, static_cast<float>(top + 100) + 2.0f, x1 - x0, 1.0f);
+        }
     }
 
     void KeyboardSection::refresh()

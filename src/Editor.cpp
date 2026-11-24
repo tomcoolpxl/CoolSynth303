@@ -21,26 +21,34 @@ namespace cs303
         public:
             void paint(juce::Graphics& g) override
             {
-                g.fillAll(ui::colour::face);
-                // the name up the left edge, in tall capitals
+                ui::drawGround(g, getLocalBounds().toFloat());
+                // the name up the left edge, in tall capitals, engraved in a darker strip
                 const juce::Rectangle<int> strip(0, 42, 52, Editor::baseHeight - 42);
-                g.setColour(ui::colour::stencil);
+                g.setGradientFill(juce::ColourGradient(ui::colour::stencil, 0.0f, 0.0f, juce::Colour(0xff18191c), static_cast<float>(strip.getRight()), 0.0f, false));
                 g.fillRect(strip);
-                g.setColour(juce::Colour(0xff111111));
+                g.setColour(juce::Colours::black);
                 g.drawVerticalLine(strip.getRight(), static_cast<float>(strip.getY()), static_cast<float>(strip.getBottom()));
+                g.setColour(juce::Colours::white.withAlpha(0.04f));
+                g.drawVerticalLine(strip.getRight() + 1, static_cast<float>(strip.getY()), static_cast<float>(strip.getBottom()));
                 {
                     juce::Graphics::ScopedSaveState state(g);
                     g.addTransform(juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, static_cast<float>(strip.getCentreX()),
                                                                    static_cast<float>(strip.getCentreY())));
                     const auto font = ui::fontOf(ui::Face::head, 40.0f, 0.08f);
-                    juce::AttributedString s;
-                    s.append("COOLSYNTH ", font, juce::Colour(0xffd9d9d6));
-                    s.append("303", font, ui::colour::orange);
-                    s.setJustification(juce::Justification::centred);
                     const auto c = strip.getCentre().toFloat();
-                    s.draw(g, juce::Rectangle<float>(c.x - 300.0f, c.y - 26.0f, 600.0f, 52.0f));
+                    const juce::Rectangle<float> place(c.x - 300.0f, c.y - 26.0f, 600.0f, 52.0f);
+                    const auto title = [&](juce::Colour a, juce::Colour b, juce::Point<float> by) {
+                        juce::AttributedString s;
+                        s.append("COOLSYNTH ", font, a);
+                        s.append("303", font, b);
+                        s.setJustification(juce::Justification::centred);
+                        s.draw(g, place + by);
+                    };
+                    title(juce::Colours::black, juce::Colours::black, { 0.0f, -1.0f });                                   // the engraving's dark edge
+                    title(juce::Colours::white.withAlpha(0.08f), juce::Colours::white.withAlpha(0.08f), { 0.0f, 1.0f });  // and its lit one
+                    title(juce::Colour(0xffcfcfcb), ui::colour::orange, {});
                 }
-                g.setColour(juce::Colour(0xff75777c));
+                g.setColour(juce::Colour(0xff66686d));
                 g.setFont(ui::bodyFont(10.5f));
                 g.drawText("CoolSynth 303 " + juce::String::charToString(0xb7) + " a bass line from its circuit", juce::Rectangle<int>(Editor::baseWidth - 420, 780, 404, 16),
                            juce::Justification::centredRight, false);

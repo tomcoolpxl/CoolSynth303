@@ -91,34 +91,39 @@ namespace cs303::ui
 
     void TopBar::paint(juce::Graphics& g)
     {
-        g.fillAll(colour::bar);
+        const auto bounds = getLocalBounds().toFloat();
+        g.setGradientFill(juce::ColourGradient(juce::Colour(0xff141517), 0.0f, 0.0f, juce::Colour(0xff0f1012), 0.0f, bounds.getBottom(), false));
+        g.fillAll();
+        g.setColour(juce::Colours::white.withAlpha(0.06f));
+        g.fillRect(0.0f, bounds.getBottom() - 2.0f, bounds.getWidth(), 1.0f);
         g.setColour(juce::Colours::black);
-        g.drawHorizontalLine(getHeight() - 1, 0.0f, static_cast<float>(getWidth()));
+        g.fillRect(0.0f, bounds.getBottom() - 1.0f, bounds.getWidth(), 1.0f);
         const auto& proj = editor.processor.project();
         const auto& pat = editor.edited();
         const juce::String name = juce::String(proj.name) + "  ·  " + juce::String(editor.editPattern + 1).paddedLeft('0', 2)
                                   + (editor.editB ? "B" : "A") + (pat.name.empty() ? juce::String() : "  " + juce::String(pat.name));
-        g.setColour(colour::well);
-        g.fillRoundedRectangle(nameBox.toFloat(), 3.0f);
-        g.setColour(colour::wellLine);
-        g.drawRoundedRectangle(nameBox.toFloat().reduced(0.5f), 3.0f, 1.0f);
-        g.setColour(juce::Colour(0xffe6e6e6));
+        drawDisplay(g, nameBox.toFloat());
+        g.setColour(juce::Colour(0xfff3e3cf));
         g.setFont(bodyFont(12.5f));
         g.drawText(name, nameBox.reduced(8, 0), juce::Justification::centred, true);
 
         // following an incoming MIDI clock, its tempo, named so
         const bool byHost = editor.processor.isFollowingHost();
         const bool byClock = byHost || editor.processor.isFollowingClock();
-        g.setColour(colour::orange);
-        g.setFont(monoFont(17.0f));
-        g.drawText(juce::String(byClock ? editor.processor.tempoNow() : proj.bpm, 1), tempoBox.withTrimmedRight(40), juce::Justification::centredRight, false);
-        g.setColour(byClock ? colour::orange : colour::hint);
+        drawDisplay(g, tempoBox.toFloat().expanded(2.0f, 0.0f));
+        const auto figures = juce::String(byClock ? editor.processor.tempoNow() : proj.bpm, 1);
+        g.setFont(fontOf(Face::monoBold, 19.0f));
+        g.setColour(colour::amber.withAlpha(0.22f));
+        g.drawText(figures, tempoBox.withTrimmedRight(40).toFloat().translated(0.0f, 0.5f).expanded(0.6f, 0.0f), juce::Justification::centredRight, false);
+        g.setColour(colour::amber);
+        g.drawText(figures, tempoBox.withTrimmedRight(40), juce::Justification::centredRight, false);
+        g.setColour(byClock ? colour::amber : juce::Colour(0xff8a7a68));
         g.setFont(labelFont(10.5f));
         g.drawText(byHost ? "HOST" : byClock ? "CLOCK" : "BPM", tempoBox.withTrimmedLeft(68), juce::Justification::centredLeft, false);
 
         // the audio thread's share of its time, small, at the far left of the transport
         const float load = editor.processor.load();
-        g.setColour(load > 0.8f ? colour::lampOn : colour::dim);
+        g.setColour(load > 0.8f ? colour::lampOn : juce::Colour(0xff6f7176));
         g.setFont(monoFont(9.5f));
         g.drawText("DSP " + juce::String(juce::roundToInt(load * 100.0f)) + "%", juce::Rectangle<int>(play->getX() - 74, 8, 64, 26),
                    juce::Justification::centredRight, false);
@@ -242,7 +247,7 @@ namespace cs303::ui
                 return isC11 ? juce::String(v, 2) + " uF" : juce::String(v, 3);
             };
             value->font = monoFont(11.0f);
-            value->ink = colour::orange;
+            value->ink = colour::amber;
             value->justification = juce::Justification::centred;
             value->setBounds(x, faceTop + 22 + b.getHeight() + 2, b.getWidth() + 14, 16);
             addAndMakeVisible(*value);
@@ -402,7 +407,7 @@ namespace cs303::ui
             const auto shown = k.value;
             value->text = [&p = p, field, shown] { return shown(p.project().panel.*field); };
             value->font = monoFont(11.0f);
-            value->ink = colour::orange;
+            value->ink = colour::amber;
             value->justification = juce::Justification::centred;
             value->setBounds(x - 6, faceTop + 22 + b.getHeight() + 2, b.getWidth() + 30, 16);
             addAndMakeVisible(*value);
@@ -491,21 +496,21 @@ namespace cs303::ui
 
     void ModsPanel::paint(juce::Graphics& g)
     {
-        g.fillAll(colour::face);
+        {
+            // the board's own ground, as if seen through: the panel lies over the synth's sections
+            juce::Graphics::ScopedSaveState s(g);
+            g.setOrigin(-getPosition());
+            drawGround(g, juce::Rectangle<float>(0.0f, 0.0f, 1280.0f, 800.0f));
+        }
         drawSection(g, juce::Rectangle<int>(6, faceTop, fishX - 14, sectionHeight).toFloat(), "Trimmers", colour::face);
         const auto fish = juce::Rectangle<int>(fishX, faceTop, fishRight - fishX, sectionHeight).toFloat();
         drawSection(g, fish, {}, colour::face);
-        // The name in red, as the Devil Fish's own panel prints it.
-        const auto font = juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 17.0f,
+        // The name in red in the head band, as the Devil Fish's own panel prints it.
+        const auto font = juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 16.0f,
                                                        juce::Font::bold | juce::Font::italic));
-        const juce::String name = "Devil Fish";
-        const float w = juce::GlyphArrangement::getStringWidth(font, name) + 14.0f;
-        const juce::Rectangle<float> gap(fish.getX() + 10.0f, fish.getY() - 10.0f, w, 20.0f);
-        g.setColour(colour::face);
-        g.fillRect(gap);
         g.setColour(juce::Colour(0xffe0362a));
         g.setFont(font);
-        g.drawText(name, gap, juce::Justification::centred, false);
+        g.drawText("Devil Fish", juce::Rectangle<float>(fish.getX() + 12.0f, fish.getY() - 8.0f, 200.0f, 22.0f), juce::Justification::centredLeft, false);
     }
 
     void ModsPanel::refresh()
@@ -543,12 +548,17 @@ namespace cs303::ui
         // the oscillator
         plainKnob(knob("Tuning", 44.0f, 6, 50, 28), &Panel::tuning);
         {
-            auto& saw = key("Saw", 6, 16, 120, 0);
-            saw.isOn = [&p = p] { return ! p.project().panel.square; };
-            saw.onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.square = false; }); };
-            auto& sq = key("Square", 6, 16 + saw.getWidth() + 6, 120, 0);
-            sq.isOn = [&p = p] { return p.project().panel.square; };
-            sq.onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.square = true; }); };
+            // the waveform: two keys in one bay, each with its wave drawn on it, the names under them
+            for (const bool square : { false, true })
+            {
+                auto k = std::make_unique<Key>(square ? "Square" : "Saw", false);
+                k->glyph = square ? 2 : 1;
+                k->isOn = [&p = p, square] { return p.project().panel.square == square; };
+                k->onClick = [&p = p, square] { p.edit([square](Project& pr) { pr.panel.square = square; }); };
+                k->setBounds(waveBay.getX() + 3 + (square ? 58 : 0), waveBay.getY() + 3, 56, 28);
+                addAndMakeVisible(*k);
+                parts.push_back(std::move(k));
+            }
         }
         // the filter
         {
@@ -585,8 +595,8 @@ namespace cs303::ui
             time.defaultValue = 1.0f / 3.0f;
             auto value = std::make_unique<Caption>();
             value->text = [&p = p] { return juce::String(delayDivisionName(p.project().panel.delayDivision)); };
-            value->font = monoFont(12.0f);
-            value->ink = colour::orange;
+            value->font = fontOf(Face::monoBold, 12.0f);
+            value->ink = colour::amber;
             value->setBounds(996 + 62, faceTop + 128, 40, 24);
             addAndMakeVisible(*value);
             parts.push_back(std::move(value));
@@ -630,13 +640,40 @@ namespace cs303::ui
 
     void SynthPanel::paint(juce::Graphics& g)
     {
-        g.fillAll(colour::face);
+        // the sections as plates, numbered in the signal's order; the board's ground shows round them
+        std::vector<float> nameEnds;
+        int number = 1;
         for (const auto& s : sections)
-            drawSection(g, juce::Rectangle<int>(s.x, faceTop, s.w, sectionHeight).toFloat(), s.name, colour::face);
+            nameEnds.push_back(drawSection(g, juce::Rectangle<int>(s.x, faceTop, s.w, sectionHeight).toFloat(), s.name, colour::face, number++));
+        // the signal path printed through the heads: from each name on to the next plate, an arrow into it
+        const float y = static_cast<float>(faceTop) + 2.0f;
+        for (size_t i = 0; i < sections.size(); ++i)
+        {
+            const float from = nameEnds[i] + 8.0f;
+            const bool last = i + 1 == sections.size();
+            const float to = last ? static_cast<float>(sections[i].x + sections[i].w - 12) : static_cast<float>(sections[i + 1].x - 8);
+            if (to <= from)
+                continue;
+            juce::ColourGradient line(colour::orange.withAlpha(0.15f), from, y, colour::orange.withAlpha(0.15f), to, y, false);
+            line.addColour(0.5, colour::orange.withAlpha(0.65f));
+            g.setGradientFill(line);
+            g.fillRect(from, y, to - from, 2.0f);
+            if (! last)
+            {
+                juce::Path head;
+                head.addTriangle(to, y - 3.0f, to + 6.0f, y + 1.0f, to, y + 5.0f);
+                g.setColour(colour::orange.withAlpha(0.3f));
+                g.strokePath(head, juce::PathStrokeType(2.5f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+                g.setColour(colour::orange);
+                g.fillPath(head);
+            }
+        }
+        // the waveform's bay and the names under its keys
+        drawScreen(g, waveBay.toFloat(), 5.0f);
         g.setColour(colour::dim);
-        g.setFont(bodyFont(13.0f));
-        for (int x : { 160, 462, 660, 786, 978 })
-            g.drawText(juce::String::charToString(0x25b8), juce::Rectangle<int>(x, 88, 14, 14), juce::Justification::centred, false);
+        g.setFont(labelFont(9.5f).withExtraKerningFactor(0.14f));
+        g.drawText("SAW", juce::Rectangle<int>(waveBay.getX() + 2, waveBay.getBottom() + 3, 56, 12), juce::Justification::centred, false);
+        g.drawText("SQUARE", juce::Rectangle<int>(waveBay.getX() + 60, waveBay.getBottom() + 3, 56, 12), juce::Justification::centred, false);
     }
 
     void SynthPanel::refresh()

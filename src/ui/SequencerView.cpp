@@ -16,12 +16,27 @@ namespace cs303::ui
         constexpr const char* letters[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C" };
         juce::String two(int i) { return juce::String(i + 1).paddedLeft('0', 2); }
 
-        void drawCellKey(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour fill, float alpha = 1.0f)
+        /** A key of the pattern row and the chain: a dark cap, darker while its pattern is empty, orange while it
+            plays. */
+        void drawSlot(juce::Graphics& g, juce::Rectangle<float> r, bool has, bool hot, float alpha = 1.0f)
         {
-            g.setColour(juce::Colour(0xff111111).withMultipliedAlpha(alpha));
-            g.drawRoundedRectangle(r.expanded(0.5f), 2.0f, 1.0f);
-            g.setColour(fill.withMultipliedAlpha(alpha));
-            g.fillRoundedRectangle(r, 2.0f);
+            if (hot)
+            {
+                drawCell(g, r, Cell::hot, alpha);
+                return;
+            }
+            juce::Graphics::ScopedSaveState s(g);
+            if (alpha < 0.999f)
+                g.beginTransparencyLayer(alpha);
+            g.setColour(juce::Colour(0xff08090a));
+            g.fillRoundedRectangle(r.expanded(1.0f), 4.0f);
+            const auto upper = has ? juce::Colour(0xff36373b) : juce::Colour(0xff26272b), bottom = has ? juce::Colour(0xff2b2c30) : juce::Colour(0xff1f2023);
+            g.setGradientFill(juce::ColourGradient(upper, 0.0f, r.getY(), bottom, 0.0f, r.getBottom(), false));
+            g.fillRoundedRectangle(r, 3.0f);
+            g.setColour(juce::Colours::white.withAlpha(0.08f));
+            g.fillRect(r.getX() + 3.0f, r.getY(), r.getWidth() - 6.0f, 1.0f);
+            if (alpha < 0.999f)
+                g.endTransparencyLayer();
         }
 
         /** Drag MIDI: dragged out, the edited pattern goes along as a MIDI file; clicked, it is saved as one. */
@@ -30,7 +45,7 @@ namespace cs303::ui
         public:
             explicit MidiKey(Editor& e) : editor(e) {}
 
-            void paint(juce::Graphics& g) override { drawKey(g, getLocalBounds().toFloat(), "Drag MIDI", dragging, false); }
+            void paint(juce::Graphics& g) override { drawKey(g, getLocalBounds().toFloat().reduced(1.0f, 0.0f).withTrimmedBottom(2.0f), "Drag MIDI", dragging, false); }
 
             void mouseDrag(const juce::MouseEvent& e) override
             {
@@ -109,19 +124,19 @@ namespace cs303::ui
             const bool has = notes(proj.pattern(i, false)) || notes(proj.pattern(i, true));
             const bool hearing = playing && p.playingPattern() == i;
             const bool queued = playing && p.queuedPattern() == i;
-            juce::Colour fill = hearing ? colour::orange : has ? juce::Colour(0xff45474c) : juce::Colour(0xff333438);
-            drawCellKey(g, r, fill);
+            drawSlot(g, r, has, hearing);
             if (queued)
             {
                 g.setColour(colour::orange);
-                g.drawRoundedRectangle(r.reduced(1.0f), 2.0f, 1.5f);
+                g.drawRoundedRectangle(r.reduced(1.0f), 3.0f, 1.5f);
             }
-            if (i == editor.editPattern)
+            const bool edited = i == editor.editPattern;
+            if (edited && ! hearing)
             {
-                g.setColour(juce::Colour(0xffe9e9e6));
-                g.drawRoundedRectangle(r.expanded(1.0f), 3.0f, 2.0f);
+                g.setColour(colour::orange);
+                g.drawRoundedRectangle(r.reduced(0.75f), 3.0f, 1.5f);
             }
-            g.setColour(hearing ? colour::orangeInk : has ? juce::Colour(0xffeeeeee) : juce::Colour(0xff9fa1a5));
+            g.setColour(hearing ? colour::orangeInk : edited ? colour::amber : has ? colour::rowName : juce::Colour(0xff77797e));
             g.setFont(font);
             g.drawText(two(i), r, juce::Justification::centred, false);
         }
@@ -129,14 +144,14 @@ namespace cs303::ui
         {
             const auto r = variationBounds(b).toFloat();
             const bool on = editor.editB == b;
-            drawCellKey(g, r, on ? colour::key : juce::Colour(0xff3a3b3f));
-            g.setColour(on ? colour::keyInk : juce::Colour(0xffd7d8da));
+            drawCell(g, r, on ? Cell::lit : Cell::off);
+            g.setColour(on ? colour::keyInk : juce::Colour(0xffa9aaa6));
             g.setFont(labelFont(11.0f));
             g.drawText(b ? "B" : "A", r, juce::Justification::centred, false);
         }
         {
             const auto r = chainLabelBounds().toFloat();
-            drawLamp(g, { r.getX() + 8.0f, r.getCentreY() }, proj.chainOn);
+            drawLens(g, { r.getX() + 8.0f, r.getCentreY() }, proj.chainOn);
             g.setColour(proj.chainOn ? colour::caption : colour::dim);
             g.setFont(labelFont(11.0f).withExtraKerningFactor(0.1f));
             g.drawText("CHAIN", r.withTrimmedLeft(16.0f), juce::Justification::centredLeft, false);
@@ -147,8 +162,8 @@ namespace cs303::ui
             const auto& e = proj.chain[static_cast<size_t>(i)];
             const auto r = chainBounds(i).toFloat();
             const bool cur = playing && proj.chainOn && p.chainPosition() == i;
-            drawCellKey(g, r, cur ? colour::orange : juce::Colour(0xff45474c), proj.chainOn ? 1.0f : 0.55f);
-            g.setColour(cur ? colour::orangeInk : juce::Colour(0xffeeeeee).withAlpha(proj.chainOn ? 1.0f : 0.6f));
+            drawSlot(g, r, true, cur, proj.chainOn ? 1.0f : 0.6f);
+            g.setColour(cur ? colour::orangeInk : juce::Colour(0xffa9aaa6).withAlpha(proj.chainOn ? 1.0f : 0.7f));
             g.setFont(font);
             g.drawText(two(e.pattern) + (e.variationB ? "B" : "") + (e.repeats > 1 ? juce::String::charToString(0xd7) + juce::String(e.repeats) : juce::String()),
                        r, juce::Justification::centred, false);
@@ -159,18 +174,11 @@ namespace cs303::ui
             g.setFont(font);
             g.drawText("+" + juce::String(static_cast<int>(proj.chain.size()) - shown), addBounds().translated(-30, 0).withWidth(28), juce::Justification::centred, false);
         }
-        drawCellKey(g, addBounds().toFloat(), juce::Colour(0xff3a3b3f));
-        g.setColour(juce::Colour(0xffd7d8da));
+        drawCell(g, addBounds().toFloat(), Cell::off);
+        g.setColour(colour::rowName);
         g.setFont(labelFont(13.0f));
         g.drawText("+", addBounds(), juce::Justification::centred, false);
-        {
-            const auto r = loopBounds().toFloat();
-            drawCellKey(g, r, juce::Colour(0xff3a3b3f));
-            drawLamp(g, { r.getX() + 12.0f, r.getCentreY() }, proj.loop);
-            g.setColour(juce::Colour(0xffd7d8da));
-            g.setFont(labelFont(11.0f).withExtraKerningFactor(0.08f));
-            g.drawText("LOOP", r.withTrimmedLeft(20.0f), juce::Justification::centredLeft, false);
-        }
+        drawKey(g, loopBounds().toFloat().withTrimmedBottom(1.0f), "Loop", proj.loop, true);
     }
 
     void PatternRow::mouseDown(const juce::MouseEvent& e)
@@ -385,8 +393,7 @@ namespace cs303::ui
     Key& ToolRow::button(const juce::String& text, int w, bool on)
     {
         auto k = std::make_unique<Key>(text, false);
-        if (on)
-            k->isOn = [] { return true; };
+        k->hot = on; // Generate: the row's one orange action
         k->setBounds(x, 1, w, 24);
         x += w + 5;
         addAndMakeVisible(*k);
@@ -412,7 +419,7 @@ namespace cs303::ui
         g.setColour(colour::dim);
         for (const auto& [name, at] : groupLabels)
             g.drawText(name, at, 1, 120, 24, juce::Justification::centredLeft, false);
-        g.setColour(juce::Colour(0xff45474c));
+        g.setColour(juce::Colours::white.withAlpha(0.07f));
         for (int s : separators)
             g.drawVerticalLine(s, 2.0f, 24.0f);
     }
@@ -483,16 +490,18 @@ namespace cs303::ui
         const bool same = p.isPlaying() && p.playingPattern() == editor.editPattern && p.playingVariationB() == editor.editB;
         const int head = same ? p.playingStep() : -1;
 
+        // the grid under its dark screen, the notes' names down its edge included
+        drawScreen(g, juce::Rectangle<float>(static_cast<float>(labelWidth) - 40.0f, 0.0f, static_cast<float>(getWidth() - labelWidth) + 40.0f, static_cast<float>(getHeight())));
         // the labels
         g.setFont(labelFont(11.0f).withExtraKerningFactor(0.08f));
-        g.setColour(juce::Colour(0xffddd5c3));
+        g.setColour(colour::rowName);
         for (auto [row, name] : { std::pair { Row::octave, "OCTAVE" }, std::pair { Row::accent, "ACCENT" }, std::pair { Row::slide, "SLIDE" },
                                   std::pair { Row::gate, "GATE" } })
             g.drawText(name, rowBounds(row).withWidth(100.0f).translated(4.0f, 0.0f), juce::Justification::centredLeft, false);
         {
             const auto r = rowBounds(Row::pitch);
             g.drawText("PITCH", juce::Rectangle<float>(4.0f, r.getY() + 26.0f, 70.0f, 14.0f), juce::Justification::centredLeft, false);
-            g.setColour(juce::Colour(0xff9d9583));
+            g.setColour(juce::Colour(0xff6f7176));
             g.setFont(bodyFont(10.5f));
             g.drawText("Drag up or", juce::Rectangle<float>(4.0f, r.getY() + 44.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
             g.drawText("down, or", juce::Rectangle<float>(4.0f, r.getY() + 57.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
@@ -506,7 +515,7 @@ namespace cs303::ui
                 const juce::Rectangle<float> rr(strip.getX(), strip.getBottom() - (n + 1) * rh, strip.getWidth(), rh);
                 const bool sharp = n == 1 || n == 3 || n == 6 || n == 8 || n == 10;
                 const bool lit = ps.gate != Gate::rest && ps.note == n;
-                g.setColour(lit ? colour::orange : sharp ? juce::Colour(0xff232427) : juce::Colour(0xffd9d9d6));
+                g.setColour(lit ? colour::orange : sharp ? juce::Colour(0xff1b1c1f) : juce::Colour(0xffc9c8c3));
                 g.fillRect(rr);
                 g.setColour(juce::Colours::black.withAlpha(0.25f));
                 g.drawHorizontalLine(juce::roundToInt(rr.getBottom()) - 1, rr.getX(), rr.getRight());
@@ -520,7 +529,7 @@ namespace cs303::ui
         }
         {
             const auto r = rowBounds(Row::motion);
-            g.setColour(juce::Colour(0xffddd5c3));
+            g.setColour(colour::rowName);
             g.setFont(labelFont(11.0f).withExtraKerningFactor(0.08f));
             g.drawText("MOTION", juce::Rectangle<float>(4.0f, r.getY() - 2.0f, 80.0f, 14.0f), juce::Justification::centredLeft, false);
             drawWell(g, juce::Rectangle<float>(4.0f, r.getY() + 14.0f, 80.0f, 20.0f), knobName(editor.motionKnob), colour::orange);
@@ -536,7 +545,7 @@ namespace cs303::ui
                 const auto c = cell(Row::lights, i);
                 const bool lit = i == head;
                 drawLamp(g, { c.getCentreX() - 8.0f, c.getCentreY() }, lit);
-                g.setColour(lit ? juce::Colour(0xfff4efe4) : juce::Colour(0xff8f8877));
+                g.setColour(lit ? juce::Colour(0xfff4efe4) : juce::Colour(0xff6d6f74));
                 g.setFont(monoFont(9.5f));
                 g.drawText(juce::String(i + 1), c.withTrimmedLeft(c.getWidth() * 0.5f - 3.0f), juce::Justification::centredLeft, false);
             }
@@ -548,7 +557,7 @@ namespace cs303::ui
                     t = "tie";
                 else if (s.gate != Gate::rest && s.octave != 0)
                     t << (s.octave > 0 ? "+" : juce::String::charToString(0x2212));
-                g.setColour(colour::ink.withAlpha(alpha));
+                g.setColour(juce::Colour(0xffc9c4b8).withAlpha(alpha));
                 g.setFont(monoFont(10.5f));
                 g.drawText(t, c, juce::Justification::centred, false);
             }
@@ -558,7 +567,7 @@ namespace cs303::ui
                 const float rh = c.getHeight() / 13.0f;
                 for (int n = 0; n < 13; ++n)
                 {
-                    g.setColour(n % 2 == 0 ? juce::Colour(0xff2b2c2f) : juce::Colour(0xff222326));
+                    g.setColour(juce::Colours::white.withAlpha(n % 2 == 0 ? 0.035f : 0.012f));
                     g.fillRect(juce::Rectangle<float>(c.getX(), c.getBottom() - (n + 1) * rh, c.getWidth(), rh));
                 }
                 // a tie draws the note it holds: the last note before it, through any ties (none after a rest)
@@ -584,13 +593,15 @@ namespace cs303::ui
                     if (s.gate == Gate::tie)
                         capR = capR.withLeft(c.getX() - 6.0f);
                     const bool playingHere = i == head;
-                    g.setColour((playingHere ? colour::light : s.accent ? colour::accentNote : colour::orange).withMultipliedAlpha(alpha * (s.gate == Gate::tie ? 0.8f : 1.0f)));
+                    // lit from inside: an accent near white, a tie the held note's darker tail
+                    const bool tie = s.gate == Gate::tie;
+                    const auto lit = playingHere ? colour::light : s.accent ? colour::accentNote : colour::orange;
+                    if (! tie)
+                        glowRounded(g, capR, 2.0f, lit, 3.0f, 0.3f * alpha);
+                    const auto upper = tie ? juce::Colour(0xffb2581f) : playingHere ? juce::Colours::white : s.accent ? juce::Colour(0xfffff1e0) : juce::Colour(0xffffa560);
+                    const auto bottom = tie ? juce::Colour(0xff8e4416) : lit;
+                    g.setGradientFill(juce::ColourGradient(upper.withMultipliedAlpha(alpha), 0.0f, capR.getY(), bottom.withMultipliedAlpha(alpha), 0.0f, capR.getBottom(), false));
                     g.fillRoundedRectangle(capR, 2.0f);
-                    if (s.accent)
-                    {
-                        g.setColour(juce::Colour(0xffffe0c4).withAlpha(alpha));
-                        g.drawRoundedRectangle(capR, 2.0f, 1.0f);
-                    }
                     if (s.slide)
                     {
                         g.setColour(juce::Colour(0xffffb067).withAlpha(alpha));
@@ -604,48 +615,50 @@ namespace cs303::ui
                 }
                 if (i == editor.pick)
                 {
-                    g.setColour(juce::Colour(0xfff4efe4));
-                    g.drawRoundedRectangle(c.expanded(1.0f), 2.0f, 2.0f);
+                    g.setColour(juce::Colours::white.withAlpha(0.06f));
+                    g.drawRoundedRectangle(c.expanded(2.5f), 4.0f, 3.0f);
+                    g.setColour(juce::Colours::white.withAlpha(0.75f));
+                    g.drawRoundedRectangle(c.expanded(1.0f), 4.0f, 1.5f);
                 }
                 if (off)
                 {
-                    g.setColour(colour::face.withAlpha(0.6f));
+                    g.setColour(juce::Colour(0xff111214).withAlpha(0.65f));
                     g.fillRect(c);
                 }
             }
             // the rows of keys
             {
                 const auto o = cell(Row::octave, i);
-                const float octaveAlpha = s.gate == Gate::note ? alpha : alpha * 0.4f; // a tie or a rest plays no octave of its own
-                drawCellKey(g, o, s.octave != 0 ? colour::key : colour::cell, octaveAlpha);
+                // a tie or a rest plays no octave of its own: its octave shown half lit
+                const bool own = s.gate == Gate::note;
+                drawCell(g, o, s.octave == 0 ? Cell::off : own ? Cell::lit : Cell::half, alpha);
                 if (s.octave != 0)
                 {
-                    g.setColour(colour::keyInk.withAlpha(octaveAlpha));
+                    g.setColour((own ? colour::keyInk : juce::Colour(0xff8d8f94)).withAlpha(alpha));
                     g.setFont(monoFont(11.0f));
                     g.drawText(s.octave > 0 ? "Up" : "Down", o, juce::Justification::centred, false);
                 }
-                drawCellKey(g, cell(Row::accent, i), s.accent ? colour::orange : colour::cell, alpha);
+                drawCell(g, cell(Row::accent, i), s.accent ? Cell::hot : Cell::off, alpha);
                 const auto sl = cell(Row::slide, i);
-                drawCellKey(g, sl, s.slide ? colour::key : colour::cell, alpha);
-                drawLamp(g, sl.getCentre(), s.slide);
+                drawCell(g, sl, s.slide ? Cell::lit : Cell::off, alpha);
+                drawLens(g, sl.getCentre(), s.slide);
                 const auto gt = cell(Row::gate, i);
-                drawCellKey(g, gt, s.gate == Gate::note ? colour::key : colour::cell, alpha);
-                g.setColour((s.gate == Gate::note ? colour::keyInk : juce::Colour(0xffa5a7ab)).withAlpha(alpha));
+                drawCell(g, gt, own ? Cell::lit : Cell::off, alpha);
+                g.setColour((own ? colour::keyInk : juce::Colour(0xff77797e)).withAlpha(alpha));
                 g.setFont(monoFont(11.0f));
                 g.drawText(s.gate == Gate::note ? "Note" : s.gate == Gate::tie ? "Tie" : "Rest", gt, juce::Justification::centred, false);
             }
             // the motion lane
             {
                 const auto m = cell(Row::motion, i);
-                g.setColour(juce::Colours::white.withAlpha(0.04f));
-                g.fillRoundedRectangle(m, 2.0f);
-                g.setColour(juce::Colours::white.withAlpha(0.05f));
-                g.drawRoundedRectangle(m, 2.0f, 1.0f);
+                g.setColour(juce::Colours::white.withAlpha(0.03f));
+                g.fillRoundedRectangle(m, 3.0f);
                 const float v = pat.motion[static_cast<size_t>(editor.motionKnob)][static_cast<size_t>(i)];
                 if (v >= 0.0f)
                 {
                     const auto bar = m.reduced(2.0f).withTop(m.getY() + 2.0f + (1.0f - v) * (m.getHeight() - 4.0f));
-                    g.setGradientFill(juce::ColourGradient(i == head ? juce::Colour(0xfffff3e0) : juce::Colour(0xffffcf9a), bar.getX(), bar.getY(),
+                    glowRounded(g, bar.withHeight(std::max(3.0f, bar.getHeight())), 2.0f, colour::orange, 3.0f, 0.25f);
+                    g.setGradientFill(juce::ColourGradient(i == head ? juce::Colour(0xfffff3e0) : juce::Colour(0xffffd09f), bar.getX(), bar.getY(),
                                                            i == head ? juce::Colour(0xffffb067) : colour::orange, bar.getX(), bar.getBottom(), false));
                     g.fillRoundedRectangle(bar.withHeight(std::max(3.0f, bar.getHeight())), 2.0f);
                 }
@@ -827,9 +840,8 @@ namespace cs303::ui
 
     void LocksStrip::paint(juce::Graphics& g)
     {
-        g.setColour(colour::outline);
-        g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 9.0f, 1.0f);
-        g.setColour(juce::Colour(0xfff4efe4));
+        drawScreen(g, getLocalBounds().toFloat());
+        g.setColour(colour::caption);
         g.setFont(labelFont(11.0f).withExtraKerningFactor(0.08f));
         g.drawText("LOCKS " + juce::String::charToString(0xb7) + " STEP " + juce::String(editor.pick + 1), 14, 10, 130, 16, juce::Justification::centredLeft, false);
         g.setColour(colour::hint);
