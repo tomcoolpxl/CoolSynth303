@@ -17,6 +17,7 @@ namespace cs303
         class KeyboardSection;
         class SequencerSection;
         class TopBar;
+        class LidView;
     }
 
     /*
@@ -49,6 +50,9 @@ namespace cs303
         bool transposeMode = false;
         bool modsOpen = false;        // the Mods panel over the synth's sections
         void setModsOpen(bool open);
+        /** Under the Lid (D310): the circuit over the whole window, at the screen's own pixels. */
+        void setLidOpen(bool open);
+        [[nodiscard]] ui::LidView& lidView() noexcept { return *lid; }
         Knob motionKnob = Knob::cutoff;
         MutateWhat mutateWhat {};
         std::optional<Pattern> clipboard; // a pattern copied from a pattern key's menu
@@ -80,6 +84,7 @@ namespace cs303
         std::unique_ptr<ui::ModsPanel> mods;
         std::unique_ptr<ui::KeyboardSection> keys;
         std::unique_ptr<ui::SequencerSection> sequencer;
+        std::unique_ptr<ui::LidView> lid;
         std::uint32_t lastEdits = 0;
         int lastStep = -2, lastPattern = -1, lastQueued = -2, lastSounding = -2;
         bool lastPlaying = false;

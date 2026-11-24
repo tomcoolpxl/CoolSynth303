@@ -6,6 +6,7 @@
 #include "synth/GlobalDelay.h"
 #include "synth/HalfBand2x.h"
 #include "synth/v3/ShaperProcessors.h"
+#include "synth/v3/Tb303Lid.h"
 #include "synth/v3/Tb303Voice.h"
 
 namespace cs303
@@ -37,8 +38,11 @@ namespace cs303
     {
         for (auto& k : liveKnobs)
             k.store(0.0f);
+        lidRing.assign(static_cast<size_t>(lidFrames) * static_cast<size_t>(lidStride()), 0.0f);
         push();
     }
+
+    int Processor::lidSeries() noexcept { return coolsynth::synth::v3::Tb303Lid::count(); }
 
     Processor::~Processor() = default;
 
@@ -53,6 +57,8 @@ namespace cs303
         hostRate = sampleRate > 0.0 ? sampleRate : 48000.0;
         factor = hostRate < 80000.0 ? 2 : 1; // the voice near 96 kHz (D294): twice 44.1 or 48 kHz, a fast device's own rate
         voiceRate = factor * hostRate;
+        lidEvery = std::max(1, juce::roundToInt(voiceRate / lidRate));
+        lidPhase = 0;
         const int block = std::max(samplesPerBlock, maxBlock);
         voiceBuffer.assign(static_cast<size_t>(2 * block), 0.0f);
         driveScratch.assign(static_cast<size_t>(2 * block), 0.0f);
@@ -328,6 +334,20 @@ namespace cs303
                 active->prepare(voiceRate);
                 active->settle(volts);
                 y = 0.0;
+            }
+            // Under the Lid: the circuit's every drawn current and voltage, lidRate times a second, while it is open
+            if (lidOpen.load(std::memory_order_relaxed) && ++lidPhase >= lidEvery)
+            {
+                lidPhase = 0;
+                const auto at = lidCount.load(std::memory_order_relaxed);
+                float* f = lidRing.data() + static_cast<size_t>(at % lidFrames) * static_cast<size_t>(lidStride());
+                coolsynth::synth::v3::Tb303Lid::read(*active, f);
+                const int s = lidSeries();
+                f[s] = gate ? 1.0f : 0.0f;
+                f[s + 1] = accent ? 1.0f : 0.0f;
+                f[s + 2] = slide ? 1.0f : 0.0f;
+                f[s + 3] = static_cast<float>(volts);
+                lidCount.store(at + 1, std::memory_order_release);
             }
             // C38: the output's DC off, a one-pole high-pass
             const double r = 1.0 - juce::MathConstants<double>::twoPi * dcCornerHz / voiceRate;

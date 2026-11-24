@@ -2,6 +2,7 @@
 // writes pictures of itself, stopped and playing, for a look without opening the app.
 
 #include <memory>
+#include <tuple>
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -9,6 +10,7 @@
 #include "Editor.h"
 #include "Processor.h"
 #include "ui/Keyboard.h"
+#include "ui/LidView.h"
 #include "ui/Panel.h"
 #include "ui/SequencerView.h"
 
@@ -198,6 +200,31 @@ namespace
                 e->setModsOpen(false);
             }
 
+            beginTest("under_the_lid_draws_the_whole_voice_from_the_engine");
+            {
+                auto& lid = e->lidView();
+                e->setLidOpen(true);
+                expect(lid.isVisible() && lid.isOpen());
+                expectEquals(lid.drawingCheck(), juce::String("all matching"), "the sheet as the mockup checked it");
+                expectGreaterThan(lid.partCount(), 190);
+                expectGreaterThan(lid.flowCount(), 800);
+                const auto unserved = lid.unservedSeries();
+                expect(unserved.isEmpty(), "every series the drawing needs comes from the engine: missing " + unserved.joinIntoString(", "));
+                p->setPlaying(true);
+                playFor(*p, 0.5);
+                lid.tickNow(1.0);
+                lid.tickNow(1.03);
+                expectGreaterThan(lid.flowsLit(), 100, "the current lights the wires while a pattern plays");
+                lid.setReplay(true);
+                lid.tickNow(1.06);
+                expectGreaterThan(lid.flowsLit(), 50, "the held seconds replay");
+                lid.setReplay(false);
+                p->setPlaying(false);
+                playFor(*p, 0.05);
+                e->setLidOpen(false);
+                expect(! lid.isVisible() && ! lid.isOpen());
+            }
+
             const auto folder = juce::SystemStats::getEnvironmentVariable("COOLSYNTH303_SNAPSHOTS", {});
             if (folder.isNotEmpty())
             {
@@ -218,6 +245,24 @@ namespace
                 snapshot(*e, dir, "panel-devil-fish");
                 p->edit([](Project& pr) { pr.panel = Panel {}; }, false);
                 e->setModsOpen(false);
+                // the lid while the first line plays, at the window's base size and at 1920 by 1080
+                for (auto [w, h, shot] : { std::tuple { 1280, 800, "lid" }, std::tuple { 1920, 1080, "lid-1080" } })
+                {
+                    e->setSize(w, h);
+                    e->setLidOpen(true);
+                    p->setPlaying(true);
+                    playFor(*p, 0.4);
+                    e->lidView().tickNow(10.0);
+                    e->lidView().tickNow(10.033);
+                    e->lidView().select("xvcf.r62");
+                    const auto image = e->lidView().createComponentSnapshot(e->lidView().getLocalBounds(), true, 1.0f);
+                    auto file = dir.getChildFile(juce::String(shot) + ".png");
+                    file.deleteFile();
+                    juce::FileOutputStream out(file);
+                    juce::PNGImageFormat().writeImageToStream(image, out);
+                    e->setLidOpen(false);
+                }
+                e->setSize(Editor::baseWidth, Editor::baseHeight);
                 p->setPlaying(false);
                 playFor(*p, 0.05);
                 expect(true);

@@ -42,6 +42,8 @@ namespace cs303::ui
         mods = &add("Mods");
         mods->isOn = [this] { return editor.modsOpen; };
         mods->onClick = [this] { editor.setModsOpen(! editor.modsOpen); };
+        lid = &add("Lid"); // Under the Lid (D310): the circuit, live, over the whole window
+        lid->onClick = [this] { editor.setLidOpen(true); };
     }
 
     Key& TopBar::add(const juce::String& text)
@@ -67,7 +69,9 @@ namespace cs303::ui
         }
         int r = getWidth() - 16;
         mods->setBounds(r - 60, y, 60, h);
-        r -= 76;
+        r -= 68;
+        lid->setBounds(r - 50, y, 50, h);
+        r -= 66;
         rec->setBounds(r - 50, y, 50, h);
         r -= 58;
         keys[6]->setBounds(r - 50, y, 50, h); // Tap

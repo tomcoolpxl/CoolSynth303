@@ -96,6 +96,21 @@ namespace cs303
         void holdAccent(bool held) noexcept { accentHeld.store(held); }
         /** Whether the Devil Fish plays now (the audio thread has taken the switch). */
         [[nodiscard]] bool isDevilFishPlaying() const noexcept { return fishNow.load(); }
+
+        // ---------------------------------------------------------------- Under the Lid (D310)
+        /** While the lid is open the audio thread reads every drawn part's current and node's voltage (the engine's
+            Tb303Lid) lidRate times a second into a ring of lidFrames frames; the lid reads them back. Each frame ends
+            with the gate, the accent, the slide and the note's volts. */
+        static constexpr int lidRate = 4000, lidFrames = 8192;
+        void setLidOpen(bool open) noexcept { lidOpen.store(open); }
+        [[nodiscard]] static int lidSeries() noexcept;
+        [[nodiscard]] static int lidStride() noexcept { return lidSeries() + 4; }
+        /** Frames written since the app started; frame i is at lidFrame(i) while i > lidWritten() - lidFrames. */
+        [[nodiscard]] std::int64_t lidWritten() const noexcept { return lidCount.load(std::memory_order_acquire); }
+        [[nodiscard]] const float* lidFrame(std::int64_t i) const noexcept
+        {
+            return lidRing.data() + static_cast<size_t>(i % lidFrames) * static_cast<size_t>(lidStride());
+        }
         [[nodiscard]] bool isRecording() const noexcept { return recording.load(); }
 
         // ---------------------------------------------------------------- where it plays (for the panel)
@@ -154,6 +169,10 @@ namespace cs303
         std::atomic<int> auditionKey { -1 };
         std::atomic<bool> recording { false };
         std::atomic<bool> accentHeld { false };
+        std::atomic<bool> lidOpen { false };
+        std::vector<float> lidRing; // lidFrames frames of lidStride() floats, allocated once
+        std::atomic<std::int64_t> lidCount { 0 };
+        int lidEvery = 24, lidPhase = 0;
 
         // audio thread
         std::unique_ptr<AudioCopy> audio;

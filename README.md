@@ -47,6 +47,11 @@ The panel, from the top:
   (held notes past half). Its Stock sets the knobs where it sounds most like a 303. Devil Fish is Whittle's name; this
   is a model of his mod from his manual, not his product.
 
+- Lid, beside Mods, lifts the lid: the whole voice as one schematic sheet, every part, the current on its wires as
+  moving dots and their voltage as a green or red tint, live from the circuit as it plays. Wheel to zoom, drag to
+  pan, click a part to read it; Slow replay holds the last two seconds and walks them fifty times slower. Escape or
+  Back to the panel closes it.
+
 MIDI: while stopped, a note plays the voice (the middle C at MIDI note 36); while playing, a note transposes the
 pattern from middle C (note 60). It follows a MIDI clock when one comes in (its start, stop, continue, song position
 and tempo, the top bar then showing CLOCK), and sends its own while it plays when none does. The audio and MIDI

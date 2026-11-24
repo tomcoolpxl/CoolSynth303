@@ -2,6 +2,7 @@
 
 #include "Processor.h"
 #include "ui/Keyboard.h"
+#include "ui/LidView.h"
 #include "ui/Panel.h"
 #include "ui/SequencerView.h"
 #include "ui/Theme.h"
@@ -64,6 +65,9 @@ namespace cs303
             boardHolder->addAndMakeVisible(*c);
         mods = std::make_unique<ui::ModsPanel>(*this);
         boardHolder->addChildComponent(*mods);
+        lid = std::make_unique<ui::LidView>(p);
+        lid->onClose = [this] { setLidOpen(false); };
+        addChildComponent(*lid);
         layOut();
         setWantsKeyboardFocus(true);
         setResizable(true, true);
@@ -82,6 +86,7 @@ namespace cs303
     Editor::~Editor()
     {
         stopTimer();
+        lid->setOpen(false);
         processor.audition(-1);
     }
 
@@ -105,6 +110,18 @@ namespace cs303
         const float scale = std::min(getWidth() / static_cast<float>(baseWidth), getHeight() / static_cast<float>(baseHeight));
         const float x = (getWidth() - baseWidth * scale) * 0.5f, y = (getHeight() - baseHeight * scale) * 0.5f;
         boardHolder->setTransform(juce::AffineTransform::scale(scale).translated(x, y));
+        lid->setBounds(getLocalBounds());
+    }
+
+    void Editor::setLidOpen(bool open)
+    {
+        lid->setBounds(getLocalBounds());
+        lid->setVisible(open);
+        lid->setOpen(open);
+        if (open)
+            lid->toFront(true);
+        else
+            grabKeyboardFocus();
     }
 
     const Pattern& Editor::edited() const { return processor.project().pattern(editPattern, editB); }
