@@ -158,7 +158,7 @@ namespace cs303
         // audio thread
         std::unique_ptr<AudioCopy> audio;
         Sequencer sequencer;
-        // the stock TB-303 and the Devil Fish (D308): two builds of the circuit, the one the panel picks plays
+        // the stock TB-303 and the Devil Fish (D309): two builds of the circuit, the one the panel picks plays
         std::unique_ptr<coolsynth::synth::v3::Tb303Voice> voice, fishVoice;
         coolsynth::synth::v3::Tb303Voice* active = nullptr;
         void chooseVoice(bool devilFish) noexcept;

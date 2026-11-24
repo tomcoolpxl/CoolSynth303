@@ -40,7 +40,7 @@ namespace cs303::ui
         void tap();
     };
 
-    /** The Mods panel, over the synth's sections while open (CoolSynth's D296, D308): the trimmers inside the case, as
+    /** The Mods panel, over the synth's sections while open (CoolSynth's D296, D309): the trimmers inside the case, as
         fitted to a real unit, and Stock to set them back; the Devil Fish, switched on or off, with its knobs, its
         three switches, its red Accent button and Stock. */
     class ModsPanel final : public juce::Component
