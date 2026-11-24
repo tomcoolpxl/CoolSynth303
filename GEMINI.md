@@ -4,8 +4,8 @@ The shared project memory for every AI tool (`CLAUDE.md` points here).
 
 ## What it is
 
-- A standalone bass line app for Windows (JUCE 9.0.5, C++20, CMake): a JUCE audio plugin built only as a
-  Standalone for now, as CoolSynth 808 (D267), so VST3 and CLAP are one line in `CMakeLists.txt` later.
+- A bass line app for Windows (JUCE 9.0.5, C++20, CMake): a JUCE audio plugin built as a Standalone and a VST3
+  (D305); in a DAW the host's transport runs the sequencer.
 - The sound is the engine's TB-303 circuit, the submodule `external/coolsynth-engine` (its own repository,
   `tomcoolpxl/coolsynth-engine`): `Tb303Voice` (CoolSynth's D295), at twice the host's rate, then the engine's
   `DriveProcessor` and `GlobalDelay`. The sequencer is the app's own (`src/Sequencer`), as the original's CPU plays.
@@ -20,13 +20,16 @@ The shared project memory for every AI tool (`CLAUDE.md` points here).
   (generate, mutate, snap to key, shift, semitones).
 - `src/Sequencer`: plays a pattern or the chain step by step on the audio thread: the gate's timing, slides, ties,
   the queue, locks and recorded moves per step.
-- `src/Processor`: the voice, the sequencer, the drive and delay, MIDI in, MIDI clock out, undo; the project lives
-  on the message thread and reaches the audio thread through a lock the audio thread only tries.
+- `src/Processor`: the voice, the sequencer, the drive and delay, MIDI in, MIDI clock in (`src/ClockFollower`,
+  the 808's) and out, a host's transport, undo; the project lives on the message thread and reaches the audio thread
+  through a lock the audio thread only tries. The circuit rests while stopped and silent.
+- `src/MidiExport`: a pattern as a MIDI file (Drag MIDI).
 - `src/Editor` and `src/ui`: the panel at 1280 by 800, scaled to the window: the top bar and the synth's sections
   (`ui/Panel`), the three-octave keyboard (`ui/Keyboard`), the pattern row, tools, step grid and locks
   (`ui/SequencerView`), the widgets and the charcoal look (`ui/Widgets`, `ui/Theme`).
-- `tests/`: `CoolSynth303Tests`. `COOLSYNTH303_SNAPSHOTS=<folder>` makes the editor's test write pictures of the
-  panel there.
+- `tests/`: `CoolSynth303Tests`, the built VST3 hosted as a DAW would (`HostingTests`).
+  `COOLSYNTH303_SNAPSHOTS=<folder>` makes the editor's test write pictures of the panel there;
+  `COOLSYNTH303_RENDER=<folder>` makes the processor's write listening files.
 
 ## Rules
 
