@@ -114,6 +114,26 @@ namespace
                 expect(p->playingStep() >= 0);
             }
 
+            beginTest("under_the_lid_the_circuit_is_read_at_little_cost");
+            {
+                // the same line twice, the lid shut and open (the audio thread then reads the circuit 4000 times a second)
+                double seconds[2] {};
+                for (int open = 0; open < 2; ++open)
+                {
+                    auto p = prepared();
+                    p->setLidOpen(open == 1);
+                    p->setPlaying(true);
+                    render(*p, 0.5); // warmed
+                    seconds[open] = render(*p, 3.0).seconds;
+                    if (open == 1)
+                        expect(p->lidWritten() > 3 * Processor::lidRate, "the lid's frames are written");
+                }
+                logMessage("the first line, the lid shut: " + juce::String(100.0 * seconds[0] / 3.0, 1) + " % of real time; open: "
+                           + juce::String(100.0 * seconds[1] / 3.0, 1) + " %");
+                if (juce::SystemStats::getEnvironmentVariable("CI", {}).isEmpty())
+                    expectLessThan(seconds[1] / 3.0, seconds[0] / 3.0 + 0.08, "open, it costs under 8 % of a core more");
+            }
+
             beginTest("it_renders_the_same_twice");
             {
                 auto a = prepared();
