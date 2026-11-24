@@ -22,7 +22,7 @@ namespace cs303::ui
         next = &add(">");
         next->onClick = [this] { editor.choosePattern((editor.editPattern + 1) % 16, editor.editB); };
         add("New").onClick = [this, &p] {
-            p.replaceProject(defaultProject());
+            p.edit([](Project& pr) { pr = defaultProject(); }); // one undo step: a stray click loses nothing
             editor.pick = 0;
             editor.choosePattern(0, false);
         };

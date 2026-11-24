@@ -68,7 +68,14 @@ namespace cs303
         setWantsKeyboardFocus(true);
         setResizable(true, true);
         setResizeLimits(640, 400, 3840, 2400);
-        setSize(baseWidth, baseHeight);
+        // the base size, or smaller to fit the screen (a laptop at 150 % has 1280 by 720 to give), its shape kept
+        float fit = 1.0f;
+        if (const auto* display = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay())
+        {
+            const auto area = display->userBounds.reduced(24.0f, 48.0f);
+            fit = std::min({ 1.0f, area.getWidth() / static_cast<float>(baseWidth), area.getHeight() / static_cast<float>(baseHeight) });
+        }
+        setSize(std::max(640, juce::roundToInt(baseWidth * fit)), std::max(400, juce::roundToInt(baseHeight * fit)));
         startTimerHz(30);
     }
 
