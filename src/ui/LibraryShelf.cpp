@@ -231,7 +231,7 @@ namespace cs303::ui
         close->setBounds(b.getRight() - 42, b.getY() + 12, 28, 28);
         list.setBounds(listArea());
         const auto d = detailArea().reduced(22, 0);
-        const int keysY = d.getY() + 380;
+        const int keysY = d.getY() + 344; // just under the preview (its how-to line gone, D351)
         audition->setBounds(d.getX(), keysY, 96, 28);
         loadKey->setBounds(d.getX() + 104, keysY, 150, 28);
         keep->setBounds(d.getX() + 262, keysY, 110, 28);
@@ -620,9 +620,6 @@ namespace cs303::ui
                     g.fillRect(x, pitch.getY(), cw, pitch.getHeight());
                 }
             }
-            y = detailArea().toFloat().getY() + 380.0f + 40.0f; // under the keys
-            text("Audition plays it in place of the pattern you edit, with the panel's sound; Load puts it there, one undo step.", bodyFont(11.5f),
-                 colour::hint, 36.0f);
         }
         else if (const auto* s = chosenSound())
         {
@@ -676,10 +673,6 @@ namespace cs303::ui
             };
             for (const auto& c : chips) chip(c, false);
             for (const auto& c : red) chip(c, true);
-            y = detailArea().toFloat().getY() + 380.0f + 40.0f; // under the keys
-            text(juce::String("Audition plays the pattern you edit with this sound; Load sets the panel, one undo step.")
-                     + (fish ? " It turns the Devil Fish on." : ""),
-                 bodyFont(11.5f), colour::hint, 36.0f);
         }
     }
 

@@ -554,8 +554,8 @@ namespace cs303::ui
             g.setColour(dimColour);
             g.setFont(fontOf(Face::stencil, 11.5f));
             const juce::String fish = processor.isDevilFishPlaying() ? " The Devil Fish plays: its own extra parts are not drawn." : "";
-            g.drawText("Dot size and speed follow the logarithm of the current, from 3 nA to 6 mA; the tint, a wire's voltage, green above 0 V. "
-                           "The sheet was checked against the netlist: " + impl->check + "." + fish,
+            g.drawText("Dot size and speed follow the logarithm of the current, from 3 nA to 6 mA; the tint, a wire's voltage, green above 0 V."
+                           + fish,
                        12, static_cast<int>(barHeight), ch.header->getWidth() - 24, static_cast<int>(footHeight), juce::Justification::centredLeft, true);
         };
     }

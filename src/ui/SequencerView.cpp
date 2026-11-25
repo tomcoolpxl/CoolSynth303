@@ -321,15 +321,15 @@ namespace cs303::ui
     ToolRow::ToolRow(Editor& e) : editor(e)
     {
         auto& p = editor.processor;
-        labels.push_back({ "NEW LINE", { 12, 2, 126, 16 } });
-        button("Generate", { 12, 20, 126, 28 }, true).onClick = [this] {
+        labels.push_back({ "NEW LINE", { 12, 6, 126, 16 } });
+        button("Generate", { 12, 24, 126, 28 }, true).onClick = [this] {
             const auto seed = editor.nextSeed++ * 2654435761u;
             const auto& proj = editor.processor.project();
             const auto scale = proj.scale;
             const int root = proj.root;
             editor.editPatternWith([=](Pattern& pat) { generate(pat, seed, scale, root); });
         };
-        button("Mutate", { 12, 50, 94, 28 }).onClick = [this] {
+        button("Mutate", { 12, 56, 94, 28 }).onClick = [this] {
             const auto seed = editor.nextSeed++ * 2246822519u;
             const auto& proj = editor.processor.project();
             const auto scale = proj.scale;
@@ -337,7 +337,7 @@ namespace cs303::ui
             const auto what = editor.mutateWhat;
             editor.editPatternWith([=](Pattern& pat) { mutate(pat, seed, scale, root, what); });
         };
-        button(juce::String::charToString(0x25be), { 110, 50, 28, 28 }).onClick = [this] {
+        button(juce::String::charToString(0x25be), { 110, 56, 28, 28 }).onClick = [this] {
             juce::PopupMenu m;
             m.addSectionHeader("Mutate may change");
             auto& w = editor.mutateWhat;
@@ -347,13 +347,13 @@ namespace cs303::ui
             m.addItem("Rests and ties", true, w.rests, [this] { editor.mutateWhat.rests = ! editor.mutateWhat.rests; });
             m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(this));
         };
-        labels.push_back({ "KEY", { 12, 88, 126, 16 } });
-        auto& root = box({ 12, 104, 34, 24 });
+        labels.push_back({ "KEY", { 12, 104, 126, 16 } });
+        auto& root = box({ 12, 122, 34, 24 });
         root.text = [&p = p] { return juce::String(letters[p.project().root]); };
         root.onClick = [&p = p] { p.edit([](Project& pr) { pr.root = (pr.root + 1) % 12; }, false); };
         root.onRightClick = [&p = p] { p.edit([](Project& pr) { pr.root = (pr.root + 11) % 12; }, false); };
         root.onWheel = [&p = p](int d) { p.edit([d](Project& pr) { pr.root = (pr.root + 12 + d) % 12; }, false); };
-        auto& scale = box({ 50, 104, 88, 24 });
+        auto& scale = box({ 50, 122, 88, 24 });
         scale.text = [&p = p] { return juce::String(scaleName(p.project().scale)); };
         const auto nextScale = [&p = p](int d) {
             p.edit([d](Project& pr) { pr.scale = static_cast<Scale>((static_cast<int>(pr.scale) + d + static_cast<int>(Scale::count)) % static_cast<int>(Scale::count)); }, false);
@@ -361,18 +361,18 @@ namespace cs303::ui
         scale.onClick = [nextScale] { nextScale(1); };
         scale.onRightClick = [nextScale] { nextScale(-1); };
         scale.onWheel = nextScale;
-        button("Snap to key", { 12, 132, 126, 28 }).onClick = [this] {
+        button("Snap to key", { 12, 152, 126, 28 }).onClick = [this] {
             const auto& proj = editor.processor.project();
             const auto sc = proj.scale;
             const int r = proj.root;
             editor.editPatternWith([=](Pattern& pat) { snapToKey(pat, sc, r); });
         };
-        labels.push_back({ "MOVE", { 12, 172, 50, 26 } });
-        button(juce::String::charToString(0x25c0), { 66, 172, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, -1); }); };
-        button(juce::String::charToString(0x25b6), { 104, 172, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, 1); }); };
-        labels.push_back({ "PITCH", { 12, 206, 50, 26 } });
-        button(juce::String::charToString(0x2212), { 66, 206, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, -1); }); };
-        button("+", { 104, 206, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, 1); }); };
+        labels.push_back({ "MOVE", { 12, 200, 50, 28 } });
+        button(juce::String::charToString(0x25c0), { 66, 200, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, -1); }); };
+        button(juce::String::charToString(0x25b6), { 104, 200, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, 1); }); };
+        labels.push_back({ "PITCH", { 12, 236, 50, 28 } });
+        button(juce::String::charToString(0x2212), { 66, 236, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, -1); }); };
+        button("+", { 104, 236, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, 1); }); };
     }
 
     Key& ToolRow::button(const juce::String& text, juce::Rectangle<int> place, bool hot)
@@ -402,9 +402,6 @@ namespace cs303::ui
         g.setColour(colour::dim);
         for (const auto& [name, place] : labels)
             shapedText(g, name, place, juce::Justification::centredLeft, false);
-        g.setColour(colour::hint);
-        g.setFont(bodyFont(11.0f));
-        g.drawFittedText("These change the whole line.", juce::Rectangle<int>(12, 246, 128, 28), juce::Justification::topLeft, 2);
     }
 
     void ToolRow::refresh()

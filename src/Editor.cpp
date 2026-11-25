@@ -49,10 +49,6 @@ namespace cs303
                     title(juce::Colours::white.withAlpha(0.08f), juce::Colours::white.withAlpha(0.08f), { 0.0f, 1.0f });  // and its lit one
                     title(juce::Colour(0xffcfcfcb), ui::colour::orange, {});
                 }
-                g.setColour(juce::Colour(0xff66686d));
-                g.setFont(ui::bodyFont(10.5f));
-                ui::shapedText(g, "CoolSynth 303 " + juce::String::charToString(0xb7) + " a bass line from its circuit", juce::Rectangle<int>(Editor::baseWidth - 420, 780, 404, 16),
-                           juce::Justification::centredRight, false);
             }
         };
 
