@@ -16,7 +16,9 @@ namespace
         {
             beginTest("the_vst3_loads_plays_with_the_host_and_keeps_its_state");
             const juce::File bundle = juce::File(COOLSYNTH303_BINARY_DIR).getChildFile("CoolSynth303_artefacts/" COOLSYNTH303_CONFIG "/VST3/CoolSynth 303.vst3"); // the test's own build
-            if (! bundle.exists())
+            // the binary, not the bundle: with an icon, JUCE makes the bundle's folder for it even when only the tests
+            // are built (the CI)
+            if (! bundle.getChildFile("Contents/x86_64-win/CoolSynth 303.vst3").existsAsFile())
             {
                 logMessage("no VST3 built at " + bundle.getFullPathName() + ": skipped");
                 expect(true);
