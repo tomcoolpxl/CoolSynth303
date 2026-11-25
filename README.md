@@ -38,6 +38,8 @@ The library has 30 original lines in ten styles, from Chicago 87 to rolling sub 
 
 The sequencer plays 16 patterns, each with an A and a B, and chains them. Each step has its note, octave, accent, slide and tie. It can write a new line in a key for you, mutate the one you have, record your knob moves into the pattern, and hold knob settings on single steps.
 
+![Under the lid: the 303's whole voice as one schematic, the current moving on its wires while a line plays](docs/lid.gif)
+
 Lid lifts the lid: the whole voice as one schematic, with the current moving on its wires as it plays.
 
 Options has the accuracy: Best, or Light for about 40 % less CPU with a slightly duller top octave. Exports always render at Best. Options also exports the pattern or the chain as a WAV file, cut, rung out or as a seamless loop.
