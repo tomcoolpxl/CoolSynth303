@@ -12,7 +12,7 @@
     CoolSynth 303's own options (D349, after CoolSynth 808's D311 and D335), in a window of their own, opened by the
     top bar's Options key, in pages listed down its left. Standalone: Audio (driver, output, sample rate, buffer, the
     accuracy), MIDI (the inputs, the output; the 303 always follows and sends MIDI clock, so no clock switches; the
-    beat sync's Play and Stop shared or not, D361), Panel
+    beat sync's Play and Stop shared or not, D361; Claude's MCP server, off until switched on, CoolSynth's D363), Panel
     (the window's size), Export. In a plugin: Host (the accuracy; the 303 always follows the host's transport), Panel,
     Export. It stays above the 303's window, remembers its place and the page last shown, and closes on its close
     key, Escape or the Options key. Drawn only through Theme.h, so a new look for the app restyles it too.
@@ -46,6 +46,10 @@ namespace cs303::ui
         // The standalone's beat sync (D361): Play and Stop shared with the session, or not. Unset: no beat sync.
         std::function<bool()> syncSharing;
         std::function<void(bool)> chooseSyncSharing;
+        // Claude's MCP server (CoolSynth's D363), the standalone's: switched, and its state in a few words. Unset: none.
+        std::function<bool()> mcpOn;
+        std::function<void(bool)> chooseMcp;
+        std::function<juce::String()> mcpStatus;
     };
 
     class OptionsWindow final : public juce::DocumentWindow

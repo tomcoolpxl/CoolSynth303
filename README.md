@@ -72,8 +72,9 @@ For hardware it follows an incoming MIDI clock and sends its own, also while the
 has others with it, an incoming clock is ignored. The 303 and the 808 together take some two and a half cores; a busy
 program beside them can make the 808 stutter.
 
-Options, in the top bar, opens the 303's own options: the audio device and the accuracy, the MIDI ports and the
-beat sync's Play and Stop, the window's size and theme, and the WAV export (in a DAW, the Host page has the accuracy).
+Options, in the top bar, opens the 303's own options: the audio device and the accuracy, the MIDI ports, the beat
+sync's Play and Stop and Claude's MCP server, the window's size and theme, and the WAV export (in a DAW, the Host page
+has the accuracy).
 - Accuracy: Best, or Light: the voice at the output's own rate and solved a little less tightly, some 40 % less CPU,
   the top octave up to 3.5 dB duller. A DAW's export always renders at Best.
 - Export: the pattern shown or the chain, 1 to 16 times, cut, rung out or as a seamless loop, the mix or the dry
@@ -105,8 +106,12 @@ writes the built-in ones.
 The output ends in a soft saturation: untouched up to -3 dBFS, above it rounded off toward full scale, so a pushed
 Devil Fish never clips digitally.
 
-The standalone app serves Claude over MCP on 127.0.0.1:47633 (`src/mcp`, as CoolSynth's): read and set the panel, run
-the sequencer, hold keys, record the output into a WAV file, picture the window. The plugin opens no port.
+The standalone app can serve Claude over MCP on 127.0.0.1:47633 (`src/mcp`, as CoolSynth's): read and set the panel,
+run the sequencer, hold keys, record the output into a WAV file, picture the window. It is off until switched on in
+Options, MIDI, Claude (MCP server), and the switch starts or stops it at once; only this computer can reach it. The
+switch is kept in `%APPDATA%\CoolSynth303\CoolSynth303.settings` as `<VALUE name="mcpServer" val="1"/>`, so a test
+setup can switch it on there before the app starts. `COOLSYNTH303_NO_MCP` in the environment keeps it off whatever the
+switch says. The plugin opens no port.
 
 `tools/listening-pass` plays the stock voice through Din Sync's 25 recorded sets of a real TB-303 (each knob from
 25 to 100 %, the others at five settings) and serves a page that switches between the real unit and ours while both

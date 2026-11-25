@@ -3,6 +3,7 @@
 // COOLSYNTH303_SNAPSHOTS=<folder> it also writes each page and the top bar with its Options key. A class of its own:
 // MSVC's Debug frames overflow with many processors and editors in one runTest.
 
+#include <cstdlib>
 #include <map>
 #include <memory>
 
@@ -332,4 +333,157 @@ namespace
     };
 
     static OptionsExportTests optionsExportTests;
+
+    // Claude's MCP server (CoolSynth's D363): off by default, the switch on the MIDI page starts and stops it at once
+    // and the settings keep it, COOLSYNTH303_NO_MCP keeps it off. On a free port of its own, never the app's 47633
+    // (a running CoolSynth 303 may hold it). A class of its own, its parts on the heap.
+    class OptionsMcpTests final : public juce::UnitTest
+    {
+    public:
+        OptionsMcpTests() : juce::UnitTest("Options MCP switch", "CoolSynth303") {}
+
+        static int freePort()
+        {
+            juce::StreamingSocket probe;
+            if (! probe.createListener(0, "127.0.0.1"))
+                return 0;
+            const int port = probe.getBoundPort();
+            probe.close();
+            return port;
+        }
+
+        static bool reachable(int port)
+        {
+            juce::StreamingSocket client;
+            return client.connect("127.0.0.1", port, 1000);
+        }
+
+        static bool keptOn(const juce::File& settings)
+        {
+            return mcpChoiceFrom(juce::PropertiesFile(settings, Processor::settingsOptions()));
+        }
+
+        static void setEnvironment(const char* name, const char* value)
+        {
+           #if JUCE_WINDOWS
+            _putenv_s(name, value); // "" removes it
+           #else
+            if (*value != 0)
+                setenv(name, value, 1);
+            else
+                unsetenv(name);
+           #endif
+        }
+
+        void runTest() override
+        {
+            const auto folder = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("CoolSynth303McpSwitchTest");
+            (void) folder.deleteRecursively();
+            folder.createDirectory();
+            const auto settings = folder.getChildFile("CoolSynth303.settings");
+            const int port = freePort();
+
+            beginTest("the_mcp_server_is_off_by_default");
+            {
+                expect(port > 0, "a free port");
+                expect(! mcpChoiceFrom(juce::PropertySet()), "no setting: off");
+                auto p = std::make_unique<Processor>();
+                expect(! p->hasMcpSwitch() && ! p->mcpServerRunning(), "none outside the standalone");
+                p->useMcpSwitchForTesting(port, settings);
+                expect(p->hasMcpSwitch());
+                expect(! p->mcpServerChosen() && ! p->mcpServerRunning(), "off with no settings file");
+                expectEquals(p->mcpStatus(), juce::String("Off"));
+                expect(! reachable(port), "nothing listens");
+            }
+
+            beginTest("the_switch_starts_and_stops_it_at_once_and_the_settings_keep_it");
+            {
+                auto p = std::make_unique<Processor>();
+                p->useMcpSwitchForTesting(port, settings);
+                p->setMcpServerOn(true);
+                expect(p->mcpServerChosen() && p->mcpServerRunning(), "on at once");
+                expectEquals(p->mcpStatus(), "On: 127.0.0.1:" + juce::String(port));
+                expect(reachable(port), "Claude can connect");
+                expect(keptOn(settings), "kept on");
+                p->setMcpServerOn(false);
+                expect(! p->mcpServerChosen() && ! p->mcpServerRunning(), "off at once");
+                expect(! reachable(port), "its port let go");
+                expect(! keptOn(settings), "kept off");
+                p->setMcpServerOn(true);
+                p.reset();
+                // the next start of the app finds it on
+                auto again = std::make_unique<Processor>();
+                again->useMcpSwitchForTesting(port, settings);
+                expect(again->mcpServerChosen() && again->mcpServerRunning(), "on from the settings");
+                again->setMcpServerOn(false);
+            }
+
+            beginTest("a_taken_port_or_coolsynth303_no_mcp_leaves_it_off");
+            {
+                auto p = std::make_unique<Processor>();
+                p->useMcpSwitchForTesting(port, settings);
+                {
+                    juce::StreamingSocket holder;
+                    expect(holder.createListener(port, "127.0.0.1"), "the port held elsewhere");
+                    p->setMcpServerOn(true);
+                    expect(p->mcpServerChosen() && ! p->mcpServerRunning(), "chosen, not running");
+                    expectEquals(p->mcpStatus(), "Port " + juce::String(port) + " is taken");
+                    p->setMcpServerOn(false);
+                }
+                setEnvironment("COOLSYNTH303_NO_MCP", "1");
+                p->setMcpServerOn(true);
+                expect(! p->mcpServerRunning(), "the environment's veto");
+                expectEquals(p->mcpStatus(), juce::String("Off: COOLSYNTH303_NO_MCP"));
+                expect(! reachable(port));
+                setEnvironment("COOLSYNTH303_NO_MCP", "");
+                p->setMcpServerOn(false);
+            }
+
+            beginTest("the_midi_page_s_switch");
+            {
+                auto p = std::make_unique<Processor>();
+                p->setPlayConfigDetails(0, 2, 48000.0, 480);
+                p->prepareToPlay(48000.0, 480);
+                auto e = std::make_unique<Editor>(*p);
+                auto devices = std::make_unique<juce::AudioDeviceManager>();
+                {
+                    // without the switch (a plugin, the tests' processor): no row
+                    auto panel = ui::makeOptionsPanelForTesting(e->optionsHooks(), devices.get());
+                    ui::showOptionsPageForTesting(*panel, 1);
+                    auto* key = childWithId(*panel, "mcpServer");
+                    expect(key != nullptr && ! key->isVisible(), "no switch without a server to switch");
+                }
+                p->useMcpSwitchForTesting(port, settings);
+                auto panel = ui::makeOptionsPanelForTesting(e->optionsHooks(), devices.get());
+                ui::showOptionsPageForTesting(*panel, 1);
+                expectEquals(ui::optionsPageNameForTesting(*panel), juce::String("MIDI"));
+                auto* key = childWithId(*panel, "mcpServer");
+                expect(key != nullptr && key->isVisible(), "the switch on the MIDI page");
+                if (key != nullptr)
+                {
+                    expect(panel->getLocalBounds().contains(key->getBounds()), "inside the panel");
+                    press(*key);
+                    expect(p->mcpServerRunning() && reachable(port), "a click starts it");
+                    expect(keptOn(settings));
+                    const auto snapshots = juce::SystemStats::getEnvironmentVariable("COOLSYNTH303_SNAPSHOTS", {});
+                    if (snapshots.isNotEmpty())
+                    {
+                        juce::File(snapshots).createDirectory();
+                        writePng(panel->createComponentSnapshot(panel->getLocalBounds(), true, 2.0f), juce::File(snapshots).getChildFile("options-midi-mcp-on.png"));
+                    }
+                    press(*key);
+                    expect(! p->mcpServerRunning() && ! reachable(port), "a second click stops it");
+                    expect(! keptOn(settings));
+                }
+                panel.reset();
+                devices.reset();
+                e.reset();
+                p.reset();
+            }
+
+            (void) folder.deleteRecursively();
+        }
+    };
+
+    static OptionsMcpTests optionsMcpTests;
 }

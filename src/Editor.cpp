@@ -183,6 +183,13 @@ namespace cs303
             hooks.syncSharing = [this] { return processor.startStopSharing(); };
             hooks.chooseSyncSharing = [this](bool on) { processor.setStartStopSharing(on); };
         }
+        if (processor.hasMcpSwitch())
+        {
+            // Claude's MCP server (CoolSynth's D363): kept by the processor in the app's settings, started or stopped at once
+            hooks.mcpOn = [this] { return processor.mcpServerChosen(); };
+            hooks.chooseMcp = [this](bool on) { processor.setMcpServerOn(on); };
+            hooks.mcpStatus = [this] { return processor.mcpStatus(); };
+        }
         // its choices kept in the app's settings, as the accuracy (not in the tests)
         if (processor.wrapperType != juce::AudioProcessor::wrapperType_Undefined)
         {

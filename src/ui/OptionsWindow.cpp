@@ -181,6 +181,18 @@ namespace cs303::ui
             };
             addChildComponent(sharing);
 
+            // Claude's MCP server (CoolSynth's D363), on the MIDI page: lit while switched on; it starts or stops at once.
+            mcpKey.setComponentID("mcpServer");
+            mcpKey.setHelpText("Lets Claude Code read and set the panel, play, record and see this window while it helps you; only this computer can reach it.");
+            mcpKey.isOn = [this] { return hooks.mcpOn && hooks.mcpOn(); };
+            mcpKey.onClick = [this]
+            {
+                if (hooks.chooseMcp && hooks.mcpOn)
+                    hooks.chooseMcp(! hooks.mcpOn());
+                repaint();
+            };
+            addChildComponent(mcpKey);
+
             // the hint line at the foot (D353): what the row under the mouse does
             hintLine = std::make_unique<HintLine>(true);
             addAndMakeVisible(*hintLine);
@@ -339,6 +351,15 @@ namespace cs303::ui
                     g.setColour(colour::wellLine);
                     g.drawRoundedRectangle(box.reduced(0.5f), 3.0f, 1.0f);
                 }
+                if (mcpKey.isVisible() && hooks.mcpStatus)
+                {
+                    // beside the switch: where Claude reaches it, or why it is off
+                    const bool running = hooks.mcpStatus().startsWith("On");
+                    g.setColour(running ? colour::orange : colour::screenHint);
+                    g.setFont(running ? monoFont(11.5f) : bodyFont(11.5f));
+                    const auto r = juce::Rectangle<int>(mcpKey.getRight() + 12, mcpKey.getY(), x + w - mcpKey.getRight() - 12, mcpKey.getHeight());
+                    g.drawFittedText(hooks.mcpStatus(), r, juce::Justification::centredLeft, 1, 0.8f);
+                }
             }
             if (page == exportPage)
             {
@@ -397,7 +418,7 @@ namespace cs303::ui
             switch (pages[static_cast<std::size_t>(i)])
             {
                 case audioPage: return "Audio: the device, its rate and buffer, the accuracy, a test tone.";
-                case midiPage: return "MIDI: the inputs that play the 303, an output for its notes, and the beat sync's Play and Stop.";
+                case midiPage: return "MIDI: the inputs that play the 303, an output for its notes, the beat sync's Play and Stop, and Claude.";
                 case hostPage: return "Host: the accuracy, in a plugin; the devices are the host's.";
                 case panelPage: return "Panel: the window's size and the theme.";
                 case exportPage: return "Export: a WAV of the pattern shown or the chain.";
@@ -736,6 +757,14 @@ namespace cs303::ui
                         sharing.setVisible(true);
                         y += rowHeight + rowGap;
                     }
+                    if (hooks.mcpOn)
+                    {
+                        // Claude's MCP server (CoolSynth's D363), the standalone's
+                        labels.push_back({ "Claude", y });
+                        mcpKey.setBounds(x + labelWidth, y + 1, mcpKeyWidth, rowHeight - 2);
+                        mcpKey.setVisible(true);
+                        y += rowHeight + rowGap;
+                    }
                     break;
                 }
                 case hostPage:
@@ -1001,6 +1030,8 @@ namespace cs303::ui
         Key controlPanel { "Control panel", false }, testTone { "Test tone", false };
         Key sharing { "Share Play and Stop", false }; // the beat sync's (D361), the standalone's
         static constexpr int sharingKeyWidth = 170;
+        Key mcpKey { "MCP server", false }; // Claude's (CoolSynth's D363), the standalone's
+        static constexpr int mcpKeyWidth = 130;
         std::array<std::unique_ptr<Key>, 2> accuracyKeys;
         InputList inputList;
         juce::Viewport inputView;

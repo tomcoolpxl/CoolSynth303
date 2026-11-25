@@ -58,6 +58,10 @@ namespace cs303
     void keepSyncChoice(juce::PropertySet& settings, const SyncChoice& choice);
     /** The SYNC key's word: the other peers' count after it, none while alone ("SYNC", "SYNC 2"). */
     [[nodiscard]] juce::String syncKeyText(int peers);
+    /** Claude's MCP server as last switched in Options (CoolSynth's D363): off until switched on. */
+    [[nodiscard]] bool mcpChoiceFrom(const juce::PropertySet& settings);
+    /** COOLSYNTH303_NO_MCP is set: the server stays off. */
+    [[nodiscard]] bool mcpForcedOff();
 
     class Processor final : public juce::AudioProcessor
     {
@@ -193,9 +197,17 @@ namespace cs303
         [[nodiscard]] const std::vector<float>& capture() const noexcept { return captureBuffer; }
         /** The loudest output sample since the last call, 0..1, for the play tool. */
         [[nodiscard]] float takeLoudest() noexcept { return loudest.exchange(0.0f); }
-        /** Starts the app's MCP server (the standalone does, at its start): 127.0.0.1 only. */
-        void startMcpServer();
+        /** Claude's MCP server, the standalone's only (CoolSynth's D363): off until switched on in Options, MIDI; the
+            switch is kept in the app's settings ("mcpServer") and starts or stops the server at once, on 127.0.0.1
+            only. COOLSYNTH303_NO_MCP in the environment keeps it off whatever the switch says. */
+        [[nodiscard]] bool hasMcpSwitch() const noexcept { return mcpSwitchable; }
+        void setMcpServerOn(bool on);
+        /** The switch as chosen; the server may still be off (its port taken, or the environment's veto). */
+        [[nodiscard]] bool mcpServerChosen() const noexcept { return mcpChosen; }
+        [[nodiscard]] bool mcpServerRunning() const noexcept { return mcp != nullptr; }
         [[nodiscard]] juce::String mcpStatus() const { return mcpStatusText; }
+        /** For the tests: the switch as the standalone has it, on its own port, kept in `settings` if given. */
+        void useMcpSwitchForTesting(int port, const juce::File& settings = {});
 
         // ---------------------------------------------------------------- the beat sync (CoolSynth's D361)
         /** One tempo, beat grid and play state with the other programs on the network that speak the beat sync: the
@@ -250,6 +262,11 @@ namespace cs303
         std::unique_ptr<coolsynth::mcp::Server> mcp;
         std::unique_ptr<juce::Timer> midiOutKeeper; // the standalone's MIDI output thread kept running
         juce::String mcpStatusText = "Off";
+        bool mcpSwitchable = false, mcpChosen = false;
+        int mcpListenPort = 0;
+        juce::File mcpSettingsFile; // the tests' settings, else the app's
+        void startMcpServer();
+        void stopMcpServer();
         std::vector<float> captureBuffer;
         std::atomic<bool> captureArmed { false };
         std::atomic<int> captureCount { 0 };

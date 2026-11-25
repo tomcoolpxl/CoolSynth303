@@ -66,17 +66,23 @@ namespace cs303
         push();
         // The accuracy (D349): the app's, from its settings, in the standalone and a plugin; Best in the tests.
         SyncChoice sync;
+        bool mcpOn = false;
         if (wrapperType != wrapperType_Undefined)
         {
             juce::PropertiesFile file(settingsOptions());
             accuracyLevel = juce::jlimit(0, 1, file.getIntValue("accuracy", 0));
             sync = syncChoiceFrom(file); // D361
+            mcpOn = mcpChoiceFrom(file); // CoolSynth's D363
         }
-        // Claude's way in, in the standalone app only (a plugin in a DAW opens no port, nor does an export).
+        // Claude's way in, in the standalone app only (a plugin in a DAW opens no port, nor does an export), and
+        // only once switched on in Options (CoolSynth's D363).
         if (wrapperType == wrapperType_Standalone && ! offline)
         {
             juce::SystemStats::setApplicationCrashHandler(writeCrashStack);
-            if (juce::SystemStats::getEnvironmentVariable("COOLSYNTH303_NO_MCP", {}).isEmpty())
+            mcpSwitchable = true;
+            mcpListenPort = mcpPort;
+            mcpChosen = mcpOn;
+            if (mcpChosen)
                 startMcpServer();
             midiOutKeeper = makeStandaloneMidiOutKeeper(); // MIDI clock out at its own samples, as the 808's
             // The beat sync, the standalone's only (D361): in a DAW its transport rules, an export renders alone.
@@ -258,10 +264,52 @@ namespace cs303
         captureArmed.store(true, std::memory_order_release);
     }
 
+    bool mcpChoiceFrom(const juce::PropertySet& settings) { return settings.getBoolValue("mcpServer", false); }
+
+    bool mcpForcedOff() { return juce::SystemStats::getEnvironmentVariable("COOLSYNTH303_NO_MCP", {}).isNotEmpty(); }
+
+    void Processor::setMcpServerOn(bool on)
+    {
+        if (! mcpSwitchable)
+            return;
+        mcpChosen = on;
+        // kept at once in the app's settings (the tests' own file instead)
+        auto file = mcpSettingsFile == juce::File() ? std::make_unique<juce::PropertiesFile>(settingsOptions())
+                                                    : std::make_unique<juce::PropertiesFile>(mcpSettingsFile, settingsOptions());
+        file->setValue("mcpServer", on);
+        file->saveIfNeeded();
+        if (on)
+            startMcpServer();
+        else
+            stopMcpServer();
+    }
+
+    void Processor::useMcpSwitchForTesting(int port, const juce::File& settings)
+    {
+        stopMcpServer();
+        mcpSwitchable = true;
+        mcpListenPort = port;
+        mcpSettingsFile = settings;
+        mcpChosen = settings.existsAsFile() && mcpChoiceFrom(juce::PropertiesFile(settings, settingsOptions()));
+        if (mcpChosen)
+            startMcpServer();
+    }
+
+    void Processor::stopMcpServer()
+    {
+        mcp = nullptr; // its thread stopped, its port let go
+        mcpStatusText = "Off";
+    }
+
     void Processor::startMcpServer()
     {
         if (mcp != nullptr)
             return;
+        if (mcpForcedOff())
+        {
+            mcpStatusText = "Off: COOLSYNTH303_NO_MCP";
+            return;
+        }
         // A tool runs on the message thread, as the panel's own edits do, and the server waits for it (10 s at most).
         coolsynth::mcp::Server::Runner runner = [alive = alive](std::function<void()> job)
         {
@@ -280,12 +328,12 @@ namespace cs303
             done->wait(10000);
         };
         mcp = std::make_unique<coolsynth::mcp::Server>("CoolSynth 303", "0.1", tools303(*this, runner), runner);
-        if (mcp->start(mcpPort))
-            mcpStatusText = "On: Claude reaches this app at http://127.0.0.1:" + juce::String(mcpPort) + "/mcp.";
+        if (mcp->start(mcpListenPort))
+            mcpStatusText = "On: 127.0.0.1:" + juce::String(mcpListenPort);
         else
         {
             mcp = nullptr;
-            mcpStatusText = "Could not start: port " + juce::String(mcpPort) + " is taken (another CoolSynth 303?).";
+            mcpStatusText = "Port " + juce::String(mcpListenPort) + " is taken";
         }
     }
 
