@@ -11,6 +11,9 @@
 #include "ClockFollower.h"
 #include "Pattern.h"
 #include "Sequencer.h"
+#include "sync/BeatSync.h"
+#include "sync/BlockClock.h"
+#include "sync/SyncClock.h"
 
 namespace coolsynth::synth
 {
@@ -38,13 +41,31 @@ namespace coolsynth::mcp
     under a lock the audio thread only tries (a block that finds it taken plays on with what it had). Play, stop,
     the pattern to hear, the transposition and the keys' audition reach it as atomics; where it plays comes back as
     atomics for the panel.
+
+    The transport: its own, an incoming MIDI clock, a DAW's, or in the standalone app the beat sync (CoolSynth's
+    D361), which leads through a play head of its own as a DAW's does.
 */
 namespace cs303
 {
+    /** The beat sync as last chosen (CoolSynth's D361): on, and Play and Stop shared; both on until switched off. Kept
+        in the app's settings. */
+    struct SyncChoice
+    {
+        bool on = coolsynth::sync::BeatSync::kDefaultEnabled;
+        bool sharing = coolsynth::sync::BeatSync::kDefaultStartStopSharing;
+    };
+    [[nodiscard]] SyncChoice syncChoiceFrom(const juce::PropertySet& settings);
+    void keepSyncChoice(juce::PropertySet& settings, const SyncChoice& choice);
+    /** The SYNC key's word: the other peers' count after it, none while alone ("SYNC", "SYNC 2"). */
+    [[nodiscard]] juce::String syncKeyText(int peers);
+
     class Processor final : public juce::AudioProcessor
     {
     public:
-        Processor();
+        Processor() : Processor(false) {}
+        /** A processor that renders offline (the WAV export, D355): no MCP server, no MIDI output keeper, no beat sync,
+            even inside the standalone app. */
+        explicit Processor(bool offlineRender);
         ~Processor() override;
 
         // ---------------------------------------------------------------- juce::AudioProcessor
@@ -140,6 +161,10 @@ namespace cs303
         [[nodiscard]] bool isFollowingClock() const noexcept { return clockFollowed.load(); }
         /** In a DAW: whether the host's transport runs it now. */
         [[nodiscard]] bool isFollowingHost() const noexcept { return hostFollowed.load(); }
+        /** The beat sync leads the beat, with other peers in its session (D361). */
+        [[nodiscard]] bool isFollowingSync() const noexcept { return syncFollowed.load(std::memory_order_acquire); }
+        /** Play pressed with other peers: waiting for the session's next bar line (D361). */
+        [[nodiscard]] bool countingIn() const noexcept { return countingInNow.load(std::memory_order_acquire); }
         [[nodiscard]] double tempoNow() const noexcept { return bpmNow.load(); }
         /** How much of the time the audio thread spent rendering, smoothed (0..1 of the block's own time). */
         [[nodiscard]] float load() const noexcept { return loadNow.load(); }
@@ -172,6 +197,31 @@ namespace cs303
         void startMcpServer();
         [[nodiscard]] juce::String mcpStatus() const { return mcpStatusText; }
 
+        // ---------------------------------------------------------------- the beat sync (CoolSynth's D361)
+        /** One tempo, beat grid and play state with the other programs on the network that speak the beat sync: the
+            standalone app has one (a plugin follows its DAW, an export renders alone). It feeds the transport through
+            a play head of its own, as a DAW's does: Play and Stop and the tempo go through it, a start waits for the
+            session's next bar line of 4 beats, and while other peers are in the session an incoming MIDI clock is
+            not followed. */
+        [[nodiscard]] bool hasBeatSync() const noexcept { return beatSync != nullptr; }
+        /** Message thread: the SYNC key, Options and Claude's tools. Kept in the app's settings at once. */
+        void setBeatSyncOn(bool on);
+        [[nodiscard]] bool beatSyncOn() const noexcept { return syncOn.load(std::memory_order_acquire); }
+        void setStartStopSharing(bool on);
+        [[nodiscard]] bool startStopSharing() const noexcept { return beatSync != nullptr && beatSync->startStopSharing(); }
+        /** The other peers in the session; 0 while off. Message thread. */
+        [[nodiscard]] int syncPeers() const noexcept { return beatSync != nullptr && beatSyncOn() ? beatSync->peerCount() : 0; }
+        /** Message thread, ten times a second: the output's latency from the audio device, and a tempo another peer
+            set becomes the panel's (no undo step). */
+        void syncTick();
+        /** For the tests: a beat sync of its own, its network on the loopback only, or none (then alone, never on a
+            socket); its two switches kept in `settings` if given; the host clock in microseconds the audio thread
+            reads; each step's host sample since the start, written into `log` (audio thread, allocating: the tests
+            only). */
+        void useBeatSyncForTesting(bool network, const juce::File& settings = {});
+        void setHostClockForTesting(std::function<std::int64_t()> micros) { hostClockForTesting = std::move(micros); }
+        void logStepsForTesting(std::vector<double>* log) noexcept { stepLog = log; }
+
     private:
         struct AudioCopy
         {
@@ -189,6 +239,11 @@ namespace cs303
         void renderVoice(float* v, int n, int key, double beatPerVoiceSample, double secondsPerStep, const Panel& panel) noexcept;
         void finishSpan(float* out, int start, int count, const Panel& panel) noexcept;
         void sendClock(juce::MidiBuffer& midi, int numSamples) noexcept;
+        void renderRange(int from, int to) noexcept;
+        /** The transport starts or stops at the block's sample `at` (beat 0 for a start not led from outside). */
+        void startOrStop(bool wantPlay, bool byClock, bool byHost, double clockBeat, int at) noexcept;
+
+        const bool offline; // the WAV export's: no ports, no beat sync
 
         // the MCP server (message thread); stopped first when the processor goes
         std::shared_ptr<std::atomic<bool>> alive = std::make_shared<std::atomic<bool>>(true);
@@ -245,7 +300,9 @@ namespace cs303
         double beat = 0.0;
         std::int64_t sixteenth = -1;
         double clockBeatSent = 0.0;
-        bool clockStartPending = false, clockStopPending = false;
+        int clockStartAt = -1; // the block's sample a MIDI start goes out at, or none
+        bool clockStopPending = false;
+        std::int64_t spanStart = 0; // the host sample the span being rendered starts at
         double volumeNow = -1.0; // the voices' VOLUME as it stands (slewed toward the panel's), -1 before the first panel
         int lastAudition = -1;
         double auditionVolts = 2.0;
@@ -265,6 +322,34 @@ namespace cs303
         std::atomic<bool> variationBNow { false };
         std::atomic<float> levelNow { 0.0f }, loadNow { 0.0f };
         std::array<std::atomic<float>, knobCount> liveKnobs {};
+
+        // The beat sync (D361). Its play head gives the block's beats as a DAW's gives its transport: the tempo the
+        // block plays at, the beat at its first sample, and playing once the count-in reaches beat 0 in the block.
+        struct SyncPlayHead final : juce::AudioPlayHead
+        {
+            coolsynth::sync::BlockBeats beats {};
+            double sampleRate = 48000.0;
+            int samples = 0;
+            juce::Optional<PositionInfo> getPosition() const override;
+        };
+        std::unique_ptr<coolsynth::sync::BeatSync> beatSync; // the standalone's, or a test's
+        bool syncNetwork = false;                            // message thread: its network switched with it
+        juce::File syncSettingsFile;                         // message thread: the tests' settings, else the app's
+        std::atomic<bool> syncOn { false };
+        std::atomic<std::int64_t> outputLatencyMicros { 0 };
+        coolsynth::sync::BlockClock blockClock; // audio thread
+        SyncPlayHead syncHead;                  // audio thread
+        bool syncInUse = false;                 // audio thread: this block (and the last) the sync's
+        bool syncRunning = false;               // audio thread: the last block had the sync on
+        double syncPanelTempo = -1.0;           // audio thread: the panel's tempo as last given to the sync
+        std::atomic<double> syncPanelTempoNow { -1.0 }, syncBpmNow { 0.0 };
+        std::atomic<int> syncPeersNow { 0 };
+        std::atomic<bool> syncFollowed { false }, countingInNow { false };
+        std::function<std::int64_t()> hostClockForTesting;
+        std::vector<double>* stepLog = nullptr;
+        std::unique_ptr<juce::Timer> syncTicker;
+        void startBeatSync(const SyncChoice& choice, bool network, coolsynth::sync::BeatSync::Options options);
+        void keepSyncChoiceNow();
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Processor)
     };

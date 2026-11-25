@@ -119,7 +119,7 @@ namespace cs303
             const ExportJob& job;
             std::atomic<std::int64_t>& rendered;
             const std::atomic<bool>& cancel;
-            std::unique_ptr<Processor> processor = std::make_unique<Processor>();
+            std::unique_ptr<Processor> processor = std::make_unique<Processor>(true); // offline: no ports, no beat sync (D361)
             juce::AudioBuffer<float> buffer { 2, block };
             juce::MidiBuffer midi;
         };

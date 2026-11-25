@@ -177,6 +177,12 @@ namespace cs303
             return job;
         };
         hooks.appRate = [this] { return processor.captureRate(); }; // the device's rate, or the host's
+        if (processor.hasBeatSync())
+        {
+            // the beat sync's Play and Stop shared, or not (D361); kept by the processor in the app's settings
+            hooks.syncSharing = [this] { return processor.startStopSharing(); };
+            hooks.chooseSyncSharing = [this](bool on) { processor.setStartStopSharing(on); };
+        }
         // its choices kept in the app's settings, as the accuracy (not in the tests)
         if (processor.wrapperType != juce::AudioProcessor::wrapperType_Undefined)
         {
@@ -498,7 +504,7 @@ namespace cs303
 
     void Editor::togglePlay()
     {
-        processor.setPlaying(! processor.isPlaying());
+        processor.setPlaying(! (processor.isPlaying() || processor.countingIn())); // Stop calls off a count-in (D361)
     }
 
     void Editor::setModsOpen(bool open)
@@ -612,8 +618,15 @@ namespace cs303
         lastPattern = pattern;
         lastQueued = queued;
         lastSounding = sounding;
+        // the beat sync's (D361): the SYNC key's count, the tempo's SYNC, the Play key lit while counting in
+        const int syncShown = (processor.beatSyncOn() ? 1 + processor.syncPeers() : 0) * 4 + (processor.countingIn() ? 2 : 0) + (processor.isFollowingSync() ? 1 : 0);
         static int frame = 0;
-        if (++frame % 15 == 0)
+        if (syncShown != lastSyncShown)
+        {
+            lastSyncShown = syncShown;
+            top->refresh();
+        }
+        else if (++frame % 15 == 0)
             top->repaint();
     }
 }

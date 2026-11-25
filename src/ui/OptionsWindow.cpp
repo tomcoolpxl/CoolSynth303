@@ -169,6 +169,18 @@ namespace cs303::ui
             if (devices != nullptr)
                 buildDevices();
 
+            // The beat sync's Play and Stop (D361), on the MIDI page: lit while shared with the session.
+            sharing.setComponentID("syncSharing");
+            sharing.setHelpText("With the beat sync on, Play and Stop here start and stop every app in the session, and theirs this one; off, only the tempo and the beat are shared.");
+            sharing.isOn = [this] { return hooks.syncSharing && hooks.syncSharing(); };
+            sharing.onClick = [this]
+            {
+                if (hooks.chooseSyncSharing && hooks.syncSharing)
+                    hooks.chooseSyncSharing(! hooks.syncSharing());
+                repaint();
+            };
+            addChildComponent(sharing);
+
             // the hint line at the foot (D353): what the row under the mouse does
             hintLine = std::make_unique<HintLine>(true);
             addAndMakeVisible(*hintLine);
@@ -385,7 +397,7 @@ namespace cs303::ui
             switch (pages[static_cast<std::size_t>(i)])
             {
                 case audioPage: return "Audio: the device, its rate and buffer, the accuracy, a test tone.";
-                case midiPage: return "MIDI: the inputs that play the 303, and an output for its notes.";
+                case midiPage: return "MIDI: the inputs that play the 303, an output for its notes, and the beat sync's Play and Stop.";
                 case hostPage: return "Host: the accuracy, in a plugin; the devices are the host's.";
                 case panelPage: return "Panel: the window's size and the theme.";
                 case exportPage: return "Export: a WAV of the pattern shown or the chain.";
@@ -716,6 +728,14 @@ namespace cs303::ui
                     else
                         y += rowHeight + rowGap;
                     row(midiOut, "Output");
+                    if (hooks.syncSharing)
+                    {
+                        // the beat sync's (D361): with it on, a Play or Stop here plays or stops the whole session
+                        labels.push_back({ "Beat sync", y });
+                        sharing.setBounds(x + labelWidth, y + 1, sharingKeyWidth, rowHeight - 2);
+                        sharing.setVisible(true);
+                        y += rowHeight + rowGap;
+                    }
                     break;
                 }
                 case hostPage:
@@ -979,6 +999,8 @@ namespace cs303::ui
         std::unique_ptr<HintWatcher> hintWatcher;
         Picker driver, output, rate, buffer, midiOut, windowSize, theme;
         Key controlPanel { "Control panel", false }, testTone { "Test tone", false };
+        Key sharing { "Share Play and Stop", false }; // the beat sync's (D361), the standalone's
+        static constexpr int sharingKeyWidth = 170;
         std::array<std::unique_ptr<Key>, 2> accuracyKeys;
         InputList inputList;
         juce::Viewport inputView;

@@ -105,6 +105,7 @@ namespace cs303
         void layOut();
 
         [[nodiscard]] juce::Component& board() noexcept { return *boardHolder; }
+        [[nodiscard]] ui::TopBar& topBarForTesting() noexcept { return *top; }
         /** What the hint line shows with the mouse at a place on the board (D353). */
         [[nodiscard]] juce::String hintAt(juce::Point<int> onBoard);
 
@@ -130,7 +131,7 @@ namespace cs303
         void stopAudition();
         void beginAudition();
         std::uint32_t lastEdits = 0;
-        int lastStep = -2, lastPattern = -1, lastQueued = -2, lastSounding = -2;
+        int lastStep = -2, lastPattern = -1, lastQueued = -2, lastSounding = -2, lastSyncShown = -1;
         bool lastPlaying = false;
         Panel shownPanel {};     // the panel's values as the knobs last drew them
         bool panelShown = false;

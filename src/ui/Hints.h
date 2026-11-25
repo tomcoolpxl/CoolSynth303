@@ -53,6 +53,7 @@ namespace cs303::ui
             { "key:Init", "The sound back to its defaults: every knob and switch, the Devil Fish off, the trimmers stock. The patterns stay. One undo step." },
             { "key:Play", "Start or stop the sequencer. Space does the same." },
             { "key:Tap", "Tap in time to set the tempo." },
+            { "key:Sync", "The beat sync: the tempo, the beat, Play and Stop shared with the other apps on this network that have it; the number counts them. Click to switch it on or off." },
             { "key:Rec", "Record knob moves into the pattern while it plays." },
             { "key:Lid", "Under the Lid: the TB-303's circuit, live as it plays." },
             { "key:Mods", "The trimmers inside the case, and the Devil Fish mod." },

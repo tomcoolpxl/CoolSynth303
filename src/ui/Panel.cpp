@@ -40,9 +40,19 @@ namespace cs303::ui
         init = &add("Init"); // the sound back to its defaults, the patterns kept (CoolSynth's D353)
         init->onClick = [&p = p] { p.edit([](Project& pr) { pr.panel = Panel {}; }); };
         play = &add("Play");
-        play->textOf = [&p = p] { return juce::String(p.isPlaying() ? "Stop" : "Play"); };
-        play->isOn = [&p = p] { return p.isPlaying(); };
+        // lit too while a start waits for the beat sync's next bar line (D361); Stop then calls it off
+        play->textOf = [&p = p] { return juce::String(p.isPlaying() || p.countingIn() ? "Stop" : "Play"); };
+        play->isOn = [&p = p] { return p.isPlaying() || p.countingIn(); };
         play->onClick = [this] { editor.togglePlay(); };
+        // The beat sync, the standalone's (D361): its lens lit while on, the other peers counted on it; a click
+        // switches it.
+        if (p.hasBeatSync())
+        {
+            syncKey = &add("Sync");
+            syncKey->isOn = [&p = p] { return p.beatSyncOn(); };
+            syncKey->textOf = [&p = p] { return syncKeyText(p.syncPeers()); };
+            syncKey->onClick = [this, &p = p] { p.setBeatSyncOn(! p.beatSyncOn()); refresh(); };
+        }
         tapKey = &add("Tap");
         tapKey->onClick = [this] { tap(); };
         rec = &add("Rec");
@@ -67,7 +77,8 @@ namespace cs303::ui
         const int y = 8, h = 26;
         int x = 60;
         keys[0]->setBounds(x, y, 30, h);
-        nameBox = { x + 36, y, 210, h };
+        // the SYNC key's room (D361) taken from the name's display, which elides a long name
+        nameBox = { x + 36, y, syncKey != nullptr ? 210 - syncRoom : 210, h };
         x = nameBox.getRight() + 6;
         keys[1]->setBounds(x, y, 30, h);
         x += 40;
@@ -88,6 +99,11 @@ namespace cs303::ui
         r -= 58;
         tapKey->setBounds(r - 50, y, 50, h);
         r -= 58;
+        if (syncKey != nullptr)
+        {
+            syncKey->setBounds(r - syncWidth, y, syncWidth, h); // beside the tempo it shares
+            r -= syncRoom;
+        }
         tempoBox = { r - 104, y, 104, h };
         r -= 112;
         play->setBounds(r - 64, y, 64, h);
@@ -111,9 +127,10 @@ namespace cs303::ui
         g.setFont(bodyFont(12.5f));
         shapedText(g, name, nameBox.reduced(8, 0), juce::Justification::centred, true);
 
-        // following an incoming MIDI clock, its tempo, named so
+        // following an incoming MIDI clock, a host or the beat sync with other peers (D361), its tempo, named so
         const bool byHost = editor.processor.isFollowingHost();
-        const bool byClock = byHost || editor.processor.isFollowingClock();
+        const bool bySync = editor.processor.isFollowingSync();
+        const bool byClock = byHost || bySync || editor.processor.isFollowingClock();
         drawDisplay(g, tempoBox.toFloat().expanded(2.0f, 0.0f));
         const auto figures = juce::String(byClock ? editor.processor.tempoNow() : proj.bpm, 1);
         g.setFont(fontOf(Face::monoBold, 19.0f));
@@ -123,7 +140,7 @@ namespace cs303::ui
         shapedText(g, figures, tempoBox.withTrimmedRight(40), juce::Justification::centredRight, false);
         g.setColour(byClock ? colour::amber : juce::Colour(0xff8a7a68));
         g.setFont(labelFont(10.5f));
-        shapedText(g, byHost ? "HOST" : byClock ? "CLOCK" : "BPM", tempoBox.withTrimmedLeft(68), juce::Justification::centredLeft, false);
+        shapedText(g, byHost ? "HOST" : bySync ? "SYNC" : byClock ? "CLOCK" : "BPM", tempoBox.withTrimmedLeft(68), juce::Justification::centredLeft, false);
         if (! hover.area.isEmpty())
         {
             g.setColour(colour::amber.withAlpha(0.45f)); // the tempo can be dragged: its display outlined under the mouse
@@ -143,7 +160,9 @@ namespace cs303::ui
         if (nameBox.contains(p))
             return "The project's name, the pattern you edit (A or B) and its name.";
         if (tempoBox.contains(p))
-            return "The tempo: drag up or down (Shift for fine), wheel, double-click for 128.";
+            return editor.processor.isFollowingSync()
+                       ? "The tempo, shared by the beat sync: drag up or down (Shift for fine), wheel, double-click for 128; every app in the session follows."
+                       : "The tempo: drag up or down (Shift for fine), wheel, double-click for 128.";
         if (juce::Rectangle<int>(play->getX() - 74, 8, 64, 26).contains(p))
             return "How much of the audio thread's time the sound takes.";
         return {};
@@ -151,7 +170,8 @@ namespace cs303::ui
 
     void TopBar::mouseDown(const juce::MouseEvent& e)
     {
-        dragStartBpm = editor.processor.project().bpm;
+        // from the tempo shown: with the sync's peers, the session's (D361)
+        dragStartBpm = editor.processor.isFollowingSync() ? editor.processor.tempoNow() : editor.processor.project().bpm;
         if (tempoBox.contains(e.getPosition()) && e.getNumberOfClicks() == 2)
             editor.processor.edit([](Project& p) { p.bpm = 128.0; }, true);
     }

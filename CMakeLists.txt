@@ -107,6 +107,7 @@ if(BUILD_TESTING)
             tests/LibraryTests.cpp
             tests/OptionsTests.cpp
             tests/ExportTests.cpp
+            tests/BeatSyncTests.cpp
             ${COOLSYNTH303_SOURCES})
     target_include_directories(CoolSynth303Tests PRIVATE src tests)
     target_compile_features(CoolSynth303Tests PUBLIC cxx_std_20)

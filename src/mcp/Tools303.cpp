@@ -31,7 +31,23 @@ namespace cs303
             auto* o = new juce::DynamicObject();
             o->setProperty("panel", project["panel"]);
             o->setProperty("bpm", project["bpm"]);
+            // The transport as the audio thread runs it, whoever leads (D359's aside): its own Play, an incoming MIDI
+            // clock, a DAW or the beat sync; the tempo it plays at.
             o->setProperty("playing", p.isPlaying());
+            o->setProperty("leads", p.isFollowingSync() ? "sync" : p.isFollowingHost() ? "host" : p.isFollowingClock() ? "clock" : "panel");
+            o->setProperty("tempoNow", p.tempoNow());
+            if (p.hasBeatSync())
+            {
+                // the beat sync (D361): on, the other peers in its session, Play and Stop shared, leading the beat
+                auto* sync = new juce::DynamicObject();
+                sync->setProperty("on", p.beatSyncOn());
+                sync->setProperty("peers", p.syncPeers());
+                sync->setProperty("sharing", p.startStopSharing());
+                sync->setProperty("leads", p.isFollowingSync());
+                sync->setProperty("countingIn", p.countingIn());
+                sync->setProperty("tempoNow", p.tempoNow());
+                o->setProperty("sync", juce::var(sync));
+            }
             o->setProperty("pattern", p.playingPattern() + 1);
             o->setProperty("variation", p.playingVariationB() ? "B" : "A");
             o->setProperty("devilFishPlaying", p.isDevilFishPlaying());
@@ -58,13 +74,17 @@ namespace cs303
                           "the Mods panel's trimmers (tm3, tm4, tm5, c11 in uF) and the Devil Fish (devilFish on or off, "
                           "overdrive, slideTime, softAttack, normalDecay, accentDecay, tracking, filterFm 0..1; sweepSpeed "
                           "0 fast 1 normal 2 slow, accentSweep 2 stock 1 high res 0 off, muffler 0 off 1 soft 2 hard); the "
-                          "tempo, whether it plays, the pattern, and the output's level now.",
+                          "tempo, whether the sequencer plays now and who leads it (panel, clock, host or sync) at what "
+                          "tempo, the beat sync in the app (on, other peers, Play and Stop shared, whether it leads, "
+                          "counting in to the next bar line, the tempo heard), the pattern, and the output's level now.",
                           objectSchema({}),
                           [&processor = processor](const juce::var&) { return textResult(juce::JSON::toString(describe(processor), false)); } });
 
         tools.push_back({ "set_values",
                           "Sets panel values by the names get_sound gives (as the knobs and switches would), and bpm; "
-                          "anything out of range is held to its range. One undo step. Answers with the panel afterwards.",
+                          "anything out of range is held to its range. One undo step. sync and syncSharing (true or false) "
+                          "switch the app's beat sync and its shared Play and Stop, as the SYNC key and Options do. Answers "
+                          "with the panel afterwards.",
                           objectSchema({ { "values", typeSchema("object", "e.g. {\"cutoff\": 0.3, \"devilFish\": true, \"muffler\": 1, \"bpm\": 125}") } },
                                        { "values" }),
                           [&processor = processor](const juce::var& args)
@@ -75,23 +95,39 @@ namespace cs303
                               auto whole = toVar(processor.project());
                               auto* panel = whole["panel"].getDynamicObject();
                               juce::StringArray unknown;
+                              int sync = -1, sharing = -1, edits = 0;
                               for (const auto& nv : values->getProperties())
                               {
                                   if (nv.name.toString() == "bpm")
+                                  {
                                       whole.getDynamicObject()->setProperty("bpm", nv.value);
+                                      ++edits;
+                                  }
+                                  else if (nv.name.toString() == "sync" && processor.hasBeatSync())
+                                      sync = static_cast<bool>(nv.value) ? 1 : 0; // as the SYNC key (D361)
+                                  else if (nv.name.toString() == "syncSharing" && processor.hasBeatSync())
+                                      sharing = static_cast<bool>(nv.value) ? 1 : 0; // as Options' switch
                                   else if (panel != nullptr && panel->hasProperty(nv.name))
+                                  {
                                       panel->setProperty(nv.name, nv.value);
+                                      ++edits;
+                                  }
                                   else
                                       unknown.add(nv.name.toString());
                               }
                               if (! unknown.isEmpty())
                                   return textResult("Not on the panel: " + unknown.joinIntoString(", "), true);
+                              if (sync >= 0)
+                                  processor.setBeatSyncOn(sync == 1);
+                              if (sharing >= 0)
+                                  processor.setStartStopSharing(sharing == 1);
                               const auto changed = projectFromVar(whole);
-                              processor.edit([&changed](Project& p)
-                              {
-                                  p.panel = changed.panel;
-                                  p.bpm = changed.bpm;
-                              });
+                              if (edits > 0)
+                                  processor.edit([&changed](Project& p)
+                                  {
+                                      p.panel = changed.panel;
+                                      p.bpm = changed.bpm;
+                                  });
                               return textResult(juce::JSON::toString(describe(processor), false));
                           } });
 

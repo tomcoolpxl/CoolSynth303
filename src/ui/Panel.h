@@ -16,7 +16,7 @@ namespace cs303
 namespace cs303::ui
 {
     /** The top bar: the pattern's name between two arrows, New, Open, Save, Library, Options; the transport, the
-        tempo, Tap, Rec. */
+        tempo, SYNC in the standalone (the beat sync, D361), Tap, Rec. */
     class TopBar final : public juce::Component, public HintSource
     {
     public:
@@ -30,12 +30,17 @@ namespace cs303::ui
         void mouseMove(const juce::MouseEvent& e) override { hover.moveTo(*this, tempoBox.contains(e.getPosition()) ? tempoBox.expanded(2, 0) : juce::Rectangle<int>()); }
         void mouseExit(const juce::MouseEvent&) override { hover.moveTo(*this, {}); }
         void refresh();
+        /** The SYNC key (the beat sync, D361), the standalone's; null elsewhere. */
+        [[nodiscard]] Key* syncKeyForTesting() const noexcept { return syncKey; }
+        [[nodiscard]] Key& playKeyForTesting() const noexcept { return *play; }
 
     private:
         Editor& editor;
         HoverPlace hover;
         std::vector<std::unique_ptr<Key>> keys;
         Key *prev = nullptr, *next = nullptr, *play = nullptr, *rec = nullptr, *mods = nullptr, *lid = nullptr, *library = nullptr, *tapKey = nullptr, *options = nullptr, *init = nullptr;
+        Key* syncKey = nullptr;
+        static constexpr int syncWidth = 62, syncRoom = syncWidth + 8;
         juce::Rectangle<int> nameBox, tempoBox;
         double dragStartBpm = 0.0;
         std::vector<double> taps;
