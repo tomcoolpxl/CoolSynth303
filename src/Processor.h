@@ -192,6 +192,7 @@ namespace cs303
         // the MCP server (message thread); stopped first when the processor goes
         std::shared_ptr<std::atomic<bool>> alive = std::make_shared<std::atomic<bool>>(true);
         std::unique_ptr<coolsynth::mcp::Server> mcp;
+        std::unique_ptr<juce::Timer> midiOutKeeper; // the standalone's MIDI output thread kept running
         juce::String mcpStatusText = "Off";
         std::vector<float> captureBuffer;
         std::atomic<bool> captureArmed { false };

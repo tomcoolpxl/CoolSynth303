@@ -25,8 +25,28 @@ namespace cs303
                 file->saveIfNeeded();
         }
     }
+
+    namespace
+    {
+        class MidiOutKeeper final : public juce::Timer
+        {
+        public:
+            MidiOutKeeper() { startTimer(500); }
+
+            void timerCallback() override
+            {
+                if (auto* holder = juce::StandalonePluginHolder::getInstance())
+                    if (auto* out = holder->deviceManager.getDefaultMidiOutput())
+                        if (! out->isBackgroundThreadRunning())
+                            out->startBackgroundThread();
+            }
+        };
+    }
+
+    std::unique_ptr<juce::Timer> makeStandaloneMidiOutKeeper() { return std::make_unique<MidiOutKeeper>(); }
 #else
     juce::AudioDeviceManager* standaloneDeviceManager() { return nullptr; }
     void saveStandaloneDeviceState() {}
+    std::unique_ptr<juce::Timer> makeStandaloneMidiOutKeeper() { return {}; }
 #endif
 }

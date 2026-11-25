@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "Editor.h"
+#include "StandaloneDevices.h"
 #include "mcp/Tools303.h"
 #include "synth/GlobalDelay.h"
 #include "synth/HalfBand2x.h"
@@ -72,6 +73,7 @@ namespace cs303
             juce::SystemStats::setApplicationCrashHandler(writeCrashStack);
             if (juce::SystemStats::getEnvironmentVariable("COOLSYNTH303_NO_MCP", {}).isEmpty())
                 startMcpServer();
+            midiOutKeeper = makeStandaloneMidiOutKeeper(); // MIDI clock out at its own samples, as the 808's
         }
     }
 
