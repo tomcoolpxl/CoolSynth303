@@ -97,6 +97,7 @@ if(BUILD_TESTING)
     target_sources(CoolSynth303Tests
         PRIVATE
             tests/TestMain.cpp
+    tests/ClockFollowerTests.cpp
             tests/PatternTests.cpp
             tests/SequencerTests.cpp
             tests/ProcessorTests.cpp

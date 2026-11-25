@@ -189,6 +189,7 @@ namespace cs303
         drive->prepare(voiceRate, block, memory);
         delay->prepare(hostRate, block, 2);
         clock.prepare(hostRate);
+        clock.setBlockLate(wrapperType == wrapperType_Standalone); // the standalone's MIDI comes a block late (D359)
         samplesSoFar = 0;
         playingByClock = endedUnderClock = false;
         sequencer.reset();
