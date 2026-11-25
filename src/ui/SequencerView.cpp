@@ -103,6 +103,7 @@ namespace cs303::ui
         length->onClick = [this] { editor.editPatternWith([](Pattern& pat) { pat.length = pat.length == 16 ? 12 : pat.length == 12 ? 8 : 16; }); };
         length->onWheel = [this](int d) { editor.editPatternWith([d](Pattern& pat) { pat.length = juce::jlimit(1, 16, pat.length + d); }); };
         length->onRightClick = [this] { editor.editPatternWith([](Pattern& pat) { pat.length = 16; }); };
+        length->setHelpText("The pattern's length: click for 16, 12 or 8 steps, wheel for any, right-click for 16.");
         length->setBounds(1114, rowY, 72, 26);
         addAndMakeVisible(*length);
     }
@@ -199,7 +200,48 @@ namespace cs303::ui
         g.setColour(colour::rowName);
         g.setFont(labelFont(13.0f));
         shapedText(g, "+", addBounds(), juce::Justification::centred, false);
-        drawKey(g, loopBounds().toFloat().withTrimmedBottom(1.0f), "Loop", proj.loop, true);
+        drawKey(g, loopBounds().toFloat().withTrimmedBottom(1.0f), "Loop", proj.loop, true, true, false, hover.area == loopBounds());
+        if (! hover.area.isEmpty() && hover.area != loopBounds())
+            drawHover(g, hover.area.toFloat());
+    }
+
+    void PatternRow::mouseMove(const juce::MouseEvent& e)
+    {
+        const auto p = e.getPosition();
+        juce::Rectangle<int> at;
+        for (int i = 0; i < 16 && at.isEmpty(); ++i)
+            if (slotBounds(i).contains(p))
+                at = slotBounds(i);
+        for (const bool b : { false, true })
+            if (variationBounds(b).contains(p))
+                at = variationBounds(b);
+        for (int i = 0; i < shownChain(); ++i)
+            if (chainBounds(i).contains(p))
+                at = chainBounds(i);
+        for (const auto r : { chainLabelBounds(), addBounds(), loopBounds() })
+            if (r.contains(p))
+                at = r;
+        hover.moveTo(*this, at);
+    }
+
+    juce::String PatternRow::hintAt(juce::Point<int> p) const
+    {
+        for (int i = 0; i < 16; ++i)
+            if (slotBounds(i).contains(p))
+                return "Pattern " + two(i) + ": click to edit it (while playing, it comes in next). Right-click to copy, paste, clear or rename.";
+        for (const bool b : { false, true })
+            if (variationBounds(b).contains(p))
+                return juce::String("Variation ") + (b ? "B" : "A") + " of the pattern: each pattern has two.";
+        if (chainLabelBounds().contains(p))
+            return "Chain on: the chain's patterns play in turn; off, the pattern you edit loops.";
+        for (int i = 0; i < shownChain(); ++i)
+            if (chainBounds(i).contains(p))
+                return "In the chain: click to edit this pattern, Shift-click or wheel for its repeats, right-click to take it out.";
+        if (addBounds().contains(p))
+            return "Add the pattern you edit to the end of the chain.";
+        if (loopBounds().contains(p))
+            return "Loop: the chain plays round; off, once through and then it stops.";
+        return {};
     }
 
     void PatternRow::mouseDown(const juce::MouseEvent& e)
@@ -337,7 +379,9 @@ namespace cs303::ui
             const auto what = editor.mutateWhat;
             editor.editPatternWith([=](Pattern& pat) { mutate(pat, seed, scale, root, what); });
         };
-        button(juce::String::charToString(0x25be), { 110, 56, 28, 28 }).onClick = [this] {
+        auto& what = button(juce::String::charToString(0x25be), { 110, 56, 28, 28 });
+        what.setHelpText("What Mutate may change: notes, accents, slides, rests and ties.");
+        what.onClick = [this] {
             juce::PopupMenu m;
             m.addSectionHeader("Mutate may change");
             auto& w = editor.mutateWhat;
@@ -349,11 +393,13 @@ namespace cs303::ui
         };
         labels.push_back({ "KEY", { 12, 104, 126, 16 } });
         auto& root = box({ 12, 122, 34, 24 });
+        root.setHelpText("The key's root, for Generate, Mutate and Snap to key. Click, right-click or wheel.");
         root.text = [&p = p] { return juce::String(letters[p.project().root]); };
         root.onClick = [&p = p] { p.edit([](Project& pr) { pr.root = (pr.root + 1) % 12; }, false); };
         root.onRightClick = [&p = p] { p.edit([](Project& pr) { pr.root = (pr.root + 11) % 12; }, false); };
         root.onWheel = [&p = p](int d) { p.edit([d](Project& pr) { pr.root = (pr.root + 12 + d) % 12; }, false); };
         auto& scale = box({ 50, 122, 88, 24 });
+        scale.setHelpText("The key's scale. Click, right-click or wheel.");
         scale.text = [&p = p] { return juce::String(scaleName(p.project().scale)); };
         const auto nextScale = [&p = p](int d) {
             p.edit([d](Project& pr) { pr.scale = static_cast<Scale>((static_cast<int>(pr.scale) + d + static_cast<int>(Scale::count)) % static_cast<int>(Scale::count)); }, false);
@@ -368,11 +414,15 @@ namespace cs303::ui
             editor.editPatternWith([=](Pattern& pat) { snapToKey(pat, sc, r); });
         };
         labels.push_back({ "MOVE", { 12, 200, 50, 28 } });
-        button(juce::String::charToString(0x25c0), { 66, 200, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, -1); }); };
-        button(juce::String::charToString(0x25b6), { 104, 200, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, 1); }); };
+        button(juce::String::charToString(0x25c0), { 66, 200, 34, 28 }).setHelpText("Move the whole pattern a step earlier.");
+        static_cast<Key&>(*parts.back()).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, -1); }); };
+        button(juce::String::charToString(0x25b6), { 104, 200, 34, 28 }).setHelpText("Move the whole pattern a step later.");
+        static_cast<Key&>(*parts.back()).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, 1); }); };
         labels.push_back({ "PITCH", { 12, 236, 50, 28 } });
-        button(juce::String::charToString(0x2212), { 66, 236, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, -1); }); };
-        button("+", { 104, 236, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, 1); }); };
+        button(juce::String::charToString(0x2212), { 66, 236, 34, 28 }).setHelpText("Every note of the pattern a semitone down.");
+        static_cast<Key&>(*parts.back()).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, -1); }); };
+        button("+", { 104, 236, 34, 28 }).setHelpText("Every note of the pattern a semitone up.");
+        static_cast<Key&>(*parts.back()).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, 1); }); };
     }
 
     Key& ToolRow::button(const juce::String& text, juce::Rectangle<int> place, bool hot)
@@ -649,6 +699,40 @@ namespace cs303::ui
                 }
             }
         }
+        if (! hover.area.isEmpty())
+            drawHover(g, hover.area.toFloat());
+    }
+
+    void StepGrid::mouseMove(const juce::MouseEvent& e)
+    {
+        const auto row = rowAt(e.position.y);
+        const int i = e.position.x >= static_cast<float>(labelWidth) ? columnAt(e.position.x) : -1;
+        hover.moveTo(*this, i >= 0 && row != Row::none && row != Row::lights && row != Row::names ? cell(row, i).toNearestInt() : juce::Rectangle<int>());
+    }
+
+    juce::String StepGrid::hintAt(juce::Point<int> p) const
+    {
+        const auto pos = p.toFloat();
+        const auto row = rowAt(pos.y);
+        if (pos.x < static_cast<float>(labelWidth))
+            return row == Row::motion ? "Which knob's recorded moves the lane below shows: click for the next, right-click for the one before." : juce::String();
+        const int i = columnAt(pos.x);
+        if (i < 0)
+            return {};
+        const auto n = "Step " + juce::String(i + 1);
+        switch (row)
+        {
+            case Row::lights:
+            case Row::names: return n + ": its note. The lamp lights while it plays.";
+            case Row::pitch: return n + "'s note: drag up or down, or wheel. Click picks the step; right-click for more.";
+            case Row::octave: return n + "'s octave: click for up, down or as written.";
+            case Row::accent: return n + "'s accent: louder, brighter, a shorter decay. Click to switch.";
+            case Row::slide: return n + "'s slide into the next step. Click to switch.";
+            case Row::gate: return n + "'s gate: a note, a tie (the note before holds on) or a rest. Click to change.";
+            case Row::motion: return "The " + juce::String(knobName(editor.motionKnob)).toLowerCase() + "'s recorded move on " + n.toLowerCase() + ": draw it; right-click to clear.";
+            case Row::none: break;
+        }
+        return {};
     }
 
     void StepGrid::repaintStep(int step)
@@ -798,6 +882,7 @@ namespace cs303::ui
             const auto [which, name] = lockable[j];
             const auto i = static_cast<size_t>(which);
             auto k = std::make_unique<Knob>(name, 28.0f);
+            k->setHelpText("Hold " + juce::String(name).toLowerCase() + " at this value on the picked step only; the panel's knob sets the other steps." + juce::String(knobHelp));
             k->showRange = false;
             k->accentRim = which == Knob_t::accent;
             k->get = [this, &p = p, i] {
@@ -881,6 +966,26 @@ namespace cs303::ui
             g.setFont(labelFont(10.5f));
             shapedText(g, l ? "LINE" : "LOCKS", r, juce::Justification::centred, false);
         }
+        if (! hover.area.isEmpty())
+            drawHover(g, hover.area.toFloat());
+    }
+
+    void InspectorColumn::mouseMove(const juce::MouseEvent& e)
+    {
+        juce::Rectangle<int> at;
+        for (const bool l : { false, true })
+            if (tabBounds(l).contains(e.getPosition()))
+                at = tabBounds(l);
+        hover.moveTo(*this, at);
+    }
+
+    juce::String InspectorColumn::hintAt(juce::Point<int> p) const
+    {
+        if (tabBounds(false).contains(p))
+            return "Locks: knob settings that hold on the picked step only.";
+        if (tabBounds(true).contains(p))
+            return "Line: tools that change the whole pattern.";
+        return {};
     }
 
     void InspectorColumn::mouseDown(const juce::MouseEvent& e)
@@ -922,6 +1027,7 @@ namespace cs303::ui
         redo->onClick = [this, &p = p] { p.redo(); editor.refreshAll(); };
         redo->setBounds(1036, 1, 56, 21);
         auto midi = std::make_unique<MidiKey>(editor);
+        midi->setHelpText("Drag the pattern into your DAW as a MIDI file, or click to save it as one.");
         midi->setBounds(1100, 1, 98, 21);
         for (auto* k : { static_cast<juce::Component*>(undo.get()), static_cast<juce::Component*>(redo.get()), static_cast<juce::Component*>(midi.get()) })
             addAndMakeVisible(*k);

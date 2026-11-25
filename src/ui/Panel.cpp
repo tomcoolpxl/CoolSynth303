@@ -6,6 +6,7 @@
 #include "Editor.h"
 #include "Processor.h"
 #include "ui/Theme.h"
+#include "ui/Hints.h"
 
 namespace cs303::ui
 {
@@ -120,6 +121,11 @@ namespace cs303::ui
         g.setColour(byClock ? colour::amber : juce::Colour(0xff8a7a68));
         g.setFont(labelFont(10.5f));
         shapedText(g, byHost ? "HOST" : byClock ? "CLOCK" : "BPM", tempoBox.withTrimmedLeft(68), juce::Justification::centredLeft, false);
+        if (! hover.area.isEmpty())
+        {
+            g.setColour(colour::amber.withAlpha(0.45f)); // the tempo can be dragged: its display outlined under the mouse
+            g.drawRoundedRectangle(hover.area.toFloat().reduced(0.5f), 4.0f, 1.0f);
+        }
 
         // the audio thread's share of its time, small, at the far left of the transport
         const float load = editor.processor.load();
@@ -127,6 +133,17 @@ namespace cs303::ui
         g.setFont(monoFont(9.5f));
         shapedText(g, "DSP " + juce::String(juce::roundToInt(load * 100.0f)) + "%", juce::Rectangle<int>(play->getX() - 74, 8, 64, 26),
                    juce::Justification::centredRight, false);
+    }
+
+    juce::String TopBar::hintAt(juce::Point<int> p) const
+    {
+        if (nameBox.contains(p))
+            return "The project's name, the pattern you edit (A or B) and its name.";
+        if (tempoBox.contains(p))
+            return "The tempo: drag up or down (Shift for fine), wheel, double-click for 128.";
+        if (juce::Rectangle<int>(play->getX() - 74, 8, 64, 26).contains(p))
+            return "How much of the audio thread's time the sound takes.";
+        return {};
     }
 
     void TopBar::mouseDown(const juce::MouseEvent& e)
@@ -255,6 +272,7 @@ namespace cs303::ui
             x += 76;
         }
         auto stockKey = std::make_unique<Key>("Stock", true);
+        stockKey->setHelpText("Set the four trimmers back to where they were fitted.");
         stockKey->onClick = [&p = p] {
             p.edit([](Project& pr) {
                 const Panel s;
@@ -350,6 +368,7 @@ namespace cs303::ui
         const auto fishOn = [&p = p] { return p.project().panel.devilFish; };
 
         auto onKey = std::make_unique<Key>("On", true);
+        onKey->setHelpText("Devil Fish on: Robin Whittle's mod with these controls; off, the stock TB-303.");
         onKey->isOn = fishOn;
         onKey->onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.devilFish = !pr.panel.devilFish; }); };
         onKey->setBounds(fishX + 14, faceTop + 22, 58, 24 + Key::lampRoom);
@@ -357,6 +376,7 @@ namespace cs303::ui
         parts.push_back(std::move(onKey));
 
         auto accent = std::make_unique<AccentButton>(p);
+        accent->setHelpText("Devil Fish: hold to accent every note while it is held.");
         accent->enabled = fishOn;
         accent->setBounds(fishX + 10, faceTop + 68, 66, 58); // under On
         addAndMakeVisible(*accent);
@@ -447,6 +467,7 @@ namespace cs303::ui
         }
 
         auto fishStock = std::make_unique<Key>("Stock", true);
+        fishStock->setHelpText("Set the Devil Fish's controls where it sounds most like a TB-303.");
         fishStock->onClick = [&p = p] {
             p.edit([](Project& pr) {
                 const Panel s;
@@ -575,6 +596,7 @@ namespace cs303::ui
         // the drive
         {
             auto& on = key("On", 804, 18, 120, 0);
+            on.setHelpText("Switch the drive on or off.");
             on.isOn = [&p = p] { return p.project().panel.driveOn; };
             on.onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.driveOn = ! pr.panel.driveOn; }); };
             plainKnob(knob("Amount", 40.0f, 804, 16, 44), &Panel::drive);
@@ -583,6 +605,7 @@ namespace cs303::ui
         // the delay
         {
             auto& on = key("On", 996, 14, 120, 0);
+            on.setHelpText("Switch the delay on or off.");
             on.isOn = [&p = p] { return p.project().panel.delayOn; };
             on.onClick = [&p = p] { p.edit([](Project& pr) { pr.panel.delayOn = ! pr.panel.delayOn; }); };
             auto& time = knob("Time", 40.0f, 996, 10, 44);

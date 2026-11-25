@@ -1,6 +1,7 @@
 #include "ui/Widgets.h"
 
 #include "ui/Theme.h"
+#include "ui/Hints.h"
 
 #include <vector>
 
@@ -14,7 +15,11 @@ namespace cs303::ui
     }
 
     // ---------------------------------------------------------------- Knob
-    Knob::Knob(juce::String n, float d) : name(std::move(n)), size(d) {}
+    Knob::Knob(juce::String n, float d) : name(std::move(n)), size(d)
+    {
+        setHelpText(hintFor("knob:" + name));
+        setRepaintsOnMouseActivity(true); // its track and name light under the mouse
+    }
 
     juce::Rectangle<int> Knob::preferredBounds(int x, int y) const
     {
@@ -121,7 +126,7 @@ namespace cs303::ui
             track.addCentredArc(c.x, c.y, ar, ar, 0.0f, start, start + sweep, true);
             g.setColour(juce::Colours::white.withAlpha(0.06f));
             g.strokePath(track, juce::PathStrokeType(1.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded), juce::AffineTransform::translation(0.0f, 1.5f));
-            g.setColour(juce::Colour(0xff0a0a0b));
+            g.setColour(isMouseOver(true) ? juce::Colour(0xff3a3c41) : juce::Colour(0xff0a0a0b));
             g.strokePath(track, juce::PathStrokeType(3.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
             if (shown > 0.005f)
             {
@@ -162,7 +167,7 @@ namespace cs303::ui
             const auto nameFont = labelFont(11.0f);
             const auto text = name.toUpperCase();
             g.setFont(nameFont);
-            g.setColour(colour::label);
+            g.setColour(isMouseOver(true) ? juce::Colours::white : colour::label);
             if (! valueText)
                 shapedText(g, text, line, juce::Justification::centred, false);
             else
@@ -235,7 +240,11 @@ namespace cs303::ui
     }
 
     // ---------------------------------------------------------------- Key
-    Key::Key(juce::String t, bool hasLamp) : lamp(hasLamp), text(std::move(t)) {}
+    Key::Key(juce::String t, bool hasLamp) : lamp(hasLamp), text(std::move(t))
+    {
+        setHelpText(hintFor("key:" + text));
+        setRepaintsOnMouseActivity(true); // the cap lights under the mouse, darkens held
+    }
 
     void Key::paint(juce::Graphics& g)
     {
@@ -245,7 +254,7 @@ namespace cs303::ui
         area = area.reduced(1.0f, 0.0f).withTrimmedBottom(2.0f); // room for the cap's edge and its shadow
         const bool on = isOn && isOn();
         const bool lens = isOn != nullptr; // a key that can be on carries a lens
-        drawKey(g, area, glyph != 0 ? juce::String() : textOf ? textOf() : text, on, lens && glyph == 0, ! enabled || enabled(), hot);
+        drawKey(g, area, glyph != 0 ? juce::String() : textOf ? textOf() : text, on, lens && glyph == 0, ! enabled || enabled(), hot, isMouseOver(), isMouseButtonDown());
         if (glyph != 0)
         {
             // a waveform drawn on the key, beside its lens
@@ -293,7 +302,11 @@ namespace cs303::ui
     }
 
     // ---------------------------------------------------------------- Fader
-    Fader::Fader(juce::String n) : name(std::move(n)) {}
+    Fader::Fader(juce::String n) : name(std::move(n))
+    {
+        setHelpText(hintFor("fader:" + name));
+        setRepaintsOnMouseActivity(true);
+    }
 
     void Fader::paint(juce::Graphics& g)
     {
@@ -334,7 +347,7 @@ namespace cs303::ui
         g.drawRoundedRectangle(cap, 3.0f, 0.8f);
         g.setColour(colour::orange);
         g.fillRoundedRectangle(cap.getX() + 3.0f, cap.getY() + 7.0f, cap.getWidth() - 6.0f, 2.0f, 1.0f);
-        g.setColour(colour::label);
+        g.setColour(isMouseOver() ? juce::Colours::white : colour::label);
         g.setFont(labelFont(11.0f));
         shapedText(g, name.toUpperCase(), juce::Rectangle<float>(-10.0f, trackH + 6.0f, getWidth() + 20.0f, 14.0f), juce::Justification::centred, false);
     }
@@ -363,6 +376,11 @@ namespace cs303::ui
     void ValueBox::paint(juce::Graphics& g)
     {
         drawWell(g, getLocalBounds().toFloat(), text ? text() : juce::String(), ink);
+        if (isMouseOver())
+        {
+            g.setColour(ink.withAlpha(0.45f));
+            g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 4.0f, 1.0f);
+        }
     }
 
     void ValueBox::mouseDown(const juce::MouseEvent& e)

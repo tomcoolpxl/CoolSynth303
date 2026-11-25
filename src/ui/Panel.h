@@ -5,6 +5,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "ui/Hints.h"
 #include "ui/Widgets.h"
 
 namespace cs303
@@ -16,19 +17,23 @@ namespace cs303::ui
 {
     /** The top bar: the pattern's name between two arrows, New, Open, Save, Library, Options; the transport, the
         tempo, Tap, Rec. */
-    class TopBar final : public juce::Component
+    class TopBar final : public juce::Component, public HintSource
     {
     public:
         explicit TopBar(Editor&);
+        [[nodiscard]] juce::String hintAt(juce::Point<int> local) const override;
         void paint(juce::Graphics&) override;
         void resized() override;
         void mouseDown(const juce::MouseEvent&) override;
         void mouseDrag(const juce::MouseEvent&) override;
         void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
+        void mouseMove(const juce::MouseEvent& e) override { hover.moveTo(*this, tempoBox.contains(e.getPosition()) ? tempoBox.expanded(2, 0) : juce::Rectangle<int>()); }
+        void mouseExit(const juce::MouseEvent&) override { hover.moveTo(*this, {}); }
         void refresh();
 
     private:
         Editor& editor;
+        HoverPlace hover;
         std::vector<std::unique_ptr<Key>> keys;
         Key *prev = nullptr, *next = nullptr, *play = nullptr, *rec = nullptr, *mods = nullptr, *lid = nullptr, *library = nullptr, *tapKey = nullptr, *options = nullptr;
         juce::Rectangle<int> nameBox, tempoBox;

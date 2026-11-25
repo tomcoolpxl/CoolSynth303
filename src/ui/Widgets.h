@@ -98,7 +98,7 @@ namespace cs303::ui
     class ValueBox final : public juce::Component
     {
     public:
-        ValueBox() = default;
+        ValueBox() { setRepaintsOnMouseActivity(true); }
         std::function<juce::String()> text;
         std::function<void()> onClick, onRightClick;
         std::function<void(int)> onWheel; // +1 up, -1 down

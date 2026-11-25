@@ -11,6 +11,7 @@
 #include "ui/SequencerView.h"
 #include "ui/Theme.h"
 #include "ui/WindowLook.h"
+#include "ui/Hints.h"
 
 namespace cs303
 {
@@ -50,6 +51,67 @@ namespace cs303
                     title(juce::Colour(0xffcfcfcb), ui::colour::orange, {});
                 }
             }
+        };
+
+        /** The hint for a place on the board: a painted place's (HintSource), else the nearest component's own hint,
+            walking out from the one under it. */
+        juce::String hintOnBoard(juce::Component& board, juce::Point<int> at)
+        {
+            for (auto* c = board.getComponentAt(at); c != nullptr && c != &board; c = c->getParentComponent())
+            {
+                juce::String t;
+                if (const auto* h = dynamic_cast<const ui::HintSource*>(c))
+                    t = h->hintAt(c->getLocalPoint(&board, at));
+                if (t.isEmpty())
+                    t = c->getHelpText();
+                if (t.isNotEmpty())
+                    return t;
+            }
+            return {};
+        }
+
+        /** The hint line at the panel's foot (D353). */
+        class HintLine final : public juce::Component
+        {
+        public:
+            HintLine() { setInterceptsMouseClicks(false, false); }
+            juce::String text;
+            void paint(juce::Graphics& g) override
+            {
+                g.setFont(ui::bodyFont(12.0f));
+                g.setColour(text.isEmpty() ? ui::colour::dim : ui::colour::hint);
+                ui::shapedText(g, text.isEmpty() ? juce::String("Point at a control to see what it does.") : text, getLocalBounds().toFloat(),
+                               juce::Justification::centredLeft, true);
+            }
+        };
+
+        /** Follows the mouse over the board and puts the hint of what is under it in the line: a painted place's
+            (HintSource), else the nearest component's own hint, walking out from the one under the mouse. */
+        class HintWatcher final : public juce::MouseListener
+        {
+        public:
+            HintWatcher(juce::Component& b, HintLine& l) : board(b), line(l) {}
+            void mouseMove(const juce::MouseEvent& e) override { show(e); }
+            void mouseEnter(const juce::MouseEvent& e) override { show(e); }
+            void mouseUp(const juce::MouseEvent& e) override { show(e); }
+            void mouseExit(const juce::MouseEvent&) override
+            {
+                if (! board.isMouseOver(true))
+                    set({});
+            }
+
+        private:
+            juce::Component& board;
+            HintLine& line;
+            void set(const juce::String& t)
+            {
+                if (t != line.text)
+                {
+                    line.text = t;
+                    line.repaint();
+                }
+            }
+            void show(const juce::MouseEvent& e) { set(hintOnBoard(board, e.getEventRelativeTo(&board).getPosition())); }
         };
 
         // the computer's keys: Z to comma, one octave from the middle C (the piano's key 12)
@@ -97,11 +159,20 @@ namespace cs303
                 fit = juce::jlimit(50, 300, kept) / 100.0f;
         }
         setSize(std::max(640, juce::roundToInt(baseWidth * fit)), std::max(400, juce::roundToInt(baseHeight * fit)));
+        auto line = std::make_unique<HintLine>();
+        line->setBounds(64, 778, 1200, 20);
+        boardHolder->addAndMakeVisible(*line);
+        hintWatcher = std::make_unique<HintWatcher>(*boardHolder, *line);
+        boardHolder->addMouseListener(hintWatcher.get(), true);
+        hintLine = std::move(line);
         startTimerHz(30);
     }
 
+    juce::String Editor::hintAt(juce::Point<int> onBoard) { return hintOnBoard(*boardHolder, onBoard); }
+
     Editor::~Editor()
     {
+        boardHolder->removeMouseListener(hintWatcher.get());
         setLookAndFeel(nullptr);
         stopTimer();
         optionsWindow.reset(); // its hooks point here

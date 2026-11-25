@@ -2,6 +2,8 @@
 // writes pictures of itself, stopped and playing, for a look without opening the app.
 
 #include <algorithm>
+#include <functional>
+#include <typeinfo>
 #include <memory>
 #include <vector>
 #include <tuple>
@@ -213,6 +215,40 @@ namespace
                     logMessage("paint, ms (median of 9): whole " + juce::String(cost(board.getLocalBounds()), 1) + ", the grid "
                                + juce::String(cost(gridArea), 1) + ", a step's key " + juce::String(cost(step), 2) + ", a knob "
                                + juce::String(cost(knobArea), 2));
+                }
+            }
+
+            beginTest("every_control_has_a_hint");
+            {
+                // the hint line (D353): every key, knob, fader and value box says what it does
+                juce::StringArray missing;
+                std::function<void(juce::Component&)> walk = [&](juce::Component& c) {
+                    const bool control = dynamic_cast<ui::Key*>(&c) != nullptr || dynamic_cast<ui::Knob*>(&c) != nullptr
+                                      || dynamic_cast<ui::Fader*>(&c) != nullptr || dynamic_cast<ui::ValueBox*>(&c) != nullptr;
+                    if (control && c.getHelpText().isEmpty())
+                        missing.add(c.getParentComponent() != nullptr ? juce::String(typeid(*c.getParentComponent()).name()) + " at " + c.getBounds().toString() : juce::String("?"));
+                    for (auto* child : c.getChildren())
+                        walk(*child);
+                };
+                walk(e->board());
+                expect(missing.isEmpty(), "no hint: " + missing.joinIntoString("; "));
+                auto* grid = find<ui::StepGrid>(e->board());
+                expect(grid != nullptr);
+                if (grid != nullptr)
+                {
+                    using R = ui::StepGrid::Row;
+                    expect(grid->hintAt(grid->cell(R::accent, 3).getCentre().toInt()).startsWith("Step 4's accent"));
+                    expect(grid->hintAt(grid->cell(R::pitch, 0).getCentre().toInt()).startsWith("Step 1's note"));
+                    // as the line finds them, from a place on the board: a painted place, a key, a knob
+                    auto& board = e->board();
+                    auto* row = find<ui::PatternRow>(board);
+                    auto* knob = find<ui::Knob>(board);
+                    if (row != nullptr && knob != nullptr)
+                    {
+                        expect(e->hintAt(board.getLocalPoint(row, row->slotBounds(4).getCentre())).startsWith("Pattern 05"));
+                        expect(e->hintAt(board.getLocalPoint(knob, knob->getLocalBounds().getCentre())).contains("double-click resets"));
+                        expect(e->hintAt(board.getLocalPoint(grid, grid->cell(R::gate, 2).getCentre().toInt())).startsWith("Step 3's gate"));
+                    }
                 }
             }
 

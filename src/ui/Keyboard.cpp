@@ -70,6 +70,11 @@ namespace cs303::ui
                 }
                 g.setGradientFill(grad);
                 g.fillRoundedRectangle(body, 4.0f);
+                if (k == hovered && ! hit)
+                {
+                    g.setColour(colour::orange.withAlpha(0.14f)); // under the mouse: a warm tint
+                    g.fillRoundedRectangle(body, 4.0f);
+                }
                 g.setColour(juce::Colours::black.withAlpha(0.12f));
                 g.fillRect(body.withTop(body.getBottom() - 3.0f).reduced(2.0f, 0.0f));
                 g.setColour(juce::Colours::black.withAlpha(0.25f));
@@ -94,6 +99,11 @@ namespace cs303::ui
                 }
                 g.setGradientFill(grad);
                 g.fillRoundedRectangle(body, 3.0f);
+                if (k == hovered && ! hit)
+                {
+                    g.setColour(juce::Colours::white.withAlpha(0.16f));
+                    g.fillRoundedRectangle(body, 3.0f);
+                }
                 g.setColour(juce::Colour(0xff050505));
                 g.fillRect(body.withTop(body.getBottom() - 5.0f).reduced(1.0f, 0.0f));
                 g.setColour(juce::Colours::white.withAlpha(0.12f));
@@ -112,6 +122,19 @@ namespace cs303::ui
         for (int k = 0; k < keys; ++k)
             if (! isWhite(k))
                 drawOne(k);
+    }
+
+    juce::String Piano::hintAt(juce::Point<int>) const
+    {
+        return editor.transposeMode ? "Transpose: a key shifts the running pattern; the middle C plays it as written."
+                                    : "Write: a key sets the picked step's note and octave, then moves on. The computer's keys Z to comma play the middle octave.";
+    }
+
+    juce::String KeyboardSection::hintAt(juce::Point<int> p) const
+    {
+        if (juce::Rectangle<int>(12, 26, 84, 22).contains(p))
+            return "The picked step: its number and its note. Pick another in the grid, or with Back and Step.";
+        return {};
     }
 
     void Piano::mouseDown(const juce::MouseEvent& e)
@@ -138,9 +161,11 @@ namespace cs303::ui
     {
         auto& p = editor.processor;
         auto& accent = key("Accent", 12, 38, 84);
+        accent.setHelpText("Accent on the picked step: louder, brighter, a shorter decay.");
         accent.isOn = [this] { return editor.edited().step[static_cast<size_t>(editor.pick)].accent; };
         accent.onClick = [this] { editor.togglePick(true); };
         auto& slide = key("Slide", 12, 66, 84);
+        slide.setHelpText("Slide from the picked step into the next: the pitch glides and the note holds on.");
         slide.isOn = [this] { return editor.edited().step[static_cast<size_t>(editor.pick)].slide; };
         slide.onClick = [this] { editor.togglePick(false); };
 

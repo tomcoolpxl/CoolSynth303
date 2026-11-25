@@ -61,7 +61,10 @@ namespace cs303::ui
         before the name in orange. Returns where the name ends, for the signal path. */
     float drawSection(juce::Graphics& g, juce::Rectangle<float> area, const juce::String& name, juce::Colour background, int number = 0);
     /** A key: a dark cap; with a lens (lit when on) if it has one; hot is the panel's one orange action. */
-    void drawKey(juce::Graphics& g, juce::Rectangle<float> area, const juce::String& text, bool on, bool lens, bool enabled = true, bool hot = false);
+    void drawKey(juce::Graphics& g, juce::Rectangle<float> area, const juce::String& text, bool on, bool lens, bool enabled = true, bool hot = false,
+                 bool hover = false, bool down = false);
+    /** The light over a painted control under the mouse (D353, as the 808's keys light under it). */
+    void drawHover(juce::Graphics& g, juce::Rectangle<float> r, float corner = 3.0f);
     /** A lens in a key, or a lamp on its own: dark red glass, amber and glowing when lit. */
     void drawLens(juce::Graphics& g, juce::Point<float> centre, bool on, float diameter = 6.0f);
     inline void drawLamp(juce::Graphics& g, juce::Point<float> centre, bool on) { drawLens(g, centre, on); }

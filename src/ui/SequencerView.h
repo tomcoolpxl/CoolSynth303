@@ -5,6 +5,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "ui/Hints.h"
 #include "ui/Widgets.h"
 
 namespace cs303
@@ -16,14 +17,17 @@ namespace cs303::ui
 {
     /** The pattern keys 01 to 16 in a bay, A and B in another, the chain (each pattern with its repeats) in a
         display with + and Loop, and the pattern's length (CoolSynth's D350, layout B). */
-    class PatternRow final : public juce::Component
+    class PatternRow final : public juce::Component, public HintSource
     {
     public:
         explicit PatternRow(Editor&);
+        [[nodiscard]] juce::String hintAt(juce::Point<int> local) const override;
         static constexpr int rowY = 3; // the keys' top: the bays reach 3 px above and below them
         void paint(juce::Graphics&) override;
         void mouseDown(const juce::MouseEvent&) override;
         void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
+        void mouseMove(const juce::MouseEvent& e) override;
+        void mouseExit(const juce::MouseEvent&) override { hover.moveTo(*this, {}); }
         [[nodiscard]] juce::Rectangle<int> slotBounds(int i) const;
         [[nodiscard]] juce::Rectangle<int> variationBounds(bool b) const;
         [[nodiscard]] juce::Rectangle<int> chainLabelBounds() const;
@@ -34,6 +38,7 @@ namespace cs303::ui
     private:
         Editor& editor;
         static constexpr int maxShown = 4;
+        HoverPlace hover;
         std::unique_ptr<ValueBox> length;
         /** How many of the chain's entries are drawn: all if they fit, else one fewer and a count of the rest. */
         [[nodiscard]] int shownChain() const;
@@ -60,15 +65,18 @@ namespace cs303::ui
 
     /** The step grid: the step lights, each step's note, the pitch lane with the notes down its edge, the rows for
         octave, accent, slide and gate, and one knob's recorded moves. */
-    class StepGrid final : public juce::Component
+    class StepGrid final : public juce::Component, public HintSource
     {
     public:
         explicit StepGrid(Editor&);
+        [[nodiscard]] juce::String hintAt(juce::Point<int> local) const override;
         void paint(juce::Graphics&) override;
         void mouseDown(const juce::MouseEvent&) override;
         void mouseDrag(const juce::MouseEvent&) override;
         void mouseUp(const juce::MouseEvent&) override;
         void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
+        void mouseMove(const juce::MouseEvent& e) override;
+        void mouseExit(const juce::MouseEvent&) override { hover.moveTo(*this, {}); }
 
         static constexpr int labelWidth = 108;
         enum class Row { lights, names, pitch, octave, accent, slide, gate, motion, none };
@@ -83,6 +91,7 @@ namespace cs303::ui
         Editor& editor;
         Row dragRow = Row::none;
         int dragColumn = -1;
+        HoverPlace hover;
         void setPitchFromY(int step, float y);
         void setMotionAt(juce::Point<float> p);
         void stepMenu(int step);
@@ -102,12 +111,15 @@ namespace cs303::ui
     };
 
     /** The column beside the grid: two tabs, Locks (the picked step's) and Line (the tools for the whole line). */
-    class InspectorColumn final : public juce::Component
+    class InspectorColumn final : public juce::Component, public HintSource
     {
     public:
         explicit InspectorColumn(Editor&);
+        [[nodiscard]] juce::String hintAt(juce::Point<int> local) const override;
         void paint(juce::Graphics&) override;
         void mouseDown(const juce::MouseEvent&) override;
+        void mouseMove(const juce::MouseEvent& e) override;
+        void mouseExit(const juce::MouseEvent&) override { hover.moveTo(*this, {}); }
         void refresh();
         void showLine(bool line);
         [[nodiscard]] bool lineShown() const noexcept { return line; }
@@ -118,6 +130,7 @@ namespace cs303::ui
         std::unique_ptr<LocksStrip> locks;
         std::unique_ptr<ToolRow> tools;
         bool line = true;
+        HoverPlace hover;
     };
 
     class SequencerSection final : public juce::Component

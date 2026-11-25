@@ -206,11 +206,24 @@ namespace cs303::ui
         }
     }
 
-    void drawKey(juce::Graphics& g, juce::Rectangle<float> area, const juce::String& text, bool on, bool lens, bool enabled, bool hot)
+    void drawHover(juce::Graphics& g, juce::Rectangle<float> r, float corner)
+    {
+        g.setColour(juce::Colours::white.withAlpha(0.08f));
+        g.fillRoundedRectangle(r, corner);
+        g.setColour(juce::Colours::white.withAlpha(0.22f));
+        g.drawRoundedRectangle(r.reduced(0.5f), corner, 1.0f);
+    }
+
+    void drawKey(juce::Graphics& g, juce::Rectangle<float> area, const juce::String& text, bool on, bool lens, bool enabled, bool hot, bool hover, bool down)
     {
         juce::Graphics::ScopedSaveState s(g);
         if (! enabled)
+        {
             g.beginTransparencyLayer(0.4f);
+            hover = down = false;
+        }
+        if (down)
+            area = area.translated(0.0f, 1.0f); // pressed: the cap goes down a pixel, its shadow shorter
         constexpr float corner = 4.0f;
         g.setColour(juce::Colours::black.withAlpha(hot ? 0.0f : 0.5f));
         g.fillRoundedRectangle(area.translated(0.0f, 2.0f), corner);
@@ -223,7 +236,13 @@ namespace cs303::ui
         else
             g.setGradientFill(vertical(area, { { 0.0f, juce::Colour(0xff3d3e43) }, { 0.55f, juce::Colour(0xff2b2c30) }, { 1.0f, juce::Colour(0xff232427) } }));
         g.fillRoundedRectangle(area, corner);
-        g.setColour(juce::Colours::white.withAlpha(hot ? 0.4f : 0.14f));
+        if (hover || down)
+        {
+            // under the mouse the cap lights a little; held, it darkens
+            g.setColour(down ? juce::Colours::black.withAlpha(0.18f) : juce::Colours::white.withAlpha(hot ? 0.12f : 0.07f));
+            g.fillRoundedRectangle(area, corner);
+        }
+        g.setColour(juce::Colours::white.withAlpha(hot ? 0.4f : hover ? 0.24f : 0.14f));
         g.fillRect(area.getX() + corner, area.getY(), area.getWidth() - 2.0f * corner, 1.0f);
         g.setColour(juce::Colours::black.withAlpha(hot ? 0.15f : 0.35f));
         g.fillRect(area.getX() + corner * 0.5f, area.getBottom() - 2.0f, area.getWidth() - corner, 2.0f);

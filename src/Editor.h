@@ -101,12 +101,16 @@ namespace cs303
         void layOut();
 
         [[nodiscard]] juce::Component& board() noexcept { return *boardHolder; }
+        /** What the hint line shows with the mouse at a place on the board (D353). */
+        [[nodiscard]] juce::String hintAt(juce::Point<int> onBoard);
 
     private:
         void timerCallback() override;
         void componentBroughtToFront(juce::Component&) override;
 
         std::unique_ptr<juce::Component> boardHolder;
+        std::unique_ptr<juce::Component> hintLine;          // the panel's foot: what the control under the mouse does (D353)
+        std::unique_ptr<juce::MouseListener> hintWatcher;
         std::unique_ptr<ui::OptionsWindow> optionsWindow;
         juce::Component* watchedWindow = nullptr; // the window this editor is in, while the options keep above it
         std::unique_ptr<ui::TopBar> top;
