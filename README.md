@@ -17,6 +17,8 @@ The panel, from the top:
 - The sections in the order the sound flows: the oscillator (Tuning, Saw or Square), the filter (Cutoff, Resonance,
   Env mod), the envelope (Decay, Accent), the amplifier (Volume), then Drive (On, Amount, Tone) and Delay (On, Time
   in notes, Feedback, Mix). While a pattern plays, a knob the pattern moves shows where it is moved to.
+- Volume is the 303's own VOLUME pot, ahead of its output mixer: turned up high, loud accents flatten as a real
+  unit's do, and Drive gets what Volume lets through.
 - The keyboard, three octaves: the octave down, as written and up. In Write, a key sets the picked step's note and
   octave and moves to the next step; Tie and Rest do the same for a held or a silent step, Back and Step move the
   pick, Accent and Slide switch the picked step's own. In Transpose, a key shifts the running pattern (the middle C
@@ -74,7 +76,10 @@ window's size and theme, and the WAV export (in a DAW, the Host page has the acc
 
 The voice is the engine's TB-303 circuit (`external/coolsynth-engine/src/synth/v3/Tb303Voice.h`): the oscillator's
 exponential converter and its capacitor's reset, the square's one-transistor shaper, the diode ladder with its drive
-and read-out, the envelope generator and the accent's circuit, and the BA662 VCA, each as its transistors. It runs at
+and read-out, the envelope generator and the accent's circuit, the BA662 VCA, and the output stage (VOLUME into the
+two-transistor mixer, out at the OUTPUT jack into a recorder's 16k), each as its transistors. The mixer can pull
+its output down only through a 10k resistor, so with Volume high the loudest notes clip on that side, as Din Sync's
+recordings of a real unit do. It runs at
 twice the output's rate (96 kHz at 48 kHz; at the output's own in Light) and is matched to ngspice renders of the service notes' circuit within a
 fraction of a cent and about half a decibel. The sequencer plays it as the original's CPU does: six clocks a step,
 the gate on for three of them, a slide holding it into the next note, accent and slide latched at the step's start,
@@ -82,7 +87,7 @@ the gate 2 ms behind the clock.
 
 The Devil Fish is the same circuit with the parts Whittle changed set to his values, a current into the filter's
 control for tracking and FM, and a sustain on the volume envelope; Soft Attack and the Muffler, whose circuits he
-never published, are simple stand-ins after the VCA.
+never published, are simple stand-ins after the VCA, ahead of Volume.
 
 The Library key opens a shelf of lines and sounds: 30 original lines in ten styles (Chicago 87 to rolling sub) and
 12 sounds, four of them Devil Fish ones. Audition plays a line in place of the pattern you edit, or your pattern with

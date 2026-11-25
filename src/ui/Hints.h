@@ -65,7 +65,7 @@ namespace cs303::ui
             { "knob:Env mod", "How far the envelope sweeps the cutoff on each note." },
             { "knob:Decay", "How long the filter's envelope takes to close; accented notes stay short." },
             { "knob:Accent", "How much louder and brighter an accented note is." },
-            { "knob:Volume", "The output level." },
+            { "knob:Volume", "The 303's VOLUME, ahead of its mixer: turned high, loud accents flatten as a real unit's do." },
             { "knob:Amount", "How hard the drive saturates." },
             { "knob:Tone", "The drive's tone, darker to brighter." },
             { "knob:Time", "The delay's time in note values: 1/16, 1/8, dotted 1/8, 1/4." },

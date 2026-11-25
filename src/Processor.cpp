@@ -19,7 +19,6 @@ namespace cs303
     namespace
     {
         constexpr int maxUndo = 64;
-        constexpr double dcCornerHz = 8.0; // C38 into the mixer's input: the output's DC taken off
         constexpr int midiNoteAsWritten = 60; // a key or MIDI note at middle C plays the pattern as written
 
         /** A crash in the standalone leaves its call stack in %TEMP%\CoolSynth303\crash.txt, named by the symbols. */
@@ -30,8 +29,11 @@ namespace cs303
             file.appendText(juce::Time::getCurrentTime().toString(true, true, true, true) + "\n" + juce::SystemStats::getStackBacktrace() + "\n");
         }
 
-        /** The Volume knob: silent at 0, unity near three quarters, +6 dB at the top. */
-        double volumeGain(double v) noexcept { return 2.0 * v * v * v; }
+        /** VOLUME's slew: the voice's pot moves at most this much of its turn every volumeEvery voice samples (a whole
+            turn in some 0.17 s at 96 kHz), so a knob turned fast steps by under 0.1 dB, and the circuit is not
+            re-analysed every sample. */
+        constexpr double volumeSlew = 0.002;
+        constexpr int volumeEvery = 32;
 
         /** The output stage's soft saturation: straight up to the knee (-3 dBFS), then a tanh from there toward full
             scale, its slope 1 at the knee so nothing below it changes and nothing above it jumps. */
@@ -193,7 +195,6 @@ namespace cs303
         samplesSoFar = 0;
         playingByClock = endedUnderClock = false;
         sequencer.reset();
-        dcState = dcIn = 0.0;
         playing = false;
         sixteenth = -1;
         dirty.store(true);
@@ -361,8 +362,18 @@ namespace cs303
             liveKnobs[i].store(v);
         }
         k.square = p.square;
+        if (volumeNow < 0.0)
+            volumeNow = p.volume; // the first panel: VOLUME where it stands, no slew
+        k.volume = volumeNow;
         voice->setKnobs(k);
         fishVoice->setKnobs(k);
+    }
+
+    void Processor::setVolumeNow(double turn) noexcept
+    {
+        volumeNow = turn;
+        voice->setVolume(turn);
+        fishVoice->setVolume(turn);
     }
 
     void Processor::renderSpan(float* out, int start, int count) noexcept
@@ -397,7 +408,8 @@ namespace cs303
             }
             resting = true;
             std::fill(v, v + n, 0.0f);
-            dcIn = dcState = 0.0;
+            if (volumeNow != static_cast<double>(panel.volume))
+                setVolumeNow(panel.volume); // silent at rest: no slew needed, and the pot moves no DC
         }
         else
         {
@@ -458,6 +470,9 @@ namespace cs303
             }
             if (accentHeld.load(std::memory_order_relaxed) && active == fishVoice.get())
                 accent = gate;
+            // VOLUME: the voice's own pot ahead of its mixer (D362), slewed toward the panel's
+            if (i % volumeEvery == 0 && volumeNow != static_cast<double>(panel.volume))
+                setVolumeNow(volumeNow + juce::jlimit(-volumeSlew, volumeSlew, static_cast<double>(panel.volume) - volumeNow));
             double y = active->process(volts, gate, accent, slide);
             if (! std::isfinite(y))
             {
@@ -479,12 +494,8 @@ namespace cs303
                 f[s + 3] = static_cast<float>(volts);
                 lidCount.store(at + 1, std::memory_order_release);
             }
-            // C38: the output's DC off, a one-pole high-pass
-            const double r = 1.0 - juce::MathConstants<double>::twoPi * dcCornerHz / voiceRate;
-            const double hp = y - dcIn + r * dcState;
-            dcIn = y;
-            dcState = hp;
-            v[i] = static_cast<float>(hp * outputScale);
+            // the OUTPUT jack (its DC off through C38, C59 and C56 in the voice's output stage, D362)
+            v[i] = static_cast<float>(y * outputScale);
             // silent: below -80 dBFS (at rest the VCA lets the oscillator through at about -98 dBFS, as a 303's does)
             quietVoiceSamples = gate || std::abs(v[i]) > 1.0e-4f ? 0 : quietVoiceSamples + 1;
         }
@@ -504,14 +515,8 @@ namespace cs303
             std::copy(v, v + n, driveScratch.data());
             drive->process(v, driveScratch.data(), n, sp);
         }
-        const double gainTarget = volumeGain(panel.volume);
-        const double gainStep = (gainTarget - gainNow) / std::max(1, count);
         for (int i = 0; i < count; ++i)
-        {
-            gainNow += gainStep;
-            const float y = factor == 2 ? decimator->process(v[2 * i], v[2 * i + 1]) : v[i];
-            out[start + i] = static_cast<float>(y * gainNow);
-        }
+            out[start + i] = factor == 2 ? decimator->process(v[2 * i], v[2 * i + 1]) : v[i];
     }
 
     void Processor::sendClock(juce::MidiBuffer& midi, int numSamples) noexcept

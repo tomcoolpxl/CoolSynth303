@@ -184,6 +184,7 @@ namespace cs303
         void keepUndo();
         void pullFromUi() noexcept;
         void applyPanel(const Panel& p, const StepOut* step) noexcept;
+        void setVolumeNow(double turn) noexcept; // both voices' VOLUME (D362)
         void renderSpan(float* out, int start, int count) noexcept;
         void renderVoice(float* v, int n, int key, double beatPerVoiceSample, double secondsPerStep, const Panel& panel) noexcept;
         void finishSpan(float* out, int start, int count, const Panel& panel) noexcept;
@@ -245,8 +246,7 @@ namespace cs303
         std::int64_t sixteenth = -1;
         double clockBeatSent = 0.0;
         bool clockStartPending = false, clockStopPending = false;
-        double dcState = 0.0, dcIn = 0.0;
-        double gainNow = 0.0;
+        double volumeNow = -1.0; // the voices' VOLUME as it stands (slewed toward the panel's), -1 before the first panel
         int lastAudition = -1;
         double auditionVolts = 2.0;
         bool auditionSlide = false;
@@ -269,6 +269,8 @@ namespace cs303
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Processor)
     };
 
-    /** The voice's volts to the app's full scale: the 303's output, its DC taken off by C38, at about -6 dBFS. */
-    inline constexpr double outputScale = 0.5;
+    /** The voice's volts to the app's full scale: the 303's OUTPUT jack (VOLUME and the mixer in the voice, D362). At
+        the default Volume (0.78) the jack carries 0.65 of the VCA's output, so 0.73 keeps a note where the app's
+        level was when Volume was a gain after the voice (0.5 of the VCA's volts times 2 v^3). */
+    inline constexpr double outputScale = 0.73;
 }
