@@ -59,9 +59,11 @@ pattern from middle C (note 60). It follows a MIDI clock when one comes in (its 
 and tempo, the top bar then showing CLOCK), and sends its own while it plays when none does.
 
 Options, in the top bar, opens the 303's own options: the audio device and the accuracy, the MIDI ports, the
-window's size, and a page kept for the WAV export to come (in a DAW, the Host page has the accuracy).
+window's size and theme, and the WAV export (in a DAW, the Host page has the accuracy).
 - Accuracy: Best, or Light: the voice at the output's own rate and solved a little less tightly, some 40 % less CPU,
   the top octave up to 3.5 dB duller. A DAW's export always renders at Best.
+- Export: the pattern shown or the chain, 1 to 16 times, cut, rung out or as a seamless loop, the mix or the dry
+  voice beside it too, at the app's rate or 96 kHz; a 24-bit WAV rendered at Best while the 303 plays on.
 
 ## How the sound is made
 

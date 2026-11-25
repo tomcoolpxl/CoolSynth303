@@ -164,6 +164,35 @@ namespace cs303
         hooks.chooseWindowSize = [this](int percent) { chooseWindowSize(percent); };
         hooks.theme = [] { return ui::currentTheme(); };
         hooks.chooseTheme = [this](int index) { chooseTheme(index); };
+        // The WAV export (D355): the pattern shown or the chain, from your own project during a library audition.
+        hooks.patternShown = [this] { return "Pattern " + juce::String(editPattern + 1).paddedLeft('0', 2) + (editB ? "B" : "A"); };
+        hooks.exportJob = [this](bool chain)
+        {
+            ExportJob job;
+            job.project = auditionSaved != nullptr ? *auditionSaved : processor.project();
+            job.chain = chain;
+            job.pattern = editPattern;
+            job.variationB = editB;
+            job.sampleRate = processor.captureRate();
+            return job;
+        };
+        hooks.appRate = [this] { return processor.captureRate(); }; // the device's rate, or the host's
+        // its choices kept in the app's settings, as the accuracy (not in the tests)
+        if (processor.wrapperType != juce::AudioProcessor::wrapperType_Undefined)
+        {
+            hooks.kept = [](const juce::String& name)
+            {
+                const juce::PropertiesFile settings(Processor::settingsOptions());
+                return juce::var(settings.getValue(name));
+            };
+            hooks.keep = [](const juce::NamedValueSet& values)
+            {
+                juce::PropertiesFile settings(Processor::settingsOptions());
+                for (const auto& v : values)
+                    settings.setValue(v.name.toString(), v.value);
+                settings.saveIfNeeded();
+            };
+        }
         return hooks;
     }
 

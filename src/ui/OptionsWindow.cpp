@@ -1,6 +1,9 @@
 #include "ui/OptionsWindow.h"
 
 #include <array>
+#include <atomic>
+#include <cmath>
+#include <thread>
 #include <vector>
 
 #include "StandaloneDevices.h"
@@ -135,6 +138,11 @@ namespace cs303::ui
         };
 
         juce::String rateText(double rate) { return juce::String(juce::roundToInt(rate)) + " Hz"; }
+        juce::String kiloHertz(double rate)
+        {
+            const double k = rate / 1000.0;
+            return (std::abs(k - std::round(k)) < 0.01 ? juce::String(juce::roundToInt(k)) : juce::String(k, 1)) + " kHz";
+        }
         juce::String bufferText(int size, double rate)
         {
             return juce::String(size) + " samples" + (rate > 0.0 ? " (" + juce::String(1000.0 * size / rate, 1) + " ms)" : juce::String());
@@ -213,12 +221,16 @@ namespace cs303::ui
             theme.setHelpText("The panel's colours: Graphite, Silver after the TB-303, the 808's Steel and Olive.");
             addChildComponent(theme);
 
+            buildExport();
             rebuildInputs();
             startTimer(500);
         }
 
         ~OptionsPanel() override
         {
+            // closing the window cancels an export, and waits for its thread (which leaves no file)
+            exportTick.stopTimer();
+            stopExport();
             stopTimer();
             if (devices != nullptr)
                 devices->removeChangeListener(this);
@@ -316,11 +328,40 @@ namespace cs303::ui
                     g.drawRoundedRectangle(box.reduced(0.5f), 3.0f, 1.0f);
                 }
             }
-            if (hint.isNotEmpty())
+            if (page == exportPage)
             {
+                // what comes out, under the rows
+                const auto j = exportJob();
+                juce::String out = "24-bit WAV at " + kiloHertz(j.sampleRate) + ", " + juce::String(static_cast<double>(loopSamples(j)) / j.sampleRate, 1) + " s";
+                if (j.end == ExportEnd::ring)
+                    out << " and the ring-out";
+                if (j.end == ExportEnd::loop)
+                    out << ", the ring-out in its start";
                 g.setColour(colour::screenHint);
                 g.setFont(bodyFont(12.0f));
-                g.drawFittedText(hint, juce::Rectangle<int>(x, hintY, w, 36), juce::Justification::topLeft, 2);
+                shapedText(g, out, juce::Rectangle<int>(x + labelWidth, summaryY, w - labelWidth, 20), juce::Justification::centredLeft, true);
+
+                // beside the key: the progress while it renders; under it, what was written
+                if (exportBusy())
+                {
+                    const int left = cancelKey.getRight() + 12;
+                    const auto bar = juce::Rectangle<int>(left, exportY + rowHeight / 2 - 4, x + w - left, 8).toFloat();
+                    g.setColour(colour::well);
+                    g.fillRoundedRectangle(bar, 4.0f);
+                    g.setColour(colour::wellLine);
+                    g.drawRoundedRectangle(bar.reduced(0.5f), 4.0f, 1.0f);
+                    g.setColour(colour::orange);
+                    g.fillRoundedRectangle(bar.withWidth(bar.getWidth() * juce::jlimit(0.0f, 1.0f, progress.load())), 4.0f);
+                }
+                else if (exportStatus.isNotEmpty())
+                {
+                    // a line each: what, then the folder (cut at its end should it be too long)
+                    g.setColour(exportOk ? colour::orange : colour::screenHint);
+                    g.setFont(bodyFont(11.5f));
+                    const auto lines = juce::StringArray::fromLines(exportStatus);
+                    for (int i = 0; i < lines.size(); ++i)
+                        shapedText(g, lines[i], juce::Rectangle<int>(x + labelWidth, exportY + rowHeight + 8 + i * 18, w - labelWidth, 18), juce::Justification::centredLeft, true);
+                }
             }
             // the foot: a strip of its own for the hint line, a line over it
             const auto foot = getLocalBounds().removeFromBottom(footHeight);
@@ -347,9 +388,91 @@ namespace cs303::ui
                 case midiPage: return "MIDI: the inputs that play the 303, and an output for its notes.";
                 case hostPage: return "Host: the accuracy, in a plugin; the devices are the host's.";
                 case panelPage: return "Panel: the window's size and the theme.";
-                case exportPage: return "Export: the WAV export comes here.";
+                case exportPage: return "Export: a WAV of the pattern shown or the chain.";
             }
             return {};
+        }
+
+        // ---------------------------------------------------------------- the WAV export (D355)
+        /** The job as the page's choices make it, the project as it is now. */
+        [[nodiscard]] ExportJob exportJob() const
+        {
+            auto j = hooks.exportJob ? hooks.exportJob(exportWhat == 1) : ExportJob {};
+            j.chain = exportWhat == 1;
+            j.times = timesChoices[static_cast<std::size_t>(exportTimes)];
+            j.end = static_cast<ExportEnd>(exportEnd);
+            j.dry = exportFiles == 1;
+            j.sampleRate = exportRate == 1 ? 96000.0 : appRate();
+            return j;
+        }
+        /** From the start of an export until its end is shown (the thread may have finished a moment before). */
+        [[nodiscard]] bool exportBusy() const noexcept { return worker != nullptr; }
+        [[nodiscard]] juce::String exportStatusText() const { return exportStatus; }
+
+        void startExport(const juce::File& mixFile)
+        {
+            stopExport();
+            cancel.store(false);
+            workerDone.store(false);
+            progress.store(0.0f);
+            exportOk = false;
+            exportStatus.clear();
+            exportTo = mixFile;
+            exportWritten.clear();
+            // The job taken here, on the message thread; rendered and written on the worker.
+            worker = std::make_unique<std::thread>([this, j = exportJob(), mixFile]
+            {
+                auto result = std::make_unique<ExportResult>();
+                bool fine = renderExport(j, *result, progress, cancel);
+                juce::Array<juce::File> files;
+                const auto write = [&](const juce::File& f, const juce::AudioBuffer<float>& audio)
+                {
+                    if (! fine || cancel.load())
+                        return;
+                    files.add(f);
+                    fine = writeWav24(f, audio, j.sampleRate);
+                };
+                write(mixFile, result->mix);
+                if (j.dry)
+                    write(dryFile(mixFile), result->dry);
+                const bool done = fine && ! cancel.load();
+                if (! done)
+                    for (const auto& f : files)
+                        (void) f.deleteFile(); // cancelled or failed: nothing half written left behind
+                for (const auto& f : files)
+                    if (done)
+                        exportWritten.add(f.getFileName());
+                exportOk = done;
+                workerDone.store(true, std::memory_order_release);
+            });
+            exportTick.startTimerHz(30);
+            layOut();
+            repaint();
+        }
+
+        /** The export's end, on the message thread: its thread joined, what it wrote said. */
+        void finishExport()
+        {
+            exportTick.stopTimer();
+            const bool cancelled = cancel.load();
+            stopExport();
+            if (exportOk)
+                exportStatus = "Written: " + exportWritten.joinIntoString(" and ") + "\nin " + exportTo.getParentDirectory().getFullPathName();
+            else
+                exportStatus = cancelled ? juce::String("Cancelled; nothing written.")
+                                         : "Could not write " + exportTo.getFileName() + "\nin " + exportTo.getParentDirectory().getFullPathName();
+            layOut();
+            repaint();
+        }
+
+        /** Waits for the export's thread (the tests'); true once it has ended. */
+        bool waitForExport(int ms)
+        {
+            for (int waited = 0; worker != nullptr && ! workerDone.load(std::memory_order_acquire) && waited < ms; waited += 10)
+                juce::Thread::sleep(10);
+            if (worker != nullptr && workerDone.load(std::memory_order_acquire))
+                finishExport();
+            return worker == nullptr;
         }
 
         void mouseMove(const juce::MouseEvent& e) override
@@ -533,7 +656,6 @@ namespace cs303::ui
         void layOut()
         {
             labels.clear();
-            hint.clear();
             for (auto* c : getChildren())
                 c->setVisible(c == hintLine.get()); // the hint line stays on every page
             const int x = sideWidth + pad, w = getWidth() - x - pad, cw = w - labelWidth;
@@ -604,10 +726,183 @@ namespace cs303::ui
                     row(theme, "Theme", 150);
                     break;
                 case exportPage:
-                    hint = "The WAV export comes here.";
-                    hintY = y + 6;
+                {
+                    // What, Times, End, Files, Rate: a row of keys each, as Accuracy's (D355)
+                    static const char* const names[] = { "What", "Times", "End", "Files", "Rate" };
+                    for (std::size_t r = 0; r < exportRows.size(); ++r)
+                    {
+                        labels.push_back({ names[r], y });
+                        placeKeys(exportRows[r], x + labelWidth, y, cw);
+                        y += rowHeight + rowGap;
+                    }
+                    summaryY = y;
+                    exportY = y + 28;
+                    for (auto* k : { &exportKey, &cancelKey })
+                        k->setBounds(x + labelWidth, exportY + 1, exportKeyWidth, rowHeight - 2);
+                    (exportBusy() ? cancelKey : exportKey).setVisible(true);
                     break;
+                }
             }
+        }
+
+        /** A row of keys from `left`, within `width`: all as wide as Accuracy's keys, or as the widest name needs,
+            or (where even that is too wide) each as its own name needs. */
+        static void placeKeys(const std::vector<std::unique_ptr<Key>>& keys, int left, int y, int width)
+        {
+            constexpr int gap = 6, roomAround = 2 + 11 + 2 * 12; // the cap's edges, the lens, the margins
+            const int n = static_cast<int>(keys.size());
+            std::vector<int> need;
+            int widest = 0, sum = 0;
+            for (const auto& k : keys)
+            {
+                const auto text = (k->textOf ? k->textOf() : k->getName()).toUpperCase();
+                need.push_back(static_cast<int>(std::ceil(shapedWidth(labelFont(10.5f), text))) + roomAround);
+                widest = std::max(widest, need.back());
+                sum += need.back();
+            }
+            const int room = width - (n - 1) * gap;
+            const int even = n * std::max(widest, accuracyKeyWidth) <= room ? std::max(widest, accuracyKeyWidth) : n * widest <= room ? widest : 0;
+            int at = left;
+            for (int i = 0; i < n; ++i)
+            {
+                const int kw = even > 0 ? even : need[static_cast<std::size_t>(i)] + (room - sum) / n;
+                keys[static_cast<std::size_t>(i)]->setBounds(at, y + 1, kw, rowHeight - 2);
+                keys[static_cast<std::size_t>(i)]->setVisible(true);
+                at += kw + gap;
+            }
+        }
+
+        void buildExport()
+        {
+            // the choices kept from last time
+            const auto keptChoice = [this](const char* name, int count)
+            {
+                return hooks.kept ? juce::jlimit(0, count - 1, static_cast<int>(hooks.kept(name))) : 0;
+            };
+            exportWhat = keptChoice("exportWhat", 2);
+            exportTimes = keptChoice("exportTimes", static_cast<int>(timesChoices.size()));
+            exportEnd = keptChoice("exportEnd", 3);
+            exportFiles = keptChoice("exportFiles", 2);
+            exportRate = keptChoice("exportRate", 2);
+
+            const auto row = [this](std::size_t r, const char* id, const juce::StringArray& names, const juce::StringArray& helps, int& value)
+            {
+                for (int i = 0; i < names.size(); ++i)
+                {
+                    auto key = std::make_unique<Key>(names[i], false);
+                    key->setName(names[i]);
+                    key->setComponentID(id + juce::String(i));
+                    key->setHelpText(helps[i]);
+                    key->isOn = [&value, i] { return value == i; };
+                    key->enabled = [this] { return ! exportBusy(); };
+                    key->onClick = [this, &value, i]
+                    {
+                        if (exportBusy())
+                            return;
+                        value = i;
+                        keepExportChoices();
+                        repaint();
+                    };
+                    addChildComponent(*key);
+                    exportRows[r].push_back(std::move(key));
+                }
+            };
+            row(0, "exportWhat", { "Pattern 01A", "Chain" },
+                { "The pattern the panel shows, played from its start.", "The chain, played from its start." }, exportWhat);
+            juce::StringArray times, timesHelp;
+            for (const int t : timesChoices)
+            {
+                times.add(juce::String(t));
+                timesHelp.add(t == 1 ? juce::String("Played through once.") : "Played through " + juce::String(t) + " times.");
+            }
+            row(1, "exportTimes", times, timesHelp, exportTimes);
+            row(2, "exportEnd", { "Cut", "Ring out", "Seamless loop" },
+                { "Cut where the last time through ends.", "The ring-out after the end: the last note and the delay, until quiet.",
+                  "A loop that joins itself: the end's ring-out in its start, as a loop plays it." }, exportEnd);
+            row(3, "exportFiles", { "Mix", "Mix and dry" },
+                { "The mix alone, as you hear it.", "The mix, and the dry voice beside it (Drive and Delay off) as \"Name - dry.wav\"." }, exportFiles);
+            row(4, "exportRate", { "App rate", "96 kHz" },
+                { "At the rate the app runs at now.", "At 96 kHz, the voice's own rate." }, exportRate);
+            exportRows[0][0]->textOf = [this] { return hooks.patternShown ? hooks.patternShown() : juce::String("Pattern 01A"); };
+            exportRows[4][0]->textOf = [this] { return kiloHertz(appRate()); };
+
+            exportKey.setComponentID("exportGo");
+            exportKey.setHelpText("Choose where to save, then render the WAV; the 303 plays on meanwhile.");
+            exportKey.onClick = [this] { chooseExportFile(); };
+            addChildComponent(exportKey);
+            cancelKey.setComponentID("exportCancel");
+            cancelKey.setHelpText("Stop the export; nothing is written.");
+            cancelKey.onClick = [this] { cancel.store(true); };
+            addChildComponent(cancelKey);
+        }
+
+        [[nodiscard]] double appRate() const
+        {
+            const double r = hooks.appRate ? hooks.appRate() : 48000.0;
+            return r > 0.0 ? r : 48000.0;
+        }
+
+        void keepExportChoices()
+        {
+            if (! hooks.keep)
+                return;
+            juce::NamedValueSet values;
+            values.set("exportWhat", exportWhat);
+            values.set("exportTimes", exportTimes);
+            values.set("exportEnd", exportEnd);
+            values.set("exportFiles", exportFiles);
+            values.set("exportRate", exportRate);
+            hooks.keep(values);
+        }
+
+        void chooseExportFile()
+        {
+            if (exportBusy())
+                return;
+            auto folder = juce::File(hooks.kept ? hooks.kept("exportFolder").toString() : juce::String());
+            if (! folder.isDirectory())
+                folder = juce::File::getSpecialLocation(juce::File::userMusicDirectory);
+            // the project's name as the file's
+            auto name = juce::File::createLegalFileName(juce::String(exportJob().project.name).trim());
+            if (name.isEmpty())
+                name = "CoolSynth 303";
+            chooser = std::make_unique<juce::FileChooser>("Export a WAV", folder.getChildFile(name + ".wav"), "*.wav");
+            chooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+                                 [safe = juce::Component::SafePointer<OptionsPanel>(this)](const juce::FileChooser& fc)
+            {
+                if (safe == nullptr)
+                    return;
+                auto f = fc.getResult();
+                if (f == juce::File())
+                    return;
+                if (! f.hasFileExtension("wav"))
+                    f = f.withFileExtension("wav");
+                if (safe->hooks.keep)
+                {
+                    juce::NamedValueSet values;
+                    values.set("exportFolder", f.getParentDirectory().getFullPathName());
+                    safe->hooks.keep(values);
+                }
+                safe->startExport(f);
+            });
+        }
+
+        void tickExport()
+        {
+            if (workerDone.load(std::memory_order_acquire))
+                finishExport();
+            else if (page == exportPage)
+                repaint(sideWidth, exportY, getWidth() - sideWidth, rowHeight);
+        }
+
+        void stopExport()
+        {
+            if (worker == nullptr)
+                return;
+            if (! workerDone.load())
+                cancel.store(true);
+            worker->join();
+            worker.reset();
         }
 
         void rebuildInputs()
@@ -668,7 +963,7 @@ namespace cs303::ui
                 repaint(sideWidth, readoutY, getWidth() - sideWidth, rowHeight);
         }
 
-        static constexpr int maxInputRows = 8, accuracyKeyWidth = 96;
+        static constexpr int maxInputRows = 8, accuracyKeyWidth = 96, exportKeyWidth = 110;
 
         OptionsHooks hooks;
         juce::AudioDeviceManager* devices;
@@ -684,8 +979,24 @@ namespace cs303::ui
         juce::Viewport inputView;
         int knownInputs = -1;
         std::vector<std::pair<juce::String, int>> labels;
-        juce::String hint, status;
-        int readoutY = 0, inputsY = 0, hintY = 0;
+        juce::String status;
+        int readoutY = 0, inputsY = 0;
+
+        // the WAV export (D355): the choices, as indices; its keys; the worker that renders and writes
+        int exportWhat = 0, exportTimes = 0, exportEnd = 0, exportFiles = 0, exportRate = 0;
+        static constexpr std::array<int, 5> timesChoices { 1, 2, 4, 8, 16 };
+        std::array<std::vector<std::unique_ptr<Key>>, 5> exportRows;
+        Key exportKey { "Export", false }, cancelKey { "Cancel", false };
+        std::unique_ptr<juce::FileChooser> chooser;
+        std::unique_ptr<std::thread> worker;
+        std::atomic<bool> cancel { false }, workerDone { false };
+        std::atomic<float> progress { 0.0f };
+        bool exportOk = false;            // written by the worker before workerDone
+        juce::StringArray exportWritten;  // likewise: the files' names
+        juce::File exportTo;
+        juce::String exportStatus;
+        juce::TimedCallback exportTick { [this] { tickExport(); } };
+        int summaryY = 0, exportY = 0;
     };
 
     // =============================================================================================================
@@ -797,5 +1108,35 @@ namespace cs303::ui
     {
         auto* p = dynamic_cast<OptionsPanel*>(&panel);
         return p != nullptr ? p->pageName(p->pageIndex()) : juce::String();
+    }
+
+    ExportJob exportJobForTesting(juce::Component& panel)
+    {
+        auto* p = dynamic_cast<OptionsPanel*>(&panel);
+        return p != nullptr ? p->exportJob() : ExportJob {};
+    }
+
+    void exportToForTesting(juce::Component& panel, const juce::File& mixFile)
+    {
+        if (auto* p = dynamic_cast<OptionsPanel*>(&panel))
+            p->startExport(mixFile);
+    }
+
+    bool exportBusyForTesting(juce::Component& panel)
+    {
+        auto* p = dynamic_cast<OptionsPanel*>(&panel);
+        return p != nullptr && p->exportBusy();
+    }
+
+    bool finishExportForTesting(juce::Component& panel, int ms)
+    {
+        auto* p = dynamic_cast<OptionsPanel*>(&panel);
+        return p == nullptr || p->waitForExport(ms);
+    }
+
+    juce::String exportStatusForTesting(juce::Component& panel)
+    {
+        auto* p = dynamic_cast<OptionsPanel*>(&panel);
+        return p != nullptr ? p->exportStatusText() : juce::String();
     }
 }

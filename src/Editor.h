@@ -72,7 +72,7 @@ namespace cs303
         /** The options (D349): a window of their own above this one, opened and closed by the top bar's Options key. */
         void toggleOptions();
         [[nodiscard]] bool optionsOpen() const noexcept;
-        /** What the options act on: the processor's accuracy, this window's size. */
+        /** What the options act on: the processor's accuracy, this window's size, the theme, the WAV export's job. */
         [[nodiscard]] ui::OptionsHooks optionsHooks();
         /** The window's size in percent of the base size, and a size chosen in the options (kept in the app's settings). */
         [[nodiscard]] int windowSizePercent() const;
