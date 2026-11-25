@@ -171,6 +171,9 @@ namespace cs303::ui
             p.gridOff = C(0xff77797e);
             p.gridHalf = C(0xff8d8f94);
             p.slotInk = C(0xffa9aaa6);
+            p.slotLabel = C(0xffe2e1dc);
+            p.slotDim = C(0xff7d7f84);
+            p.slotEdited = C(0xffffb35c);
             p.capTop = C(0xff3d3e43);
             p.capMid = C(0xff2b2c30);
             p.capBottom = C(0xff232427);
@@ -265,31 +268,37 @@ namespace cs303::ui
             p.face = C(0xff46494e);
             p.dialogTop = C(0xff55595e);
             p.dialogBottom = C(0xff4d5156);
-            p.screenTop = C(0xff3f4348);
-            p.screenBottom = C(0xff464a4f);
-            p.screenEdge = C(0xff2a2d31);
+            p.screenTop = C(0xff383c41);
+            p.screenBottom = C(0xff3d4146);
+            p.screenEdge = C(0xff26292d);
             p.displayTop = C(0xff2c2f33);
             p.displayBottom = C(0xff33363a);
             p.well = C(0xff2e3135);
             p.wellLine = C(0xff62666c);
             p.outline = C(0xff6e7278);
-            p.cell = C(0xff575b61);
-            p.cellOff = C(0xff4f5359);
-            p.litTop = C(0xff7c8086);
-            p.litBottom = C(0xff6c7076);
-            p.halfTop = C(0xff676b71);
-            p.halfBottom = C(0xff5d6167);
-            p.slotHasTop = C(0xff6a6e74);
-            p.slotHasBottom = C(0xff5c6066);
-            p.slotEmptyTop = C(0xff50545a);
-            p.slotEmptyBottom = C(0xff494d53);
-            p.key = C(0xff7a7e84);
-            p.screenDim = C(0xffa6aaaf);
-            p.screenHint = C(0xffb3b7bc);
-            p.gridNumber = C(0xffa0a4a9);
-            p.gridOff = C(0xffa6aaaf);
-            p.gridHalf = C(0xffc0c4c9);
-            p.slotInk = C(0xffd6d7d5);
+            // the grid's and the bays' keys light grey with dark ink, as the TB-303's own step keys (the user's pick
+            // after measuring: text 4.5:1 or more against its ground, every key clearly off the screen)
+            p.cell = C(0xffa3a7ad);
+            p.cellOff = C(0xff989ca2);
+            p.litTop = C(0xffe9ebed);
+            p.litBottom = C(0xffdadde0);
+            p.halfTop = C(0xffc9ccd0);
+            p.halfBottom = C(0xffbcbfc3);
+            p.slotHasTop = C(0xffc6c9cd);
+            p.slotHasBottom = C(0xffb9bcc0);
+            p.slotEmptyTop = C(0xffa3a7ad);
+            p.slotEmptyBottom = C(0xff989ca2);
+            p.key = C(0xffdcdee1);
+            p.keyInk = C(0xff16171a);
+            p.screenDim = C(0xffc6c9cd);
+            p.screenHint = C(0xffd0d3d6);
+            p.gridNumber = C(0xffc0c4c8);
+            p.gridOff = C(0xff26282c);
+            p.gridHalf = C(0xff26282c);
+            p.slotInk = C(0xff26282c);
+            p.slotLabel = C(0xff16171a);
+            p.slotDim = C(0xff2e3135);
+            p.slotEdited = C(0xff76300c);
             return p;
         }
 
@@ -355,6 +364,9 @@ namespace cs303::ui
             p.slotEmptyTop = C(0xff262d35);
             p.slotEmptyBottom = C(0xff1f252c);
             p.key = C(0xff56606b);
+            p.slotLabel = p.screenLabel; // the slots print as the screen does
+            p.slotDim = p.screenDim;
+            p.slotEdited = p.amber;
             return p;
         }
 
@@ -427,6 +439,9 @@ namespace cs303::ui
             p.slotEmptyTop = C(0xff292a20);
             p.slotEmptyBottom = C(0xff222319);
             p.key = C(0xff5a5d4b);
+            p.slotLabel = p.screenLabel; // the slots print as the screen does
+            p.slotDim = p.screenDim;
+            p.slotEdited = p.amber;
             return p;
         }
 

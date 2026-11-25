@@ -158,7 +158,7 @@ namespace cs303::ui
                 g.setColour(colour::orange);
                 g.drawRoundedRectangle(r.reduced(0.75f), 3.0f, 1.5f);
             }
-            g.setColour(hearing ? colour::orangeInk : edited ? colour::amber : has ? colour::screenLabel : colour::screenDim);
+            g.setColour(hearing ? colour::orangeInk : edited ? palette().slotEdited : has ? palette().slotLabel : palette().slotDim);
             g.setFont(font);
             shapedText(g, two(i), r, juce::Justification::centred, false);
         }
@@ -197,7 +197,7 @@ namespace cs303::ui
             shapedText(g, "+" + juce::String(static_cast<int>(proj.chain.size()) - shown) + " more", chainBounds(shown), juce::Justification::centred, false);
         }
         drawCell(g, addBounds().toFloat(), Cell::off);
-        g.setColour(colour::screenLabel);
+        g.setColour(palette().slotLabel);
         g.setFont(labelFont(13.0f));
         shapedText(g, "+", addBounds(), juce::Justification::centred, false);
         drawKey(g, loopBounds().toFloat().withTrimmedBottom(1.0f), "Loop", proj.loop, true, true, false, hover.area == loopBounds());
@@ -562,7 +562,8 @@ namespace cs303::ui
             g.setColour(colour::rowName);
             g.setFont(labelFont(11.0f).withExtraKerningFactor(0.08f));
             shapedText(g, "MOTION", juce::Rectangle<float>(4.0f, r.getY() - 2.0f, 80.0f, 14.0f), juce::Justification::centredLeft, false);
-            drawWell(g, juce::Rectangle<float>(4.0f, r.getY() + 14.0f, 62.0f, 20.0f), knobName(editor.motionKnob), colour::amber); // clear of the screen's edge
+            // the knob's well sits on the grid's foot, its bottom level with the screen's (the user)
+            drawWell(g, juce::Rectangle<float>(4.0f, static_cast<float>(getHeight()) - 20.0f, 62.0f, 20.0f), knobName(editor.motionKnob), colour::amber);
         }
 
         const auto clip = g.getClipBounds().toFloat();

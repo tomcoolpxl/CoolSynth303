@@ -29,6 +29,8 @@ namespace cs303::ui
         juce::Colour screenCaption, screenLabel, screenDim, screenHint;
         // the grid's quieter inks: the step numbers, a tie's or a rest's gate, an octave held over, a slot's number
         juce::Colour gridNumber, gridOff, gridHalf, slotInk;
+        // a pattern slot's number: filled, empty, the one edited
+        juce::Colour slotLabel, slotDim, slotEdited;
         // the keys
         juce::Colour capTop, capMid, capBottom, capEdge, capInk, capInkOn, capEngrave;
         float capLit, engraveDy;
