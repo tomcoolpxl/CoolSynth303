@@ -735,6 +735,8 @@ namespace cs303::ui
                         placeKeys(exportRows[r], x + labelWidth, y, cw);
                         y += rowHeight + rowGap;
                     }
+                    // at 96 kHz the app's rate is the voice's: one Rate key says it
+                    exportRows[4][1]->setVisible(! appAtVoiceRate());
                     summaryY = y;
                     exportY = y + 28;
                     for (auto* k : { &exportKey, &cancelKey })
@@ -825,6 +827,7 @@ namespace cs303::ui
                 { "At the rate the app runs at now.", "At 96 kHz, the voice's own rate." }, exportRate);
             exportRows[0][0]->textOf = [this] { return hooks.patternShown ? hooks.patternShown() : juce::String("Pattern 01A"); };
             exportRows[4][0]->textOf = [this] { return kiloHertz(appRate()); };
+            exportRows[4][0]->isOn = [this] { return exportRate == 0 || appAtVoiceRate(); };
 
             exportKey.setComponentID("exportGo");
             exportKey.setHelpText("Choose where to save, then render the WAV; the 303 plays on meanwhile.");
@@ -841,6 +844,8 @@ namespace cs303::ui
             const double r = hooks.appRate ? hooks.appRate() : 48000.0;
             return r > 0.0 ? r : 48000.0;
         }
+        /** The app runs at 96 kHz, so its rate and the voice's are one. */
+        [[nodiscard]] bool appAtVoiceRate() const { return std::abs(appRate() - 96000.0) < 1.0; }
 
         void keepExportChoices()
         {

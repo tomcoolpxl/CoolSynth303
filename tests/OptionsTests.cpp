@@ -231,6 +231,21 @@ namespace
                 expect(! job.chain && job.times == 2 && job.end == ExportEnd::ring && ! job.dry && job.sampleRate == 48000.0);
             }
 
+            beginTest("at_96_khz_one_rate_key");
+            {
+                auto at96 = hooks;
+                at96.appRate = [] { return 96000.0; };
+                (*store)["exportRate"] = 1; // 96 kHz chosen before: the one key stays lit
+                auto panel = ui::makeOptionsPanelForTesting(at96, nullptr);
+                ui::showOptionsPageForTesting(*panel, 2);
+                auto* appKey = childWithId(*panel, "exportRate0");
+                auto* voiceKey = childWithId(*panel, "exportRate1");
+                expect(appKey != nullptr && appKey->isVisible(), "the app's rate key");
+                expect(voiceKey != nullptr && ! voiceKey->isVisible(), "no second key reading 96 kHz");
+                expectEquals(ui::exportJobForTesting(*panel).sampleRate, 96000.0);
+                (*store)["exportRate"] = 0;
+            }
+
             beginTest("export_writes_a_24_bit_wav_and_the_dry_file");
             {
                 auto panel = exportPage();
