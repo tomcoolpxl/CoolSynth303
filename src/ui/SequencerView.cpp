@@ -167,7 +167,7 @@ namespace cs303::ui
             const auto r = variationBounds(b).toFloat();
             const bool on = editor.editB == b;
             drawCell(g, r, on ? Cell::lit : Cell::off);
-            g.setColour(on ? colour::keyInk : juce::Colour(0xffa9aaa6));
+            g.setColour(on ? colour::keyInk : palette().slotInk);
             g.setFont(labelFont(11.0f));
             shapedText(g, b ? "B" : "A", r, juce::Justification::centred, false);
         }
@@ -185,7 +185,7 @@ namespace cs303::ui
             const auto r = chainBounds(i).toFloat();
             const bool cur = playing && proj.chainOn && p.chainPosition() == i;
             drawSlot(g, r, true, cur, proj.chainOn ? 1.0f : 0.6f);
-            g.setColour(cur ? colour::orangeInk : juce::Colour(0xffa9aaa6).withAlpha(proj.chainOn ? 1.0f : 0.7f));
+            g.setColour(cur ? colour::orangeInk : palette().slotInk.withAlpha(proj.chainOn ? 1.0f : 0.7f));
             g.setFont(font);
             shapedText(g, two(e.pattern) + (e.variationB ? "B" : "") + (e.repeats > 1 ? juce::String::charToString(0xd7) + juce::String(e.repeats) : juce::String()),
                        r, juce::Justification::centred, false);
@@ -580,7 +580,7 @@ namespace cs303::ui
                 const auto c = cell(Row::lights, i);
                 const bool lit = i == head;
                 drawLamp(g, { c.getCentreX() - 8.0f, c.getCentreY() }, lit);
-                g.setColour(lit ? juce::Colour(0xfff4efe4) : juce::Colour(0xff6d6f74));
+                g.setColour(lit ? juce::Colour(0xfff4efe4) : palette().gridNumber);
                 g.setFont(monoFont(9.5f));
                 shapedText(g, juce::String(i + 1), c.withTrimmedLeft(c.getWidth() * 0.5f - 3.0f), juce::Justification::centredLeft, false);
             }
@@ -677,7 +677,7 @@ namespace cs303::ui
                 drawCell(g, o, s.octave == 0 ? Cell::off : own ? Cell::lit : Cell::half, alpha);
                 if (s.octave != 0)
                 {
-                    g.setColour((own ? colour::keyInk : juce::Colour(0xff8d8f94)).withAlpha(alpha));
+                    g.setColour((own ? colour::keyInk : palette().gridHalf).withAlpha(alpha));
                     g.setFont(monoFont(11.0f));
                     shapedText(g, s.octave > 0 ? "Up" : "Down", o, juce::Justification::centred, false);
                 }
@@ -687,7 +687,7 @@ namespace cs303::ui
                 drawLens(g, sl.getCentre(), s.slide);
                 const auto gt = cell(Row::gate, i);
                 drawCell(g, gt, own ? Cell::lit : Cell::off, alpha);
-                g.setColour((own ? colour::keyInk : juce::Colour(0xff77797e)).withAlpha(alpha));
+                g.setColour((own ? colour::keyInk : palette().gridOff).withAlpha(alpha));
                 g.setFont(monoFont(11.0f));
                 shapedText(g, s.gate == Gate::note ? "Note" : s.gate == Gate::tie ? "Tie" : "Rest", gt, juce::Justification::centred, false);
             }
@@ -983,7 +983,7 @@ namespace cs303::ui
         {
             const auto r = tabBounds(l).toFloat();
             drawCell(g, r, line == l ? Cell::lit : Cell::off);
-            g.setColour(line == l ? colour::keyInk : juce::Colour(0xffa9aaa6));
+            g.setColour(line == l ? colour::keyInk : palette().slotInk);
             g.setFont(labelFont(10.5f));
             shapedText(g, l ? "LINE" : "LOCKS", r, juce::Justification::centred, false);
         }

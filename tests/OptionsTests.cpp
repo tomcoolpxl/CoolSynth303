@@ -11,6 +11,7 @@
 #include "Editor.h"
 #include "Processor.h"
 #include "ui/OptionsWindow.h"
+#include "ui/Theme.h"
 
 namespace
 {
@@ -119,6 +120,24 @@ namespace
                 e->layOut();
                 e->refreshAll();
                 writePng(e->board().createComponentSnapshot({ 0, 0, Editor::baseWidth, 42 }, true, 2.0f), dir.getChildFile("topbar.png"));
+                expect(true);
+
+                // the Audio and Panel pages in every theme (D352), then back to the one in use
+                beginTest("snapshots_of_the_pages_in_every_theme");
+                const int themeBefore = ui::currentTheme();
+                const auto names = ui::themeNames();
+                for (int t = 0; t < names.size(); ++t)
+                {
+                    e->chooseThemeForTesting(t);
+                    auto panel = ui::makeOptionsPanelForTesting(e->optionsHooks(), devices.get());
+                    for (const int page : { 0, 2 })
+                    {
+                        ui::showOptionsPageForTesting(*panel, page);
+                        writePng(panel->createComponentSnapshot(panel->getLocalBounds(), true, 2.0f),
+                                 dir.getChildFile("options-" + ui::optionsPageNameForTesting(*panel).toLowerCase() + "-" + names[t].toLowerCase() + ".png"));
+                    }
+                }
+                e->chooseThemeForTesting(themeBefore);
                 expect(true);
             }
 

@@ -167,6 +167,10 @@ namespace cs303::ui
             p.screenLabel = C(0xffe2e1dc);
             p.screenDim = C(0xff7d7f84);
             p.screenHint = C(0xff8f9196);
+            p.gridNumber = C(0xff6d6f74);
+            p.gridOff = C(0xff77797e);
+            p.gridHalf = C(0xff8d8f94);
+            p.slotInk = C(0xffa9aaa6);
             p.capTop = C(0xff3d3e43);
             p.capMid = C(0xff2b2c30);
             p.capBottom = C(0xff232427);
@@ -215,11 +219,22 @@ namespace cs303::ui
             return p;
         }
 
-        /** Silver: the TB-303's face. The plates brushed aluminium printed in black, the keys light grey; the top bar,
-            the title strip, the displays, the bays and the screens stay dark glass, as the TB-303's black boxes. */
+        /** Silver: the TB-303's face. The plates brushed aluminium printed in black, the keys light grey; the frame,
+            the screens, the bays and the dialogs smoked mid grey (black was too hard a step from the silver), the
+            displays a little darker for their amber. */
         Palette silver()
         {
             auto p = graphite();
+            // the frame (the name's strip, the top bar, the desk round the board) a mid grey, not graphite's black:
+            // against the light plates black was too hard a step (the user, after Steel)
+            p.desk = C(0xff464a4f);
+            p.bar = C(0xff50545a);
+            p.barTop = C(0xff5b5f65);
+            p.barBottom = C(0xff4d5157);
+            p.barDim = C(0xffbcc0c5);
+            p.stencil = C(0xff50545a);
+            p.stencilRight = C(0xff595d63);
+            p.titleInk = C(0xffeff0f1);
             p.faceTop = C(0xffd1d4d7);
             p.faceBottom = C(0xffb5b9bd);
             p.plateTop = C(0xffe7e9eb);
@@ -245,6 +260,36 @@ namespace cs303::ui
             p.capEngrave = juce::Colours::white.withAlpha(0.65f);
             p.capLit = 0.9f;
             p.engraveDy = 1.0f;
+            // the glass (the grid, the side column, the bays, the dialogs) smoked mid grey, not graphite's black
+            // (the user: too black against the silver); the displays a little darker, for their amber
+            p.face = C(0xff46494e);
+            p.dialogTop = C(0xff55595e);
+            p.dialogBottom = C(0xff4d5156);
+            p.screenTop = C(0xff3f4348);
+            p.screenBottom = C(0xff464a4f);
+            p.screenEdge = C(0xff2a2d31);
+            p.displayTop = C(0xff2c2f33);
+            p.displayBottom = C(0xff33363a);
+            p.well = C(0xff2e3135);
+            p.wellLine = C(0xff62666c);
+            p.outline = C(0xff6e7278);
+            p.cell = C(0xff575b61);
+            p.cellOff = C(0xff4f5359);
+            p.litTop = C(0xff7c8086);
+            p.litBottom = C(0xff6c7076);
+            p.halfTop = C(0xff676b71);
+            p.halfBottom = C(0xff5d6167);
+            p.slotHasTop = C(0xff6a6e74);
+            p.slotHasBottom = C(0xff5c6066);
+            p.slotEmptyTop = C(0xff50545a);
+            p.slotEmptyBottom = C(0xff494d53);
+            p.key = C(0xff7a7e84);
+            p.screenDim = C(0xffa6aaaf);
+            p.screenHint = C(0xffb3b7bc);
+            p.gridNumber = C(0xffa0a4a9);
+            p.gridOff = C(0xffa6aaaf);
+            p.gridHalf = C(0xffc0c4c9);
+            p.slotInk = C(0xffd6d7d5);
             return p;
         }
 

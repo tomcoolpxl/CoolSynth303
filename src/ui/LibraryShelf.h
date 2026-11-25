@@ -40,6 +40,8 @@ namespace cs303::ui
         void reload();
         /** An audition ended elsewhere. */
         void auditionEnded();
+        /** The list's and the search field's colours from the theme in use (at the start, and on a theme's change). */
+        void recolour();
 
         void paint(juce::Graphics&) override;
         void resized() override;

@@ -19,7 +19,7 @@ namespace cs303::ui
 {
     struct Palette
     {
-        // the frame: the top bar, the title strip, the dialogs (dark glass in every theme)
+        // the frame: the top bar, the title strip, the dialogs (dark glass; Silver's a smoked mid grey)
         juce::Colour desk, face, dialogTop, dialogBottom, bar, barTop, barBottom, barDim, stencil, stencilRight, titleInk;
         // the panel's ground and its plates
         juce::Colour faceTop, faceBottom, plateTop, plateBottom, plateEdge;
@@ -27,6 +27,8 @@ namespace cs303::ui
         // printing on the plates, and inside the dark screens
         juce::Colour caption, label, dim, hint, rowName, labelHover, valueInk;
         juce::Colour screenCaption, screenLabel, screenDim, screenHint;
+        // the grid's quieter inks: the step numbers, a tie's or a rest's gate, an octave held over, a slot's number
+        juce::Colour gridNumber, gridOff, gridHalf, slotInk;
         // the keys
         juce::Colour capTop, capMid, capBottom, capEdge, capInk, capInkOn, capEngrave;
         float capLit, engraveDy;

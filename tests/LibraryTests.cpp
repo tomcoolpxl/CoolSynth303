@@ -11,6 +11,7 @@
 #include "Library.h"
 #include "Processor.h"
 #include "ui/LibraryShelf.h"
+#include "ui/Theme.h"
 
 namespace
 {
@@ -175,11 +176,20 @@ namespace
                 {
                     shelf->showShelf("lines:Long slides");
                     shelf->selectRow(0);
-                    const auto image = e->board().createComponentSnapshot(e->board().getLocalBounds(), true, 1.0f);
-                    auto file = juce::File(dir).getChildFile("library.png");
-                    file.deleteFile();
-                    juce::FileOutputStream out(file);
-                    juce::PNGImageFormat().writeImageToStream(image, out);
+                    // in every theme (D352), then back to the one in use
+                    const int themeBefore = ui::currentTheme();
+                    const auto names = ui::themeNames();
+                    for (int t = -1; t < names.size(); ++t)
+                    {
+                        if (t >= 0)
+                            e->chooseThemeForTesting(t);
+                        const auto image = e->board().createComponentSnapshot(e->board().getLocalBounds(), true, t < 0 ? 1.0f : 2.0f);
+                        auto file = juce::File(dir).getChildFile(t < 0 ? juce::String("library.png") : "library-" + names[t].toLowerCase() + ".png");
+                        file.deleteFile();
+                        juce::FileOutputStream out(file);
+                        juce::PNGImageFormat().writeImageToStream(image, out);
+                    }
+                    e->chooseThemeForTesting(themeBefore);
                 }
                 e->closeLibrary();
                 expect(e->libraryShelf() == nullptr);

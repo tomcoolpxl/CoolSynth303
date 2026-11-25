@@ -250,7 +250,7 @@ namespace cs303::ui
             g.fillAll(colour::face);
 
             // The pages' list: a lamp and a name each, the page shown on a key of its own, its lamp lit.
-            g.setColour(colour::stencil);
+            g.setColour(colour::face.darker(0.4f)); // a shade under the dialog's glass, in every theme
             g.fillRect(0, 0, sideWidth, getHeight());
             g.setColour(juce::Colour(0xff111111));
             g.fillRect(sideWidth - 1, 0, 1, getHeight());

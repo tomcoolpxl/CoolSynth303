@@ -6,7 +6,9 @@ namespace cs303::ui
 {
     namespace
     {
-        const juce::Colour pickFill { 0xff3a3326 }, rowLine { 0xff2a2b2f }, devilRed { 0xffd2453a };
+        const juce::Colour rowLine { 0xff2a2b2f }, devilRed { 0xffd2453a };
+        /** The chosen row or shelf: the dialog's ground warmed by the theme's orange. */
+        juce::Colour pickFill() { return palette().dialogBottom.interpolatedWith(palette().orange, 0.12f); }
         constexpr const char* noteNames[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C" };
 
         /** A line's steps as small bars by pitch (accents lighter, ties darker, slides as a link), off steps shaded. */
@@ -19,7 +21,7 @@ namespace cs303::ui
                 const auto& s = p.step[static_cast<size_t>(i)];
                 if (i >= p.length)
                 {
-                    g.setColour(juce::Colour(0xff141517).withAlpha(0.75f));
+                    g.setColour(palette().displayTop.withAlpha(0.75f));
                     g.fillRect(r.getX() + i * cw, r.getY(), cw, r.getHeight());
                     continue;
                 }
@@ -46,7 +48,7 @@ namespace cs303::ui
             {
                 const float value = v[k].isVoid() ? 0.5f : static_cast<float>(static_cast<double>(v[k]));
                 const auto bar = juce::Rectangle<float>(r.getX() + 10.0f + i * 24.0f, r.getY() + 6.0f, 14.0f, r.getHeight() - 12.0f);
-                g.setColour(juce::Colour(0xff2c2d31));
+                g.setColour(colour::cell);
                 g.fillRoundedRectangle(bar, 2.0f);
                 g.setColour(fish ? devilRed : colour::orange);
                 g.fillRoundedRectangle(bar.withTrimmedTop(bar.getHeight() * (1.0f - value)), 2.0f);
@@ -71,19 +73,27 @@ namespace cs303::ui
         juce::String percentText(const juce::var& v) { return juce::String(juce::roundToInt(static_cast<double>(v) * 10.0)); }
     }
 
+    void LibraryShelf::recolour()
+    {
+        list.setColour(juce::ListBox::backgroundColourId, palette().dialogBottom);
+        search.setTextToShowWhenEmpty("Search lines and sounds", colour::screenDim);
+        search.setColour(juce::TextEditor::backgroundColourId, colour::well);
+        search.setColour(juce::TextEditor::outlineColourId, colour::wellLine);
+        search.setColour(juce::TextEditor::textColourId, colour::ink);
+        search.applyColourToAllText(colour::ink);
+        list.repaint();
+        repaint();
+    }
+
     LibraryShelf::LibraryShelf()
     {
         setWantsKeyboardFocus(true);
         list.setModel(this);
         list.setRowHeight(48);
-        list.setColour(juce::ListBox::backgroundColourId, palette().dialogBottom);
         list.setOutlineThickness(0);
         addAndMakeVisible(list);
-        search.setTextToShowWhenEmpty("Search lines and sounds", colour::screenDim);
-        search.setColour(juce::TextEditor::backgroundColourId, colour::well);
-        search.setColour(juce::TextEditor::outlineColourId, colour::wellLine);
-        search.setColour(juce::TextEditor::textColourId, colour::ink);
         search.setFont(bodyFont(13.0f));
+        recolour();
         search.onTextChange = [this] { searchFor(search.getText()); };
         addAndMakeVisible(search);
 
@@ -465,7 +475,7 @@ namespace cs303::ui
         if (row < 0 || row >= shownCount())
             return;
         const auto& s = shown[static_cast<size_t>(row)];
-        g.fillAll(selected ? pickFill : palette().dialogBottom);
+        g.fillAll(selected ? pickFill() : palette().dialogBottom);
         if (row == hoverRow && ! selected)
             g.fillAll(juce::Colours::white.withAlpha(0.05f));
         if (selected)
@@ -549,7 +559,7 @@ namespace cs303::ui
             const bool on = query.isEmpty() && r.key == shelf;
             if (on)
             {
-                g.setColour(pickFill);
+                g.setColour(pickFill());
                 g.fillRect(r.area);
                 g.setColour(colour::orange);
                 g.fillRect(r.area.withWidth(3.0f));
@@ -608,7 +618,7 @@ namespace cs303::ui
             for (int k = 0; k <= 36; k += 12)
             {
                 const float ly = pitch.getBottom() - 6.0f - (k / 36.0f) * (pitch.getHeight() - 12.0f);
-                g.setColour(juce::Colour(0xff2c2d31));
+                g.setColour(colour::cell);
                 g.fillRect(pitch.getX(), ly, pitch.getWidth(), 1.0f);
             }
             for (int i = 0; i < Pattern::steps; ++i)
@@ -639,7 +649,7 @@ namespace cs303::ui
                     drawLens(g, { x + cw / 2.0f, ry + 33.0f }, s.slide);
                 if (off)
                 {
-                    g.setColour(juce::Colour(0xff141517).withAlpha(0.7f));
+                    g.setColour(palette().screenTop.withAlpha(0.7f));
                     g.fillRect(x, pitch.getY(), cw, pitch.getHeight());
                 }
             }

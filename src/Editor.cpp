@@ -217,6 +217,8 @@ namespace cs303
     {
         ui::applyTheme(index);
         ui::WindowLook::shared().recolour();
+        if (library != nullptr)
+            library->recolour(); // its list and search field hold their own colours
         refreshAll(true);
         repaint(); // every part of the panel, the library and the lid with it
         if (optionsWindow != nullptr)
