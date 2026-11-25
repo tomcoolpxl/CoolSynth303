@@ -95,18 +95,30 @@ namespace cs303::ui
     }
 
     // ---------------------------------------------------------------- the pattern row
-    PatternRow::PatternRow(Editor& e) : editor(e) {}
-
-    juce::Rectangle<int> PatternRow::slotBounds(int i) const { return { i * 31 + (i / 4) * 8, 0, 28, 26 }; }
-    juce::Rectangle<int> PatternRow::variationBounds(bool b) const { return { slotBounds(15).getRight() + 12 + (b ? 30 : 0), 0, 27, 26 }; }
-    juce::Rectangle<int> PatternRow::chainLabelBounds() const { return { variationBounds(true).getRight() + 18, 0, 62, 26 }; }
-    juce::Rectangle<int> PatternRow::chainBounds(int i) const { return { chainLabelBounds().getRight() + 6 + i * 49, 0, 46, 26 }; }
-    juce::Rectangle<int> PatternRow::addBounds() const
+    PatternRow::PatternRow(Editor& e) : editor(e)
     {
-        const int n = std::min(maxShown, static_cast<int>(editor.processor.project().chain.size()));
-        return { chainBounds(n).getX(), 0, 26, 26 };
+        // the pattern's length at the row's end: clicked through 16, 12 and 8, wheeled a step at a time
+        length = std::make_unique<ValueBox>();
+        length->text = [this] { return juce::String(editor.edited().length) + " steps"; };
+        length->onClick = [this] { editor.editPatternWith([](Pattern& pat) { pat.length = pat.length == 16 ? 12 : pat.length == 12 ? 8 : 16; }); };
+        length->onWheel = [this](int d) { editor.editPatternWith([d](Pattern& pat) { pat.length = juce::jlimit(1, 16, pat.length + d); }); };
+        length->onRightClick = [this] { editor.editPatternWith([](Pattern& pat) { pat.length = 16; }); };
+        length->setBounds(1114, rowY, 72, 26);
+        addAndMakeVisible(*length);
     }
-    juce::Rectangle<int> PatternRow::loopBounds() const { return { addBounds().getRight() + 10, 0, 64, 26 }; }
+
+    // The places as the mockup's layout B gives them (coolsynth-303-relayout.src.html), from the row's left at x 72.
+    juce::Rectangle<int> PatternRow::slotBounds(int i) const { return { 62 + i * 30 + (i / 4) * 6, rowY, 27, 26 }; }
+    juce::Rectangle<int> PatternRow::variationBounds(bool b) const { return { 577 + (b ? 30 : 0), rowY, 28, 26 }; }
+    juce::Rectangle<int> PatternRow::chainLabelBounds() const { return { 648, rowY, 60, 26 }; }
+    juce::Rectangle<int> PatternRow::chainBounds(int i) const { return { 716 + i * 55, rowY + 1, 51, 24 }; }
+    juce::Rectangle<int> PatternRow::addBounds() const { return { 946, rowY, 26, 26 }; }
+    juce::Rectangle<int> PatternRow::loopBounds() const { return { 978, rowY, 66, 26 }; }
+    int PatternRow::shownChain() const
+    {
+        const int n = static_cast<int>(editor.processor.project().chain.size());
+        return n > maxShown ? maxShown - 1 : n;
+    }
 
     void PatternRow::paint(juce::Graphics& g)
     {
@@ -114,6 +126,14 @@ namespace cs303::ui
         const auto& proj = p.project();
         const bool playing = p.isPlaying();
         const auto font = monoFont(12.0f);
+        // the bays: the bank, A and B, the chain's display; the names beside them
+        drawScreen(g, juce::Rectangle<float>(58.0f, 0.0f, 504.0f, 32.0f), 5.0f);
+        drawScreen(g, juce::Rectangle<float>(574.0f, 0.0f, 64.0f, 32.0f), 5.0f);
+        drawDisplay(g, juce::Rectangle<float>(712.0f, 0.0f, 228.0f, 32.0f));
+        g.setColour(colour::dim);
+        g.setFont(labelFont(10.5f).withExtraKerningFactor(0.1f));
+        g.drawText("PATTERN", juce::Rectangle<int>(0, rowY, 56, 26), juce::Justification::centredLeft, false);
+        g.drawText("LENGTH", juce::Rectangle<int>(1058, rowY, 54, 26), juce::Justification::centredLeft, false);
         for (int i = 0; i < 16; ++i)
         {
             const auto r = slotBounds(i).toFloat();
@@ -153,10 +173,10 @@ namespace cs303::ui
             const auto r = chainLabelBounds().toFloat();
             drawLens(g, { r.getX() + 8.0f, r.getCentreY() }, proj.chainOn);
             g.setColour(proj.chainOn ? colour::caption : colour::dim);
-            g.setFont(labelFont(11.0f).withExtraKerningFactor(0.1f));
+            g.setFont(labelFont(10.5f).withExtraKerningFactor(0.1f));
             g.drawText("CHAIN", r.withTrimmedLeft(16.0f), juce::Justification::centredLeft, false);
         }
-        const int shown = std::min(maxShown, static_cast<int>(proj.chain.size()));
+        const int shown = shownChain();
         for (int i = 0; i < shown; ++i)
         {
             const auto& e = proj.chain[static_cast<size_t>(i)];
@@ -172,7 +192,7 @@ namespace cs303::ui
         {
             g.setColour(colour::dim);
             g.setFont(font);
-            g.drawText("+" + juce::String(static_cast<int>(proj.chain.size()) - shown), addBounds().translated(-30, 0).withWidth(28), juce::Justification::centred, false);
+            g.drawText("+" + juce::String(static_cast<int>(proj.chain.size()) - shown) + " more", chainBounds(shown), juce::Justification::centred, false);
         }
         drawCell(g, addBounds().toFloat(), Cell::off);
         g.setColour(colour::rowName);
@@ -206,7 +226,7 @@ namespace cs303::ui
             editor.refreshAll();
             return;
         }
-        const int n = std::min(maxShown, static_cast<int>(p.project().chain.size()));
+        const int n = shownChain();
         for (int i = 0; i < n; ++i)
             if (chainBounds(i).contains(pos))
             {
@@ -285,7 +305,7 @@ namespace cs303::ui
     void PatternRow::mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& w)
     {
         auto& p = editor.processor;
-        const int n = std::min(maxShown, static_cast<int>(p.project().chain.size()));
+        const int n = shownChain();
         for (int i = 0; i < n; ++i)
             if (chainBounds(i).contains(e.getPosition()))
             {
@@ -300,15 +320,15 @@ namespace cs303::ui
     ToolRow::ToolRow(Editor& e) : editor(e)
     {
         auto& p = editor.processor;
-        group("New line");
-        button("Generate", 82, true).onClick = [this] {
+        labels.push_back({ "NEW LINE", { 12, 2, 126, 16 } });
+        button("Generate", { 12, 20, 126, 28 }, true).onClick = [this] {
             const auto seed = editor.nextSeed++ * 2654435761u;
             const auto& proj = editor.processor.project();
             const auto scale = proj.scale;
             const int root = proj.root;
             editor.editPatternWith([=](Pattern& pat) { generate(pat, seed, scale, root); });
         };
-        button("Mutate", 66).onClick = [this] {
+        button("Mutate", { 12, 50, 94, 28 }).onClick = [this] {
             const auto seed = editor.nextSeed++ * 2246822519u;
             const auto& proj = editor.processor.project();
             const auto scale = proj.scale;
@@ -316,7 +336,7 @@ namespace cs303::ui
             const auto what = editor.mutateWhat;
             editor.editPatternWith([=](Pattern& pat) { mutate(pat, seed, scale, root, what); });
         };
-        button(juce::String::charToString(0x25be), 24).onClick = [this] {
+        button(juce::String::charToString(0x25be), { 110, 50, 28, 28 }).onClick = [this] {
             juce::PopupMenu m;
             m.addSectionHeader("Mutate may change");
             auto& w = editor.mutateWhat;
@@ -326,14 +346,13 @@ namespace cs303::ui
             m.addItem("Rests and ties", true, w.rests, [this] { editor.mutateWhat.rests = ! editor.mutateWhat.rests; });
             m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(this));
         };
-        endGroup();
-        group("Key");
-        auto& root = box(34);
+        labels.push_back({ "KEY", { 12, 88, 126, 16 } });
+        auto& root = box({ 12, 104, 34, 24 });
         root.text = [&p = p] { return juce::String(letters[p.project().root]); };
         root.onClick = [&p = p] { p.edit([](Project& pr) { pr.root = (pr.root + 1) % 12; }, false); };
         root.onRightClick = [&p = p] { p.edit([](Project& pr) { pr.root = (pr.root + 11) % 12; }, false); };
         root.onWheel = [&p = p](int d) { p.edit([d](Project& pr) { pr.root = (pr.root + 12 + d) % 12; }, false); };
-        auto& scale = box(86);
+        auto& scale = box({ 50, 104, 88, 24 });
         scale.text = [&p = p] { return juce::String(scaleName(p.project().scale)); };
         const auto nextScale = [&p = p](int d) {
             p.edit([d](Project& pr) { pr.scale = static_cast<Scale>((static_cast<int>(pr.scale) + d + static_cast<int>(Scale::count)) % static_cast<int>(Scale::count)); }, false);
@@ -341,72 +360,35 @@ namespace cs303::ui
         scale.onClick = [nextScale] { nextScale(1); };
         scale.onRightClick = [nextScale] { nextScale(-1); };
         scale.onWheel = nextScale;
-        button("Snap to key", 98).onClick = [this] {
+        button("Snap to key", { 12, 132, 126, 28 }).onClick = [this] {
             const auto& proj = editor.processor.project();
             const auto sc = proj.scale;
             const int r = proj.root;
             editor.editPatternWith([=](Pattern& pat) { snapToKey(pat, sc, r); });
         };
-        endGroup();
-        group("Move");
-        button(juce::String::charToString(0x25c0), 36).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, -1); }); };
-        button(juce::String::charToString(0x25b6), 36).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, 1); }); };
-        endGroup();
-        group("Pitch");
-        button(juce::String::charToString(0x2212), 36).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, -1); }); };
-        button("+", 36).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, 1); }); };
-        endGroup();
-        group("Length");
-        auto& len = box(70);
-        len.text = [this] { return juce::String(editor.edited().length) + " steps"; };
-        len.onClick = [this] { editor.editPatternWith([](Pattern& pat) { pat.length = pat.length == 16 ? 12 : pat.length == 12 ? 8 : 16; }); };
-        len.onWheel = [this](int d) { editor.editPatternWith([d](Pattern& pat) { pat.length = juce::jlimit(1, 16, pat.length + d); }); };
-        len.onRightClick = [this] { editor.editPatternWith([](Pattern& pat) { pat.length = 16; }); };
-        endGroup();
-        auto& undo = button("Undo", 56);
-        undo.enabled = [&p = p] { return p.canUndo(); };
-        undo.onClick = [this, &p = p] { p.undo(); editor.refreshAll(); };
-        auto& redo = button("Redo", 56);
-        redo.enabled = [&p = p] { return p.canRedo(); };
-        redo.onClick = [this, &p = p] { p.redo(); editor.refreshAll(); };
-        endGroup();
-        auto midi = std::make_unique<MidiKey>(editor);
-        midi->setBounds(std::min(x, 1186 - 92), 1, 92, 24); // its right edge on the row's, never past it
-        x += 97;
-        addAndMakeVisible(*midi);
-        parts.push_back(std::move(midi));
+        labels.push_back({ "MOVE", { 12, 172, 50, 26 } });
+        button(juce::String::charToString(0x25c0), { 66, 172, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, -1); }); };
+        button(juce::String::charToString(0x25b6), { 104, 172, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { shift(pat, 1); }); };
+        labels.push_back({ "PITCH", { 12, 206, 50, 26 } });
+        button(juce::String::charToString(0x2212), { 66, 206, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, -1); }); };
+        button("+", { 104, 206, 34, 28 }).onClick = [this] { editor.editPatternWith([](Pattern& pat) { semitone(pat, 1); }); };
     }
 
-    void ToolRow::group(const juce::String& name)
-    {
-        groupLabels.push_back({ name.toUpperCase(), x });
-        x += juce::roundToInt(juce::GlyphArrangement::getStringWidth(labelFont(10.5f).withExtraKerningFactor(0.1f), name.toUpperCase())) + 8;
-    }
-
-    void ToolRow::endGroup()
-    {
-        x += 6;
-        separators.push_back(x);
-        x += 11;
-    }
-
-    Key& ToolRow::button(const juce::String& text, int w, bool on)
+    Key& ToolRow::button(const juce::String& text, juce::Rectangle<int> place, bool hot)
     {
         auto k = std::make_unique<Key>(text, false);
-        k->hot = on; // Generate: the row's one orange action
-        k->setBounds(x, 1, w, 24);
-        x += w + 5;
+        k->hot = hot; // Generate: the column's one orange action
+        k->setBounds(place);
         addAndMakeVisible(*k);
         auto& ref = *k;
         parts.push_back(std::move(k));
         return ref;
     }
 
-    ValueBox& ToolRow::box(int w)
+    ValueBox& ToolRow::box(juce::Rectangle<int> place)
     {
         auto b = std::make_unique<ValueBox>();
-        b->setBounds(x, 1, w, 24);
-        x += w + 5;
+        b->setBounds(place);
         addAndMakeVisible(*b);
         auto& ref = *b;
         parts.push_back(std::move(b));
@@ -417,11 +399,11 @@ namespace cs303::ui
     {
         g.setFont(labelFont(10.5f).withExtraKerningFactor(0.1f));
         g.setColour(colour::dim);
-        for (const auto& [name, at] : groupLabels)
-            g.drawText(name, at, 1, 120, 24, juce::Justification::centredLeft, false);
-        g.setColour(juce::Colours::white.withAlpha(0.07f));
-        for (int s : separators)
-            g.drawVerticalLine(s, 2.0f, 24.0f);
+        for (const auto& [name, place] : labels)
+            g.drawText(name, place, juce::Justification::centredLeft, false);
+        g.setColour(colour::hint);
+        g.setFont(bodyFont(11.0f));
+        g.drawFittedText("These change the whole line.", juce::Rectangle<int>(12, 246, 128, 28), juce::Justification::topLeft, 2);
     }
 
     void ToolRow::refresh()
@@ -441,12 +423,12 @@ namespace cs303::ui
         {
             case Row::lights: return { 0.0f, 0.0f, w, 14.0f };
             case Row::names: return { 0.0f, 19.0f, w, 12.0f };
-            case Row::pitch: return { 0.0f, 33.0f, w, 100.0f };
-            case Row::octave: return { 0.0f, 138.0f, w, 20.0f };
-            case Row::accent: return { 0.0f, 163.0f, w, 20.0f };
-            case Row::slide: return { 0.0f, 188.0f, w, 20.0f };
-            case Row::gate: return { 0.0f, 213.0f, w, 20.0f };
-            case Row::motion: return { 0.0f, 238.0f, w, 36.0f };
+            case Row::pitch: return { 0.0f, 33.0f, w, 136.0f };
+            case Row::octave: return { 0.0f, 174.0f, w, 20.0f };
+            case Row::accent: return { 0.0f, 199.0f, w, 20.0f };
+            case Row::slide: return { 0.0f, 224.0f, w, 20.0f };
+            case Row::gate: return { 0.0f, 249.0f, w, 20.0f };
+            case Row::motion: return { 0.0f, 274.0f, w, 36.0f };
             case Row::none: break;
         }
         return {};
@@ -500,12 +482,12 @@ namespace cs303::ui
             g.drawText(name, rowBounds(row).withWidth(100.0f).translated(4.0f, 0.0f), juce::Justification::centredLeft, false);
         {
             const auto r = rowBounds(Row::pitch);
-            g.drawText("PITCH", juce::Rectangle<float>(4.0f, r.getY() + 26.0f, 70.0f, 14.0f), juce::Justification::centredLeft, false);
+            g.drawText("PITCH", juce::Rectangle<float>(4.0f, r.getCentreY() - 24.0f, 70.0f, 14.0f), juce::Justification::centredLeft, false);
             g.setColour(juce::Colour(0xff6f7176));
             g.setFont(bodyFont(10.5f));
-            g.drawText("Drag up or", juce::Rectangle<float>(4.0f, r.getY() + 44.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
-            g.drawText("down, or", juce::Rectangle<float>(4.0f, r.getY() + 57.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
-            g.drawText("wheel", juce::Rectangle<float>(4.0f, r.getY() + 70.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
+            g.drawText("Drag up or", juce::Rectangle<float>(4.0f, r.getCentreY() - 6.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
+            g.drawText("down, or", juce::Rectangle<float>(4.0f, r.getCentreY() + 7.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
+            g.drawText("wheel", juce::Rectangle<float>(4.0f, r.getCentreY() + 20.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
             // the notes down the lane's edge, as a piano roll's keys; the picked step's note lit
             const juce::Rectangle<float> strip(static_cast<float>(labelWidth) - 36.0f, r.getY(), 30.0f, r.getHeight());
             const auto& ps = pat.step[static_cast<size_t>(editor.pick)];
@@ -840,10 +822,9 @@ namespace cs303::ui
 
     void LocksStrip::paint(juce::Graphics& g)
     {
-        drawScreen(g, getLocalBounds().toFloat());
         g.setColour(colour::caption);
         g.setFont(labelFont(11.0f).withExtraKerningFactor(0.08f));
-        g.drawText("LOCKS " + juce::String::charToString(0xb7) + " STEP " + juce::String(editor.pick + 1), 14, 10, 130, 16, juce::Justification::centredLeft, false);
+        g.drawText("STEP " + juce::String(editor.pick + 1), 14, 6, 130, 16, juce::Justification::centredLeft, false);
         g.setColour(colour::hint);
         g.setFont(bodyFont(10.5f));
         g.drawFittedText("Turn a knob to hold its value on this step.", juce::Rectangle<int>(14, 200, 124, 60), juce::Justification::topLeft, 4);
@@ -857,19 +838,86 @@ namespace cs303::ui
     }
 
     // ---------------------------------------------------------------- the section
+    // ---------------------------------------------------------------- the inspector column
+    InspectorColumn::InspectorColumn(Editor& e) : editor(e)
+    {
+        locks = std::make_unique<LocksStrip>(editor);
+        tools = std::make_unique<ToolRow>(editor);
+        for (juce::Component* c : { static_cast<juce::Component*>(locks.get()), static_cast<juce::Component*>(tools.get()) })
+        {
+            c->setBounds(0, 36, 150, 276);
+            addChildComponent(*c);
+        }
+        showLine(true);
+    }
+
+    void InspectorColumn::showLine(bool l)
+    {
+        line = l;
+        tools->setVisible(line);
+        locks->setVisible(! line);
+        repaint();
+    }
+
+    void InspectorColumn::paint(juce::Graphics& g)
+    {
+        drawScreen(g, getLocalBounds().toFloat());
+        drawScreen(g, juce::Rectangle<float>(4.0f, 4.0f, 142.0f, 30.0f), 5.0f);
+        for (const bool l : { false, true })
+        {
+            const auto r = tabBounds(l).toFloat();
+            drawCell(g, r, line == l ? Cell::lit : Cell::off);
+            g.setColour(line == l ? colour::keyInk : juce::Colour(0xffa9aaa6));
+            g.setFont(labelFont(10.5f));
+            g.drawText(l ? "LINE" : "LOCKS", r, juce::Justification::centred, false);
+        }
+    }
+
+    void InspectorColumn::mouseDown(const juce::MouseEvent& e)
+    {
+        for (const bool l : { false, true })
+            if (tabBounds(l).contains(e.getPosition()))
+                showLine(l);
+    }
+
+    void InspectorColumn::refresh()
+    {
+        repaint();
+        locks->refresh();
+        tools->refresh();
+    }
+
+    // ---------------------------------------------------------------- the section
     SequencerSection::SequencerSection(Editor& e) : editor(e)
     {
+        auto& p = editor.processor;
         patterns = std::make_unique<PatternRow>(editor);
-        tools = std::make_unique<ToolRow>(editor);
         stepGrid = std::make_unique<StepGrid>(editor);
-        locks = std::make_unique<LocksStrip>(editor);
-        for (juce::Component* c : { static_cast<juce::Component*>(patterns.get()), static_cast<juce::Component*>(tools.get()),
-                                    static_cast<juce::Component*>(stepGrid.get()), static_cast<juce::Component*>(locks.get()) })
+        column = std::make_unique<InspectorColumn>(editor);
+        for (juce::Component* c : { static_cast<juce::Component*>(patterns.get()), static_cast<juce::Component*>(stepGrid.get()),
+                                    static_cast<juce::Component*>(column.get()) })
             addAndMakeVisible(*c);
-        patterns->setBounds(12, top + 22, 1186, 26);
-        tools->setBounds(12, top + 58, 1186, 26);
-        stepGrid->setBounds(12, top + 94, 1022, 276);
-        locks->setBounds(12 + 1022 + 14, top + 94, 150, 276);
+        // layout B (CoolSynth's D350): the pattern row, then the grid a row taller beside the inspector column
+        patterns->setBounds(12, top + 19, 1186, 32);
+        stepGrid->setBounds(12, top + 58, 1022, 312);
+        column->setBounds(12 + 1022 + 14, top + 58, 150, 312);
+
+        // Undo, Redo and Drag MIDI, small, at the head band's right
+        auto undo = std::make_unique<Key>("Undo", false);
+        undo->enabled = [&p = p] { return p.canUndo(); };
+        undo->onClick = [this, &p = p] { p.undo(); editor.refreshAll(); };
+        undo->setBounds(976, 1, 56, 21);
+        auto redo = std::make_unique<Key>("Redo", false);
+        redo->enabled = [&p = p] { return p.canRedo(); };
+        redo->onClick = [this, &p = p] { p.redo(); editor.refreshAll(); };
+        redo->setBounds(1036, 1, 56, 21);
+        auto midi = std::make_unique<MidiKey>(editor);
+        midi->setBounds(1100, 1, 98, 21);
+        for (auto* k : { static_cast<juce::Component*>(undo.get()), static_cast<juce::Component*>(redo.get()), static_cast<juce::Component*>(midi.get()) })
+            addAndMakeVisible(*k);
+        headKeys.push_back(std::move(undo));
+        headKeys.push_back(std::move(redo));
+        headKeys.push_back(std::move(midi));
     }
 
     void SequencerSection::paint(juce::Graphics& g)
@@ -895,9 +943,10 @@ namespace cs303::ui
     {
         repaint();
         patterns->repaint();
-        tools->refresh();
         stepGrid->repaint();
-        locks->refresh();
+        column->refresh();
+        for (auto& k : headKeys)
+            k->repaint();
     }
 
     void SequencerSection::repaintPlaying()

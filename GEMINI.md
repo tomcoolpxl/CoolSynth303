@@ -25,7 +25,7 @@ The shared project memory for every AI tool (`CLAUDE.md` points here).
   through a lock the audio thread only tries. The circuit rests while stopped and silent.
 - `src/MidiExport`: a pattern as a MIDI file (Drag MIDI).
 - `src/Editor` and `src/ui`: the panel at 1280 by 800, scaled to the window: the top bar and the synth's sections
-  (`ui/Panel`), the three-octave keyboard (`ui/Keyboard`), the pattern row, tools, step grid and locks
+  (`ui/Panel`), the three-octave keyboard (`ui/Keyboard`), the pattern row, step grid and the inspector column (Locks and Line tabs)
   (`ui/SequencerView`), the widgets and the machined look, graphite plates and knurled knobs (`ui/Widgets`, `ui/Theme`; CoolSynth's D348).
 - `tests/`: `CoolSynth303Tests`, the built VST3 hosted as a DAW would (`HostingTests`).
   `COOLSYNTH303_SNAPSHOTS=<folder>` makes the editor's test write pictures of the panel there;

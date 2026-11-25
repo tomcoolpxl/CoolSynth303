@@ -179,6 +179,23 @@ namespace
                 playFor(*p, 0.05);
             }
 
+            beginTest("the_inspector_column_shows_the_locks_or_the_line_by_its_tabs");
+            {
+                auto& board = e->board();
+                auto* column = find<ui::InspectorColumn>(board);
+                auto* tools = find<ui::ToolRow>(board);
+                auto* locks = find<ui::LocksStrip>(board);
+                expect(column != nullptr && tools != nullptr && locks != nullptr);
+                if (column != nullptr && tools != nullptr && locks != nullptr)
+                {
+                    expect(column->lineShown() && tools->isVisible() && ! locks->isVisible(), "the Line page first");
+                    expect(click(board, onBoard(board, *column, ui::InspectorColumn::tabBounds(false).toFloat().getCentre())) == column);
+                    expect(! column->lineShown() && locks->isVisible() && ! tools->isVisible(), "Locks after its tab");
+                    click(board, onBoard(board, *column, ui::InspectorColumn::tabBounds(true).toFloat().getCentre()));
+                    expect(column->lineShown() && tools->isVisible(), "Line again");
+                }
+            }
+
             beginTest("the_devil_fish_switch_in_the_mods_panel_turns_it_on_and_off");
             {
                 auto& board = e->board();

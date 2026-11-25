@@ -46,6 +46,7 @@ namespace cs303::ui
         Editor& editor;
         std::unique_ptr<Piano> piano;
         std::vector<std::unique_ptr<juce::Component>> parts;
+        const juce::Rectangle<int> modeBay { 952, 51, 176, 30 }; // Write and Transpose, one switch
         Key& key(const juce::String& text, int x, int y, int w);
     };
 }

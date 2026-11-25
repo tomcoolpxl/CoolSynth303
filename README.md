@@ -28,9 +28,11 @@ The panel, from the top:
   - Chain: switch it on to play the chain instead. Its blocks are patterns with their repeats; click a block to edit
     that pattern, Shift-click or wheel for repeats, right-click to remove it; + adds the pattern you edit. Loop plays
     the chain round, or once and then stops.
-  - The tools: Generate (a new line in the key), Mutate (four steps changed; the arrow beside it says what may
-    change), the key (root and scale) and Snap to key, Move (the pattern a step earlier or later), Pitch (every note a
-    semitone), Length (click for 16, 12 or 8 steps, wheel for any), Undo and Redo (also Ctrl+Z and Ctrl+Shift+Z).
+  - Length, at the pattern row's end: click for 16, 12 or 8 steps, wheel for any.
+  - The column beside the grid has two tabs. Line: Generate (a new line in the key), Mutate (four steps changed; the
+    arrow beside it says what may change), the key (root and scale) and Snap to key, Move (the pattern a step earlier
+    or later), Pitch (every note a semitone). Locks: the picked step's knobs.
+  - Undo, Redo and Drag MIDI sit at the sequencer's top right (Undo and Redo also Ctrl+Z and Ctrl+Shift+Z).
   - The grid: drag a step up or down in the pitch lane (or wheel it) for its note; the notes run down the lane's
     left edge. Below it each step's octave, accent, slide and gate (note, tie or rest). Right-click a step for more.
   - The motion lane: the recorded moves of one knob (click its name for the next); draw them, right-click to clear.

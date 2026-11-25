@@ -137,10 +137,10 @@ namespace cs303::ui
     KeyboardSection::KeyboardSection(Editor& e) : editor(e)
     {
         auto& p = editor.processor;
-        auto& accent = key("Accent", 18, 28, 62);
+        auto& accent = key("Accent", 12, 38, 84);
         accent.isOn = [this] { return editor.edited().step[static_cast<size_t>(editor.pick)].accent; };
         accent.onClick = [this] { editor.togglePick(true); };
-        auto& slide = key("Slide", 18, 76, 62);
+        auto& slide = key("Slide", 12, 66, 84);
         slide.isOn = [this] { return editor.edited().step[static_cast<size_t>(editor.pick)].slide; };
         slide.onClick = [this] { editor.togglePick(false); };
 
@@ -148,15 +148,16 @@ namespace cs303::ui
         piano->setBounds(104, top + 16, Piano::whites * Piano::whiteWidth, 80);
         addAndMakeVisible(*piano);
 
-        const int rx = 104 + Piano::whites * Piano::whiteWidth + 34;
-        key("Back", rx, 28, 62).onClick = [this] { editor.movePick(-1); };
-        key("Step", rx + 70, 28, 62).onClick = [this] { editor.movePick(1); };
-        key("Tie", rx, 76, 62).onClick = [this] { editor.setGateAtPick(Gate::tie); };
-        key("Rest", rx + 70, 76, 62).onClick = [this] { editor.setGateAtPick(Gate::rest); };
-        auto& write = key("Write", rx + 160, 28, 86);
+        // layout B (CoolSynth's D350): the entry keys in two even rows, Write and Transpose one switch in a bay
+        const int rx = 776;
+        key("Back", rx, 38, 76).onClick = [this] { editor.movePick(-1); };
+        key("Step", rx + 82, 38, 76).onClick = [this] { editor.movePick(1); };
+        key("Tie", rx, 66, 76).onClick = [this] { editor.setGateAtPick(Gate::tie); };
+        key("Rest", rx + 82, 66, 76).onClick = [this] { editor.setGateAtPick(Gate::rest); };
+        auto& write = key("Write", modeBay.getX() + 3, 38, 84);
         write.isOn = [this] { return ! editor.transposeMode; };
         write.onClick = [this] { editor.transposeMode = false; editor.refreshAll(); };
-        auto& trans = key("Transpose", rx + 160, 76, 86);
+        auto& trans = key("Transpose", modeBay.getX() + 89, 38, 84);
         trans.isOn = [this] { return editor.transposeMode; };
         trans.onClick = [this] { editor.transposeMode = true; editor.refreshAll(); };
         trans.onRightClick = [this, &p = p] { p.setTranspose(0); editor.refreshAll(); };
@@ -172,7 +173,7 @@ namespace cs303::ui
                        + (p.transposition() != 0 ? juce::String(" Now ") + (p.transposition() > 0 ? "+" : "") + juce::String(p.transposition()) + "." : juce::String());
             return "Write: a key sets step " + juce::String(editor.pick + 1) + "'s note and octave, then moves on.";
         };
-        hint->setBounds(rx + 266, top + 24, 1196 - (rx + 266), 80);
+        hint->setBounds(modeBay.getX(), modeBay.getBottom() + 5, 250, 40);
         addAndMakeVisible(*hint);
         parts.push_back(std::move(hint));
 
@@ -205,6 +206,28 @@ namespace cs303::ui
     void KeyboardSection::paint(juce::Graphics& g)
     {
         drawSection(g, juce::Rectangle<int>(0, top, getWidth(), getHeight() - top).toFloat(), "Keyboard", colour::face);
+        // the picked step, where its keys are: its number and its note
+        {
+            const auto r = juce::Rectangle<float>(12.0f, 26.0f, 84.0f, 22.0f);
+            drawDisplay(g, r);
+            const auto& st = editor.edited().step[static_cast<size_t>(editor.pick)];
+            const juce::String note = st.gate == Gate::rest ? juce::String::charToString(0xb7)
+                                    : st.gate == Gate::tie ? juce::String("tie")
+                                    : juce::String(letters[st.note % 12]) + (st.note == 12 ? juce::String::charToString(0x2032) : juce::String())
+                                          + (st.octave > 0 ? "+" : st.octave < 0 ? juce::String::charToString(0x2212) : juce::String());
+            g.setColour(juce::Colour(0xff8a7a68));
+            g.setFont(monoFont(9.5f));
+            g.drawText("STEP " + juce::String(editor.pick + 1).paddedLeft('0', 2), r.withTrimmedLeft(8.0f), juce::Justification::centredLeft, false);
+            g.setColour(colour::amber);
+            g.setFont(fontOf(Face::monoBold, 13.5f));
+            g.drawText(note, r.withTrimmedRight(8.0f), juce::Justification::centredRight, false);
+        }
+        // the entry keys' and the switch's names, the switch's bay
+        g.setColour(colour::dim);
+        g.setFont(labelFont(9.5f).withExtraKerningFactor(0.14f));
+        g.drawText("STEP ENTRY", juce::Rectangle<int>(776, 32, 158, 14), juce::Justification::centred, false);
+        g.drawText("KEYS", juce::Rectangle<int>(modeBay.getX(), 32, modeBay.getWidth(), 14), juce::Justification::centred, false);
+        drawScreen(g, modeBay.toFloat(), 5.0f);
         // the keys' bed
         drawScreen(g, juce::Rectangle<float>(104.0f - 6.0f, top + 12.0f, Piano::whites * Piano::whiteWidth + 12.0f, 88.0f), 5.0f);
         // the line over each octave's name, fading at its ends
@@ -221,6 +244,7 @@ namespace cs303::ui
 
     void KeyboardSection::refresh()
     {
+        repaint(0, 0, 110, 60); // the picked step's display
         piano->repaint();
         for (auto& c : parts)
             c->repaint();
