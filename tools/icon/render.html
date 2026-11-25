@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: "Archivo"; src: url("Archivo-ExtraBold.ttf"); font-weight: 800; }
+  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<div id="out"></div>
+<script src="draw.js"></script>
+<script>
+  // render.html?icon=303|808&size=N : the picked icon at N px; 32 px and under the small design (no number)
+  const q = new URLSearchParams(location.search);
+  const size = parseInt(q.get("size") || "256", 10);
+  const which = q.get("icon") === "808" ? pick808 : pick303;
+  document.fonts.load('800 28px "Archivo"').then(() => {
+    document.getElementById("out").innerHTML =
+      `<svg viewBox="0 0 120 120" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">${which[0][2](size <= 32)}</svg>`;
+  });
+</script>
+</body>
+</html>
