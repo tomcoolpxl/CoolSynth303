@@ -1,7 +1,8 @@
 ; CoolSynth 303's Windows installer (CoolSynth's D363, as CoolSynth's own, its D209), built with Inno Setup 6.5 or newer:
 ;   ISCC /DAppVersion=0.1.0 "/DBuildDir=..\build\CoolSynth303_artefacts\Release" installer\CoolSynth303.iss
 ; scripts\ci\PackageRelease.ps1 -Installer passes the version from CMakeLists.txt. It installs the standalone app with
-; a Start menu entry, and the VST3 where hosts look (Common Files\VST3). Uninstalling removes what it installed and
+; a Start menu entry, and the VST3 and the CLAP where hosts look (Common Files\VST3 and Common Files\CLAP, CoolSynth's
+; D367). Uninstalling removes what it installed and
 ; nothing else: the player's own library (%APPDATA%\CoolSynth303\Library) and the app's settings beside it stay.
 ; No firewall rule: Windows asks once, on the app's first start, for the beat sync (the user's pick, D363).
 
@@ -48,17 +49,21 @@ VersionInfoVersion={#AppVersion}
 VersionInfoProductName=CoolSynth 303
 
 [Types]
-Name: "full"; Description: "Everything: the app and the VST3 plugin"
+Name: "full"; Description: "Everything: the app, the VST3 and the CLAP plugins"
 Name: "app"; Description: "The app only"
 Name: "vst3"; Description: "The VST3 plugin only"
+Name: "clap"; Description: "The CLAP plugin only"
 
 [Components]
 Name: "app"; Description: "Standalone app"; Types: full app
 Name: "vst3"; Description: "VST3 plugin, to play CoolSynth 303 in your music software (DAW)"; Types: full vst3
+Name: "clap"; Description: "CLAP plugin, for DAWs that support it: Bitwig, Reaper, FL Studio, Studio One"; Types: full clap
 
 [Files]
 Source: "{#BuildDir}\Standalone\CoolSynth 303.exe"; DestDir: "{app}"; Components: app; Flags: ignoreversion
 Source: "{#BuildDir}\VST3\CoolSynth 303.vst3\*"; DestDir: "{commoncf64}\VST3\CoolSynth 303.vst3"; Components: vst3; Flags: ignoreversion recursesubdirs createallsubdirs
+; The CLAP is one file (CoolSynth's D367); Common Files\CLAP is where CLAP hosts look.
+Source: "{#BuildDir}\CLAP\CoolSynth 303.clap"; DestDir: "{commoncf64}\CLAP"; Components: clap; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 Source: "..\THIRD_PARTY_NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
 #if FileExists(AddBackslash(SourcePath) + "CoolSynth303.ico")

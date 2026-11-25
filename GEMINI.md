@@ -5,7 +5,7 @@ The shared project memory for every AI tool (`CLAUDE.md` points here).
 ## What it is
 
 - A bass line app for Windows (JUCE 9.0.5, C++20, CMake): a JUCE audio plugin built as a Standalone and a VST3
-  (D305); in a DAW the host's transport runs the sequencer.
+  (D305), and a CLAP through `external/clap-juce-extensions` (CoolSynth's D367); in a DAW the host's transport runs the sequencer.
 - The sound is the engine's TB-303 circuit, the submodule `external/coolsynth-engine` (its own repository,
   `tomcoolpxl/coolsynth-engine`): `Tb303Voice` (CoolSynth's D295), at twice the host's rate, then the engine's
   `DriveProcessor` and `GlobalDelay`. The sequencer is the app's own (`src/Sequencer`), as the original's CPU plays.

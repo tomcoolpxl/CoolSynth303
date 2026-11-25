@@ -1,4 +1,4 @@
-# Configures and builds CoolSynth 303 (the app, the VST3 and the tests) in build/ci-<configuration>, and runs the
+# Configures and builds CoolSynth 303 (the app, the VST3, the CLAP and the tests) in build/ci-<configuration>, and runs the
 # whole test program when asked (CoolSynth's D363, as CoolSynth's own BuildAndTest.ps1).
 param(
     [Parameter(Mandatory)][ValidateSet('Debug', 'Release')][string]$Configuration,

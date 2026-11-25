@@ -1,5 +1,6 @@
 # The release pipeline's steps (CoolSynth's D363), as CoolSynth's own scripts/ci/Common.ps1: configure, build, test,
-# then the packages: one zip of the app, the VST3 and the notices, the installer, and their checksums.
+# then the packages: one zip of the app, the VST3 and the notices, one of the CLAP (CoolSynth's D367), the installer,
+# and their checksums.
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -60,7 +61,7 @@ function Invoke-Cs303Configure {
 }
 
 function Invoke-Cs303Build {
-    # Every target: the app, the VST3 and the tests (the hosting test loads the VST3 just built).
+    # Every target: the app, the VST3, the CLAP and the tests (the hosting test loads the VST3 just built).
     param([Parameter(Mandatory)][pscustomobject]$BuildContext)
 
     Invoke-LoggedCommand -LogPath (Join-Path $BuildContext.LogsDirectory 'build.log') -ScriptBlock {
@@ -123,6 +124,20 @@ function New-Cs303Zip {
     Remove-Item -LiteralPath $stage -Recurse -Force
     Assert-PathExists -Path $zip -Description 'Zip'
     New-Cs303Asset -LogicalName 'zip' -Path $zip
+}
+
+function New-Cs303ClapZip {
+    # The CLAP is one file (CoolSynth's D367), in a zip of its own beside the other, as CoolSynth's. After New-Cs303Zip,
+    # which empties the package folder first.
+    param([Parameter(Mandatory)][pscustomobject]$BuildContext)
+
+    $clap = Join-Path $BuildContext.ArtifactRoot 'CLAP/CoolSynth 303.clap'
+    Assert-PathExists -Path $clap -Description 'CLAP plugin'
+
+    $zip = Join-Path $BuildContext.PackageDirectory "CoolSynth303-windows-x64-clap-$($BuildContext.TagName).zip"
+    Compress-Archive -LiteralPath $clap -DestinationPath $zip -CompressionLevel Optimal -Force
+    Assert-PathExists -Path $zip -Description 'CLAP zip'
+    New-Cs303Asset -LogicalName 'clap' -Path $zip
 }
 
 function New-Cs303Installer {

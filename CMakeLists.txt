@@ -14,6 +14,9 @@ if(NOT DEFINED CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE)
 endif()
 
 add_subdirectory(external/JUCE)
+# CLAP beside the VST3 (CoolSynth's D367, as CoolSynth's own): free-audio/clap-juce-extensions, pinned in external/ at
+# CoolSynth's commit.
+add_subdirectory(external/clap-juce-extensions EXCLUDE_FROM_ALL)
 include(CTest)
 # The engine's own tests run in its repository's CI; here only this app's.
 set(COOLSYNTH_ENGINE_TESTS OFF CACHE BOOL "Build the engine's own test program" FORCE)
@@ -49,6 +52,17 @@ juce_add_plugin(CoolSynth303
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
     IS_MIDI_EFFECT FALSE)
+
+# The CLAP version (CoolSynth's D367), as CoolSynth's without its remote control pages. "stereo" is CLAP's audio
+# capability (its stereo output), not the voicing. Stepped parameters keep their steps (DISCRETE).
+clap_juce_extensions_plugin(TARGET CoolSynth303
+    CLAP_ID "com.tomcoolpxl.coolsynth303"
+    CLAP_FEATURES instrument synthesizer stereo
+    # No "#readme" anchor: a '#' in a define is dropped by the Ninja and Makefile generators (the repository's page
+    # opens on the README anyway).
+    CLAP_MANUAL_URL "https://github.com/tomcoolpxl/CoolSynth303"
+    CLAP_SUPPORT_URL "https://github.com/tomcoolpxl/CoolSynth303/issues"
+    CLAP_USE_JUCE_PARAMETER_RANGES DISCRETE)
 
 set(COOLSYNTH303_SOURCES
     src/Pattern.cpp

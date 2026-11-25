@@ -24,7 +24,7 @@ The standalone app can serve Claude over MCP on 127.0.0.1:47633 (`src/mcp`, as C
 
 ## Building a release
 
-The Debug build is compiled optimised (the engine's `cmake/CoolSynthFlags.cmake`). The app is `build/CoolSynth303_artefacts/Debug/Standalone/CoolSynth 303.exe`; the plugin is `build/CoolSynth303_artefacts/Debug/VST3/CoolSynth 303.vst3` (copy it to `C:\Program Files\Common Files\VST3`).
+The Debug build is compiled optimised (the engine's `cmake/CoolSynthFlags.cmake`). The app is `build/CoolSynth303_artefacts/Debug/Standalone/CoolSynth 303.exe`; the plugin is `build/CoolSynth303_artefacts/Debug/VST3/CoolSynth 303.vst3` (copy it to `C:\Program Files\Common Files\VST3`), and the CLAP `build/CoolSynth303_artefacts/Debug/CLAP/CoolSynth 303.clap` (to `C:\Program Files\Common Files\CLAP`).
 
 A Release build carries the C++ runtime inside it. `scripts/ci/BuildAndTest.ps1 -Configuration Release -RunTests`, then `scripts/ci/PackageRelease.ps1 -Configuration Release -Installer`, build, test and package as the release does (the installer needs Inno Setup 6.5 or newer, `installer/CoolSynth303.iss`). A version tag (`v0.1.0`) makes GitHub build and publish a release.
 
