@@ -219,6 +219,12 @@ namespace cs303::ui
             p.lampOff = C(0xff5a2a20);
             p.lampOn = C(0xffff3b28);
             p.ink = C(0xfff1ebde);
+            p.laneHi = 0.035f;
+            p.laneLo = 0.012f;
+            p.motionFill = 0.03f;
+            p.hoverFill = 0.08f;
+            p.hoverEdge = 0.22f;
+            p.wellRim = 0.05f;
             return p;
         }
 
@@ -457,10 +463,96 @@ namespace cs303::ui
     juce::StringArray themeNames() { return { "Graphite", "Silver", "Steel", "Olive" }; }
     int currentTheme() { return themeInUse; }
 
+    namespace
+    {
+        // WCAG 2's relative luminance and contrast ratio
+        float luminanceOf(juce::Colour c)
+        {
+            const auto lin = [](float u) { return u <= 0.04045f ? u / 12.92f : std::pow((u + 0.055f) / 1.055f, 2.4f); };
+            return 0.2126f * lin(c.getFloatRed()) + 0.7152f * lin(c.getFloatGreen()) + 0.0722f * lin(c.getFloatBlue());
+        }
+        float ratioOf(juce::Colour a, juce::Colour b)
+        {
+            const float x = luminanceOf(a), y = luminanceOf(b);
+            return (std::max(x, y) + 0.05f) / (std::min(x, y) + 0.05f);
+        }
+        juce::Colour brighter(juce::Colour c, float add) { return c.withBrightness(std::min(1.0f, c.getBrightness() + add)); }
+        /** How much brighter c must be, its hue and saturation kept, to stand `target` off the darker `against`. */
+        float liftFor(juce::Colour c, juce::Colour against, float target)
+        {
+            float add = 0.0f;
+            while (add < 1.0f && ratioOf(brighter(c, add), against) < target)
+                add += 0.004f;
+            return add;
+        }
+        /** A gradient's two ends lifted together, judged by their middle. */
+        void liftPair(juce::Colour& top, juce::Colour& bottom, juce::Colour against, float target)
+        {
+            const float add = liftFor(top.interpolatedWith(bottom, 0.5f), against, target);
+            top = brighter(top, add);
+            bottom = brighter(bottom, add);
+        }
+        /** An ink brought to 4.5:1 on its ground (aimed a hair over, for rounding): lighter on a dark ground, darker on a
+            light one; where its own hue cannot get there, pure white or near black, whichever stands further off. */
+        juce::Colour inkOn(juce::Colour ink, juce::Colour ground)
+        {
+            constexpr float need = 4.6f;
+            if (ratioOf(ink, ground) >= need)
+                return ink;
+            const bool dark = luminanceOf(ground) < 0.18f;
+            for (float step = 0.0f; step <= 1.0f; step += 0.01f)
+            {
+                const auto c = dark ? brighter(ink, step) : ink.withBrightness(std::max(0.0f, ink.getBrightness() - step));
+                if (ratioOf(c, ground) >= need)
+                    return c;
+            }
+            const juce::Colour white(0xffffffff), black(0xff101113);
+            return ratioOf(white, ground) > ratioOf(black, ground) ? white : black;
+        }
+
+        /** Every theme's contrast (D352, the user's pick of three steps drawn and measured): the grid's empty keys 3:1
+            off the screen (WCAG's floor for a control), half-lit 4:1, lit 5.5:1, the screens' keys 3:1, each lifted in
+            its own hue; the lanes, the hover and the displays' rims plainly there; every ink 4.5:1 on what it prints on. */
+        void strengthen(Palette& p)
+        {
+            struct Targets { float off, half, lit, cap, laneHi, laneLo, motion, hoverFill, hoverEdge, rim; };
+            constexpr Targets t { 3.05f, 4.05f, 5.55f, 3.05f, 0.14f, 0.06f, 0.14f, 0.28f, 0.75f, 0.42f }; // a hair over 3, 4, 5.5, for rounding
+            const auto screen = p.screenTop.interpolatedWith(p.screenBottom, 0.5f);
+            liftPair(p.cell, p.cellOff, screen, t.off);
+            liftPair(p.slotEmptyTop, p.slotEmptyBottom, screen, t.off);
+            liftPair(p.halfTop, p.halfBottom, screen, t.half);
+            liftPair(p.slotHasTop, p.slotHasBottom, screen, t.half);
+            liftPair(p.litTop, p.litBottom, screen, t.lit);
+            p.key = brighter(p.key, liftFor(p.key, screen, t.lit));
+            const float capAdd = liftFor(p.capMid, screen, t.cap);
+            p.capTop = brighter(p.capTop, capAdd);
+            p.capMid = brighter(p.capMid, capAdd);
+            p.capBottom = brighter(p.capBottom, capAdd);
+            p.laneHi = std::max(p.laneHi, t.laneHi);
+            p.laneLo = std::max(p.laneLo, t.laneLo);
+            p.motionFill = std::max(p.motionFill, t.motion);
+            p.hoverFill = std::max(p.hoverFill, t.hoverFill);
+            p.hoverEdge = std::max(p.hoverEdge, t.hoverEdge);
+            p.wellRim = std::max(p.wellRim, t.rim);
+            const auto mid = [](juce::Colour a, juce::Colour b) { return a.interpolatedWith(b, 0.5f); };
+            const auto off = mid(p.cell, p.cellOff), half = mid(p.halfTop, p.halfBottom), lit = mid(p.litTop, p.litBottom);
+            p.keyInk = inkOn(p.keyInk, lit);
+            p.gridHalf = inkOn(p.gridHalf, half);
+            p.gridOff = inkOn(p.gridOff, off);
+            p.slotInk = inkOn(p.slotInk, off);
+            p.slotLabel = inkOn(p.slotLabel, mid(p.slotHasTop, p.slotHasBottom));
+            p.slotDim = inkOn(p.slotDim, mid(p.slotEmptyTop, p.slotEmptyBottom));
+            p.slotEdited = inkOn(p.slotEdited, mid(p.slotHasTop, p.slotHasBottom));
+            p.gridNumber = inkOn(p.gridNumber, screen);
+            p.capInk = inkOn(p.capInk, p.capMid);
+        }
+    }
+
     void applyTheme(int i)
     {
         themeInUse = juce::jlimit(0, 3, i);
         palette() = themeInUse == 1 ? silver() : themeInUse == 2 ? steel() : themeInUse == 3 ? olive() : graphite();
+        strengthen(palette());
         forgetKept();
     }
 
@@ -546,9 +638,9 @@ namespace cs303::ui
 
     void drawHover(juce::Graphics& g, juce::Rectangle<float> r, float corner)
     {
-        g.setColour(juce::Colours::white.withAlpha(0.08f));
+        g.setColour(juce::Colours::white.withAlpha(palette().hoverFill));
         g.fillRoundedRectangle(r, corner);
-        g.setColour(juce::Colours::white.withAlpha(0.22f));
+        g.setColour(juce::Colours::white.withAlpha(palette().hoverEdge));
         g.drawRoundedRectangle(r.reduced(0.5f), corner, 1.0f);
     }
 
@@ -617,7 +709,7 @@ namespace cs303::ui
         g.fillRoundedRectangle(area, corner);
         g.setColour(juce::Colours::black);
         g.fillRect(area.getX() + corner, area.getY(), area.getWidth() - 2.0f * corner, 1.5f);
-        g.setColour(juce::Colours::white.withAlpha(0.05f));
+        g.setColour(juce::Colours::white.withAlpha(palette().wellRim));
         g.drawRoundedRectangle(area.reduced(0.5f), corner, 1.0f);
         // the glass's sheen
         const auto glass = area.reduced(1.0f);

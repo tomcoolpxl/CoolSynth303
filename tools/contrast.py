@@ -1,6 +1,7 @@
 """Contrast of the 303's palettes: WCAG 2 ratio and APCA Lc for each element against what lies next to it.
 
 Use: python tools/contrast.py src/ui/Theme.cpp   (a ! marks a pair under its threshold)
+It reads the palettes from Theme.cpp and applies its strengthen() as a mirror (keep the two in step).
 
 WCAG 2: L = 0.2126 R + 0.7152 G + 0.0722 B on linearised sRGB; ratio (L1 + 0.05) / (L2 + 0.05).
 Thresholds: text 4.5:1 (1.4.3), a control's or a graphic's edge against what is next to it 3:1 (1.4.11).
@@ -18,10 +19,69 @@ def palettes():
         m = re.search(r"Palette " + name + r"\(\)\s*\{(.*?)\n        \}", src, re.S)
         body = m.group(1)
         p = dict(out["graphite"]) if name != "graphite" else {}
-        for k, v in re.findall(r"p\.(\w+) = C\(0x([0-9a-fA-F]{8})\)", body):
-            p[k] = int(v, 16) & 0xFFFFFF
+        for line in body.splitlines():
+            if m := re.search(r"p\.(\w+) = C\(0x([0-9a-fA-F]{8})\)", line):
+                p[m.group(1)] = int(m.group(2), 16) & 0xFFFFFF
+            elif m := re.search(r"p\.(\w+) = p\.(\w+);", line):
+                p[m.group(1)] = p[m.group(2)]
         out[name] = p
-    return out
+    return {n: strengthen(dict(p)) for n, p in out.items()}
+
+
+def strengthen(p):
+    """Theme.cpp's strengthen(): the keys lifted in their own hue to their ratios off the screen, the inks to 4.5:1."""
+    import colorsys
+
+    def bright(c, add):
+        h, s, v = colorsys.rgb_to_hsv(*rgb(c))
+        r, g, b = colorsys.hsv_to_rgb(h, s, min(1.0, v + add))
+        return (round(r * 255) << 16) | (round(g * 255) << 8) | round(b * 255)
+
+    def lift_for(c, against, target):
+        add = 0.0
+        while add < 1.0 and ratio(bright(c, add), against) < target:
+            add += 0.004
+        return add
+
+    def lift_pair(a, b, against, target):
+        add = lift_for(mix(p[a], p[b]), against, target)
+        p[a], p[b] = bright(p[a], add), bright(p[b], add)
+
+    def ink_on(k, ground):
+        c = p[k]
+        if ratio(c, ground) >= 4.6:
+            return
+        dark = lum(ground) < 0.18
+        for i in range(101):
+            step = i / 100
+            h, s, v = colorsys.rgb_to_hsv(*rgb(c))
+            n = bright(c, step) if dark else bright(c, -min(v, step))
+            if ratio(n, ground) >= 4.6:
+                p[k] = n
+                return
+        p[k] = 0xFFFFFF if ratio(0xFFFFFF, ground) > ratio(0x101113, ground) else 0x101113
+
+    screen = mix(p["screenTop"], p["screenBottom"])
+    lift_pair("cell", "cellOff", screen, 3.05)
+    lift_pair("slotEmptyTop", "slotEmptyBottom", screen, 3.05)
+    lift_pair("halfTop", "halfBottom", screen, 4.05)
+    lift_pair("slotHasTop", "slotHasBottom", screen, 4.05)
+    lift_pair("litTop", "litBottom", screen, 5.55)
+    p["key"] = bright(p["key"], lift_for(p["key"], screen, 5.55))
+    add = lift_for(p["capMid"], screen, 3.05)
+    for k in ("capTop", "capMid", "capBottom"):
+        p[k] = bright(p[k], add)
+    off, half, lit = mix(p["cell"], p["cellOff"]), mix(p["halfTop"], p["halfBottom"]), mix(p["litTop"], p["litBottom"])
+    ink_on("keyInk", lit)
+    ink_on("gridHalf", half)
+    ink_on("gridOff", off)
+    ink_on("slotInk", off)
+    ink_on("slotLabel", mix(p["slotHasTop"], p["slotHasBottom"]))
+    ink_on("slotDim", mix(p["slotEmptyTop"], p["slotEmptyBottom"]))
+    ink_on("slotEdited", mix(p["slotHasTop"], p["slotHasBottom"]))
+    ink_on("gridNumber", screen)
+    ink_on("capInk", p["capMid"])
+    return p
 
 
 def rgb(c):

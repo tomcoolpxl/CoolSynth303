@@ -40,6 +40,8 @@ namespace cs303::ui
         juce::Colour screenTop, screenBottom, screenEdge, displayTop, displayBottom, well, wellLine, outline;
         juce::Colour cell, cellOff, litTop, litBottom, halfTop, halfBottom, slotHasTop, slotHasBottom, slotEmptyTop, slotEmptyBottom, key, keyInk;
         juce::Colour lampOff, lampOn, ink;
+        // white washes on the glass: the pitch lane's rows, the motion lane's slots, the hover light, a display's rim
+        float laneHi, laneLo, motionFill, hoverFill, hoverEdge, wellRim;
     };
 
     /** The palette in use; themes() lists them, Graphite first (the default). */

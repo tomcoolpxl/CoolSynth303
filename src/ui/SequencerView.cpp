@@ -603,7 +603,7 @@ namespace cs303::ui
                 const float rh = c.getHeight() / 13.0f;
                 for (int n = 0; n < 13; ++n)
                 {
-                    g.setColour(juce::Colours::white.withAlpha(n % 2 == 0 ? 0.035f : 0.012f));
+                    g.setColour(juce::Colours::white.withAlpha(n % 2 == 0 ? palette().laneHi : palette().laneLo));
                     g.fillRect(juce::Rectangle<float>(c.getX(), c.getBottom() - (n + 1) * rh, c.getWidth(), rh));
                 }
                 // a tie draws the note it holds: the last note before it, through any ties (none after a rest)
@@ -695,7 +695,7 @@ namespace cs303::ui
             // the motion lane
             {
                 const auto m = cell(Row::motion, i);
-                g.setColour(juce::Colours::white.withAlpha(0.03f));
+                g.setColour(juce::Colours::white.withAlpha(palette().motionFill));
                 g.fillRoundedRectangle(m, 3.0f);
                 const float v = pat.motion[static_cast<size_t>(editor.motionKnob)][static_cast<size_t>(i)];
                 if (v >= 0.0f)
