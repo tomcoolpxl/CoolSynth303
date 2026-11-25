@@ -66,7 +66,8 @@ set(COOLSYNTH303_SOURCES
     src/ui/LibraryShelf.cpp
     src/StandaloneDevices.cpp
     src/ui/WindowLook.cpp
-    src/ui/OptionsWindow.cpp)
+    src/ui/OptionsWindow.cpp
+    src/AudioExport.cpp)
 
 # The standalone app's own window (D349) only in the app, not in the tests.
 target_sources(CoolSynth303 PRIVATE ${COOLSYNTH303_SOURCES} src/StandaloneApp.cpp)
@@ -104,6 +105,7 @@ if(BUILD_TESTING)
             tests/McpTests.cpp
             tests/LibraryTests.cpp
             tests/OptionsTests.cpp
+            tests/ExportTests.cpp
             ${COOLSYNTH303_SOURCES})
     target_include_directories(CoolSynth303Tests PRIVATE src tests)
     target_compile_features(CoolSynth303Tests PUBLIC cxx_std_20)
