@@ -6,6 +6,7 @@
 #include "StandaloneDevices.h"
 #include "ui/Theme.h"
 #include "ui/Widgets.h"
+#include "ui/Hints.h"
 #include "ui/WindowLook.h"
 
 #if JUCE_WINDOWS
@@ -19,7 +20,7 @@ namespace cs303::ui
     namespace
     {
         // In pages, as the 808's (D335): the pages' list down the left, a page beside it; every page fits the one size.
-        constexpr int panelWidth = 600, panelHeight = 372, sideWidth = 148, pad = 22, labelWidth = 104, rowHeight = 28, rowGap = 8,
+        constexpr int panelWidth = 600, panelHeight = 372 + 26, footHeight = 26, sideWidth = 148, pad = 22, labelWidth = 104, rowHeight = 28, rowGap = 8,
                       headHeight = 22, topPad = 18, sidePad = 8, pagePitch = 33, pageHeight = 30;
         constexpr std::array<int, 6> windowSizes { 75, 100, 125, 150, 175, 200 };
 
@@ -143,7 +144,7 @@ namespace cs303::ui
     // =============================================================================================================
 
     /** The options in pages: their list down the left, one page at a time beside it (as the 808's, D335). */
-    class OptionsPanel final : public juce::Component, private juce::ChangeListener, private juce::Timer
+    class OptionsPanel final : public juce::Component, public HintSource, private juce::ChangeListener, private juce::Timer
     {
     public:
         enum Page { audioPage, midiPage, hostPage, panelPage, exportPage };
@@ -160,12 +161,20 @@ namespace cs303::ui
             if (devices != nullptr)
                 buildDevices();
 
+            // the hint line at the foot (D353): what the row under the mouse does
+            hintLine = std::make_unique<HintLine>(true);
+            addAndMakeVisible(*hintLine);
+            hintWatcher = std::make_unique<HintWatcher>(*this, *hintLine);
+            addMouseListener(hintWatcher.get(), true);
+
             // The accuracy (D349): two keys, the chosen one lit; on the Audio page, the Host page in a plugin.
             for (int level = 0; level < static_cast<int>(accuracyKeys.size()); ++level)
             {
                 auto& key = accuracyKeys[static_cast<std::size_t>(level)];
                 key = std::make_unique<Key>(level == 0 ? "Best" : "Light", false);
                 key->setComponentID("accuracy" + juce::String(level));
+                key->setHelpText(level == 0 ? "Best: the circuit solved as closely as it goes; the most CPU."
+                                            : "Light: the voice at the device's rate with a looser solve; about half the CPU, the top a little duller.");
                 key->isOn = [this, level] { return (hooks.accuracy ? hooks.accuracy() : 0) == level; };
                 key->onClick = [this, level]
                 {
@@ -190,6 +199,7 @@ namespace cs303::ui
                     hooks.chooseWindowSize(windowSizes[static_cast<std::size_t>(i)]);
                 repaint();
             };
+            windowSize.setHelpText("The window's size, in percent of the panel's own.");
             addChildComponent(windowSize);
 
             theme.value = [this] { return themeNames()[hooks.theme ? hooks.theme() : 0]; };
@@ -200,6 +210,7 @@ namespace cs303::ui
                     hooks.chooseTheme(i);
                 repaint();
             };
+            theme.setHelpText("The panel's colours: Graphite, Silver after the TB-303, the 808's Steel and Olive.");
             addChildComponent(theme);
 
             rebuildInputs();
@@ -311,9 +322,35 @@ namespace cs303::ui
                 g.setFont(bodyFont(12.0f));
                 g.drawFittedText(hint, juce::Rectangle<int>(x, hintY, w, 36), juce::Justification::topLeft, 2);
             }
+            // the foot: a strip of its own for the hint line, a line over it
+            const auto foot = getLocalBounds().removeFromBottom(footHeight);
+            g.setColour(colour::face);
+            g.fillRect(foot);
+            g.setColour(juce::Colours::black.withAlpha(0.5f));
+            g.fillRect(foot.withHeight(1));
         }
 
-        void resized() override { layOut(); }
+        void resized() override
+        {
+            layOut();
+            hintLine->setBounds(sidePad + 4, getHeight() - footHeight + 3, getWidth() - 2 * sidePad - 8, footHeight - 6);
+        }
+
+        [[nodiscard]] juce::String hintAt(juce::Point<int> p) const override
+        {
+            const int i = pageAt(p);
+            if (i < 0)
+                return {};
+            switch (pages[static_cast<std::size_t>(i)])
+            {
+                case audioPage: return "Audio: the device, its rate and buffer, the accuracy, a test tone.";
+                case midiPage: return "MIDI: the inputs that play the 303, and an output for its notes.";
+                case hostPage: return "Host: the accuracy, in a plugin; the devices are the host's.";
+                case panelPage: return "Panel: the window's size and the theme.";
+                case exportPage: return "Export: the WAV export comes here.";
+            }
+            return {};
+        }
 
         void mouseMove(const juce::MouseEvent& e) override
         {
@@ -431,6 +468,10 @@ namespace cs303::ui
                 if (auto* device = devices->getCurrentAudioDevice())
                     applySetup([b = device->getAvailableBufferSizes()[i]](auto& s) { s.bufferSize = b; });
             };
+            driver.setHelpText("The audio driver: Windows Audio, or ASIO for the lowest latency.");
+            output.setHelpText("The audio output the 303 plays through.");
+            rate.setHelpText("The sample rate the audio device runs at.");
+            buffer.setHelpText("The audio buffer: smaller answers faster, larger is safer from crackles.");
             for (auto* p : { &driver, &output, &rate, &buffer })
                 addChildComponent(*p);
 
@@ -444,8 +485,10 @@ namespace cs303::ui
                     changed();
                 }
             };
+            controlPanel.setHelpText("The driver's own control panel (ASIO).");
             addChildComponent(controlPanel);
             testTone.onClick = [this] { devices->playTestSound(); };
+            testTone.setHelpText("Play a short tone through the output, to hear that it works.");
             addChildComponent(testTone);
 
             inputList.isOn = [this](const juce::String& id) { return devices->isMidiInputDeviceEnabled(id); };
@@ -457,9 +500,11 @@ namespace cs303::ui
             inputView.setViewedComponent(&inputList, false);
             inputView.setScrollBarsShown(true, false);
             inputView.setScrollBarThickness(8);
+            inputView.setHelpText("The MIDI inputs: tick those whose notes play the 303 and whose clock it follows.");
             addChildComponent(inputView);
 
             // The MIDI output the 303's clock and notes go to (JUCE's player sends to the default output).
+            midiOut.setHelpText("A MIDI output for the sequencer's notes, to play another synth.");
             midiOut.value = [this]
             {
                 const auto id = devices->getDefaultMidiOutputIdentifier();
@@ -490,7 +535,7 @@ namespace cs303::ui
             labels.clear();
             hint.clear();
             for (auto* c : getChildren())
-                c->setVisible(false);
+                c->setVisible(c == hintLine.get()); // the hint line stays on every page
             const int x = sideWidth + pad, w = getWidth() - x - pad, cw = w - labelWidth;
             int y = topPad + headHeight + 12;
             const auto row = [&](juce::Component& c, const juce::String& label, int width = -1)
@@ -630,6 +675,8 @@ namespace cs303::ui
         std::vector<Page> pages;
         Page page = audioPage;
         int hoverPage = -1;
+        std::unique_ptr<HintLine> hintLine;
+        std::unique_ptr<HintWatcher> hintWatcher;
         Picker driver, output, rate, buffer, midiOut, windowSize, theme;
         Key controlPanel { "Control panel", false }, testTone { "Test tone", false };
         std::array<std::unique_ptr<Key>, 2> accuracyKeys;

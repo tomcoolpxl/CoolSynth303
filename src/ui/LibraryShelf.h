@@ -7,6 +7,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "Library.h"
+#include "ui/Hints.h"
 #include "ui/Widgets.h"
 
 /*
@@ -20,7 +21,7 @@
 */
 namespace cs303::ui
 {
-    class LibraryShelf final : public juce::Component, private juce::ListBoxModel
+    class LibraryShelf final : public juce::Component, public HintSource, private juce::ListBoxModel
     {
     public:
         LibraryShelf();
@@ -43,6 +44,9 @@ namespace cs303::ui
         void paint(juce::Graphics&) override;
         void resized() override;
         void mouseUp(const juce::MouseEvent&) override;
+        void mouseMove(const juce::MouseEvent&) override;
+        void mouseExit(const juce::MouseEvent&) override;
+        [[nodiscard]] juce::String hintAt(juce::Point<int> local) const override;
         bool keyPressed(const juce::KeyPress&) override;
 
         // ---- tests ----------------------------------------------------------------------------------------------
@@ -88,6 +92,7 @@ namespace cs303::ui
         void renameChosen();
         void recycleChosen();
         [[nodiscard]] juce::Rectangle<int> box() const noexcept { return { 70, 64, 1150, 690 }; }
+        static constexpr int footHeight = 26; // the hint line at the box's foot
         [[nodiscard]] juce::Rectangle<int> sideArea() const noexcept;
         [[nodiscard]] juce::Rectangle<int> listArea() const noexcept;
         [[nodiscard]] juce::Rectangle<int> detailArea() const noexcept;
@@ -96,6 +101,10 @@ namespace cs303::ui
         Library lib;
         std::vector<Shown> shown;
         std::vector<SideRow> side;
+        HoverPlace sideHover;        // the shelf's name under the mouse
+        int hoverRow = -1;           // the list's row under the mouse
+        std::unique_ptr<HintLine> hintLine;
+        std::unique_ptr<HintWatcher> hintWatcher;
         juce::String shelf = "lines:all", query;
         int chosen = -1;
         juce::ListBox list;

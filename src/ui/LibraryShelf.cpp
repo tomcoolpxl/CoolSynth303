@@ -106,7 +106,15 @@ namespace cs303::ui
         rename->onClick = [this] { renameChosen(); };
         recycle = make("To the Recycle Bin");
         recycle->onClick = [this] { recycleChosen(); };
+        close->setHelpText("Close the library (Esc). An audition still sounding stops and gives yours back.");
+        audition->setHelpText("Hear the chosen line with your sound, or your pattern with the chosen sound, in place of yours. Stop gives yours back. Space does the same.");
+        loadKey->setHelpText("Put the chosen line into the pattern you edit, or the chosen sound on the panel. One undo step. Enter does the same.");
+        keep->setHelpText("Keep a copy of the chosen line or sound on your own shelf, to rename and change.");
+        rename->setHelpText("Rename this one of yours.");
+        recycle->setHelpText("Move this one of yours to the Recycle Bin.");
+        search.setHelpText("Search the lines and sounds by name, style or family.");
         keepMine = make("Keep");
+        keepMine->setHelpText("Keep the pattern you edit, or the panel's sound, on your own shelf.");
         keepMine->onClick = [this]
         {
             if (shelf == "mine:lines" && currentLine)
@@ -116,11 +124,18 @@ namespace cs303::ui
             reload();
             selectRow(shownCount() - 1);
         };
+        hintLine = std::make_unique<HintLine>(true);
+        addAndMakeVisible(*hintLine);
+        hintWatcher = std::make_unique<HintWatcher>(*this, *hintLine);
+        addMouseListener(hintWatcher.get(), true);
+        list.addMouseListener(this, true); // the row under the mouse, lit
         reload();
     }
 
     LibraryShelf::~LibraryShelf()
     {
+        list.removeMouseListener(this);
+        removeMouseListener(hintWatcher.get());
         list.setModel(nullptr);
     }
 
@@ -217,11 +232,11 @@ namespace cs303::ui
         }
     }
 
-    juce::Rectangle<int> LibraryShelf::sideArea() const noexcept { return { box().getX(), box().getY() + 52, 200, box().getHeight() - 52 }; }
-    juce::Rectangle<int> LibraryShelf::listArea() const noexcept { return { box().getX() + 200, box().getY() + 52, 400, box().getHeight() - 52 }; }
+    juce::Rectangle<int> LibraryShelf::sideArea() const noexcept { return { box().getX(), box().getY() + 52, 200, box().getHeight() - 52 - footHeight }; }
+    juce::Rectangle<int> LibraryShelf::listArea() const noexcept { return { box().getX() + 200, box().getY() + 52, 400, box().getHeight() - 52 - footHeight }; }
     juce::Rectangle<int> LibraryShelf::detailArea() const noexcept
     {
-        return { box().getX() + 600, box().getY() + 52, box().getWidth() - 600, box().getHeight() - 52 };
+        return { box().getX() + 600, box().getY() + 52, box().getWidth() - 600, box().getHeight() - 52 - footHeight };
     }
 
     void LibraryShelf::resized()
@@ -238,6 +253,7 @@ namespace cs303::ui
         rename->setBounds(d.getX() + 262, keysY, 80, 28);
         recycle->setBounds(d.getX() + 350, keysY, 140, 28);
         keepMine->setBounds(listArea().getX() + 14, listArea().getBottom() - 44, listArea().getWidth() - 28, 30);
+        hintLine->setBounds(box().getX() + 16, box().getBottom() - footHeight + 2, box().getWidth() - 32, footHeight - 4);
         layOutSide();
     }
 
@@ -450,6 +466,8 @@ namespace cs303::ui
             return;
         const auto& s = shown[static_cast<size_t>(row)];
         g.fillAll(selected ? pickFill : palette().dialogBottom);
+        if (row == hoverRow && ! selected)
+            g.fillAll(juce::Colours::white.withAlpha(0.05f));
         if (selected)
         {
             g.setColour(colour::orange);
@@ -552,6 +570,12 @@ namespace cs303::ui
                              listArea().reduced(18, 16).withHeight(60), juce::Justification::topLeft, 3);
         }
         paintDetail(g);
+        if (! sideHover.area.isEmpty())
+            drawHover(g, sideHover.area.toFloat().reduced(4.0f, 1.0f));
+        // the foot: a line over the hint
+        const auto foot = box().toFloat().removeFromBottom(static_cast<float>(footHeight));
+        g.setColour(juce::Colours::black.withAlpha(0.5f));
+        g.fillRect(foot.getX() + 1.0f, foot.getY(), foot.getWidth() - 2.0f, 1.0f);
     }
 
     void LibraryShelf::paintDetail(juce::Graphics& g)
@@ -686,6 +710,52 @@ namespace cs303::ui
             }
         if (! box().toFloat().contains(p) && onClose)
             onClose(); // a click on the veil closes, as the 808's
+    }
+
+    void LibraryShelf::mouseMove(const juce::MouseEvent& e)
+    {
+        // over the list: its row lit; over the shelves: the shelf's name
+        if (e.eventComponent != this && list.isParentOf(e.eventComponent))
+        {
+            const auto at = e.getEventRelativeTo(&list).getPosition();
+            const int row = list.getRowContainingPosition(at.x, at.y);
+            if (row != hoverRow)
+            {
+                list.repaintRow(hoverRow);
+                hoverRow = row;
+                list.repaintRow(hoverRow);
+            }
+            return;
+        }
+        juce::Rectangle<int> at;
+        for (const auto& r : side)
+            if (! r.heading && r.area.toNearestInt().contains(e.getPosition()))
+                at = r.area.toNearestInt();
+        sideHover.moveTo(*this, at);
+    }
+
+    void LibraryShelf::mouseExit(const juce::MouseEvent& e)
+    {
+        if (e.eventComponent != this && list.isParentOf(e.eventComponent) && ! list.isMouseOver(true))
+        {
+            list.repaintRow(hoverRow);
+            hoverRow = -1;
+        }
+        if (e.eventComponent == this)
+            sideHover.moveTo(*this, {});
+    }
+
+    juce::String LibraryShelf::hintAt(juce::Point<int> p) const
+    {
+        for (const auto& r : side)
+            if (! r.heading && r.area.toNearestInt().contains(p))
+                return r.key.startsWith("mine:") ? "Your own " + r.label.toLowerCase() + ", kept from the panel or copied from the library."
+                     : r.key.startsWith("sounds") ? "The sounds: " + r.label + "." : "The lines: " + r.label + ".";
+        if (listArea().contains(p))
+            return "Click to choose; Space auditions it, Enter loads it, right-click for more.";
+        if (detailArea().contains(p))
+            return "The chosen one in full: its steps as the grid draws them, or its sound's knobs.";
+        return {};
     }
 
     bool LibraryShelf::keyPressed(const juce::KeyPress& k)

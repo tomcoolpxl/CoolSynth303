@@ -4,6 +4,8 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "ui/Theme.h"
+
 /*
     The hint line (CoolSynth's D353): one plain sentence at the panel's foot on what the control under the mouse does
     and how to use it. A knob or key takes its hint from this table by its kind and name when it is made; where a name
@@ -104,4 +106,70 @@ namespace cs303::ui
             return kindAndName.startsWith("knob:") ? found->second + knobHelp : found->second;
         return {};
     }
+
+    /** The hint for a place in a component: a painted place's (HintSource), else the nearest component's own hint,
+        walking out from the one under it. */
+    inline juce::String hintOnBoard(juce::Component& root, juce::Point<int> at)
+    {
+        for (auto* c = root.getComponentAt(at); c != nullptr && c != &root; c = c->getParentComponent())
+        {
+            juce::String t;
+            if (const auto* h = dynamic_cast<const HintSource*>(c))
+                t = h->hintAt(c->getLocalPoint(&root, at));
+            if (t.isEmpty())
+                t = c->getHelpText();
+            if (t.isNotEmpty())
+                return t;
+        }
+        if (const auto* h = dynamic_cast<const HintSource*>(&root))
+            return h->hintAt(at);
+        return {};
+    }
+
+    /** The hint line (D353): one sentence on what is under the mouse; on dark glass (the dialogs) in their light ink. */
+    class HintLine final : public juce::Component
+    {
+    public:
+        explicit HintLine(bool onGlass) : glass(onGlass) { setInterceptsMouseClicks(false, false); }
+        juce::String text;
+        void paint(juce::Graphics& g) override
+        {
+            g.setFont(bodyFont(12.0f));
+            const auto quiet = glass ? colour::screenDim : colour::dim, said = glass ? colour::screenHint : colour::hint;
+            g.setColour(text.isEmpty() ? quiet : said);
+            shapedText(g, text.isEmpty() ? juce::String("Point at a control to see what it does.") : text, getLocalBounds().toFloat(),
+                       juce::Justification::centredLeft, true);
+        }
+
+    private:
+        bool glass;
+    };
+
+    /** Follows the mouse over a component and its children and puts the hint of what is under it in the line. */
+    class HintWatcher final : public juce::MouseListener
+    {
+    public:
+        HintWatcher(juce::Component& r, HintLine& l) : root(r), line(l) {}
+        void mouseMove(const juce::MouseEvent& e) override { show(e); }
+        void mouseEnter(const juce::MouseEvent& e) override { show(e); }
+        void mouseUp(const juce::MouseEvent& e) override { show(e); }
+        void mouseExit(const juce::MouseEvent&) override
+        {
+            if (! root.isMouseOver(true))
+                set({});
+        }
+
+    private:
+        juce::Component& root;
+        HintLine& line;
+        void set(const juce::String& t)
+        {
+            if (t != line.text)
+            {
+                line.text = t;
+                line.repaint();
+            }
+        }
+        void show(const juce::MouseEvent& e) { set(hintOnBoard(root, e.getEventRelativeTo(&root).getPosition())); }
+    };
 }
