@@ -4,7 +4,7 @@ The shared project memory for every AI tool (`CLAUDE.md` points here).
 
 ## What it is
 
-- A bass line app for Windows (JUCE 9.0.5, C++20, CMake): a JUCE audio plugin built as a Standalone and a VST3
+- A bass line app for Windows and the Mac (JUCE 9.0.5, C++20, CMake): a JUCE audio plugin built as a Standalone and a VST3
   (D305), and a CLAP through `external/clap-juce-extensions` (CoolSynth's D367); in a DAW the host's transport runs the sequencer.
 - The sound is the engine's TB-303 circuit, the submodule `external/coolsynth-engine` (its own repository,
   `tomcoolpxl/coolsynth-engine`): `Tb303Voice` (CoolSynth's D295), at twice the host's rate, then the engine's
@@ -29,6 +29,9 @@ The shared project memory for every AI tool (`CLAUDE.md` points here).
   (`ui/SequencerView`), the widgets and the machined look, graphite plates and knurled knobs (`ui/Widgets`, `ui/Theme`; CoolSynth's D348).
 - The release (CoolSynth's D363): `installer/CoolSynth303.iss` (Inno Setup), `scripts/ci` (build, test, package),
   `.github/workflows/release.yml` on a version tag; `tools/release/make_notices.py` writes `THIRD_PARTY_NOTICES.txt`.
+- The Mac (CoolSynth's D370): Apple silicon, macOS 13 or newer, as CoolSynth's; `scripts/ci/BuildAndTestMac.sh` builds,
+  tests and packages, `installer/macos/package.py` makes the unsigned .pkg and zips, `.github/workflows/macos.yml`
+  runs it on every push and `release.yml` publishes the Mac beside Windows.
 - `tests/`: `CoolSynth303Tests`, the built VST3 hosted as a DAW would (`HostingTests`).
   `COOLSYNTH303_SNAPSHOTS=<folder>` makes the editor's test write pictures of the panel there;
   `COOLSYNTH303_RENDER=<folder>` makes the processor's write listening files.

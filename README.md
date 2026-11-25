@@ -13,13 +13,21 @@ TB-303 is a trademark of Roland Corporation. CoolSynth 303 is not made, approved
 
 ## Download
 
-Get the latest `CoolSynth303-Setup` installer from the [Releases page](https://github.com/tomcoolpxl/CoolSynth303/releases). CoolSynth 303 runs on 64-bit Windows 10 or 11.
+Get the latest `CoolSynth303-Setup` installer from the [Releases page](https://github.com/tomcoolpxl/CoolSynth303/releases): the `.exe` for Windows, the `.pkg` for a Mac. CoolSynth 303 runs on 64-bit Windows 10 or 11, and on Macs with Apple silicon (M1 or newer) with macOS 13 Ventura or newer.
+
+### Windows
 
 Windows may warn that the publisher is unknown, because the installer isn't code-signed. Click **More info**, then **Run anyway**.
 
 The installer puts the app in the Start menu, the VST3 in `C:\Program Files\Common Files\VST3` and the CLAP in `C:\Program Files\Common Files\CLAP`. Uninstalling it keeps your own lines and sounds.
 
 The first time the app starts, Windows asks whether it may use the network. Allow it on private networks, so the beat sync can play in time with other computers.
+
+### Mac
+
+Open the `.pkg`. The installer isn't signed, so macOS blocks it once: go to **System Settings > Privacy & Security** and click **Open Anyway**.
+
+It installs for your user only, without an administrator password: the app in `~/Applications`, the VST3 and the CLAP in `~/Library/Audio/Plug-Ins`. The first time the app starts, macOS asks whether it may find devices on your local network: allow it, so the beat sync can play in time with other computers.
 
 ## Sounds
 
@@ -72,8 +80,20 @@ ctest --test-dir build -C Debug --output-on-failure
 
 Debug builds are optimized, so they play in real time. Use `--config Release` for a build you want to give to someone else.
 
+On a Mac with Apple silicon, you need the Xcode command line tools, CMake 3.22 or newer and Ninja (`brew install cmake ninja`):
+
+```bash
+git clone --recurse-submodules https://github.com/tomcoolpxl/CoolSynth303.git
+cd CoolSynth303
+cmake -S . -B build -G "Ninja Multi-Config"
+cmake --build build --config Debug
+ctest --test-dir build -C Debug --output-on-failure
+```
+
+`scripts/ci/BuildAndTestMac.sh Release --package <name>` builds, tests and makes the installer and zips as the release does.
+
 How the sound is made, the tools and how a release is built are in [docs/development.md](docs/development.md).
 
 ## License
 
-CoolSynth 303's own code is MIT licensed (see `LICENSE`). It's built with [JUCE](https://juce.com) 9 under the free [Starter licence](https://juce.com/legal/juce-9-licence/). The fonts are Archivo and IBM Plex Mono, under the SIL Open Font License. `THIRD_PARTY_NOTICES.txt`, which the installer ships beside the app, holds the notices of everything it includes.
+CoolSynth 303's own code is MIT licensed (see `LICENSE`). It's built with [JUCE](https://juce.com) 9 under the free [Starter licence](https://juce.com/legal/juce-9-licence/). The fonts are Archivo and IBM Plex Mono, under the SIL Open Font License. `THIRD_PARTY_NOTICES.txt`, which the installers ship with the app, holds the notices of everything it includes.
