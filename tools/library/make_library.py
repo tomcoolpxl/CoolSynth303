@@ -128,35 +128,37 @@ def sound(name, family, about, **panel):
     return {"name": name, "family": family, "about": about, "panel": base}
 
 
+# cutoff and envMod are on the pots' track since CoolSynth's D364 (a 50k A taper): each was set anew so the pot sits
+# where it did on the exponential track the sounds were made on, and the sound plays as before.
 SOUNDS = [
     sound("Classic Acid", "Stock", "Saw, the filter low and resonant, a medium envelope: the classic squelch.",
-          cutoff=0.32, resonance=0.80, envMod=0.55, decay=0.50, accent=0.70),
+          cutoff=0.3308, resonance=0.80, envMod=0.5203, decay=0.50, accent=0.70),
     sound("Squelch", "Stock", "Darker and more resonant, a wide envelope that the accents fling open.",
-          cutoff=0.20, resonance=0.90, envMod=0.75, decay=0.35, accent=0.85),
+          cutoff=0.2643, resonance=0.90, envMod=0.6479, decay=0.35, accent=0.85),
     sound("Warehouse Drive", "Stock", "The classic squelch through the drive, pushed.",
-          cutoff=0.40, resonance=0.72, envMod=0.60, decay=0.55, accent=0.70, driveOn=True, drive=0.60, tone=0.55),
+          cutoff=0.3931, resonance=0.72, envMod=0.5444, decay=0.55, accent=0.70, driveOn=True, drive=0.60, tone=0.55),
     sound("Minimal Click", "Stock", "A short decay and the filter open: clicks and plucks for odd lengths.",
-          cutoff=0.55, resonance=0.50, envMod=0.40, decay=0.10, accent=0.50),
+          cutoff=0.5203, resonance=0.50, envMod=0.3931, decay=0.10, accent=0.50),
     sound("Rolling Sub", "Stock", "The square with the filter nearly closed and little resonance: a round sub.",
-          square=True, cutoff=0.12, resonance=0.20, envMod=0.20, decay=0.60, accent=0.40),
+          square=True, cutoff=0.1659, resonance=0.20, envMod=0.2643, decay=0.60, accent=0.40),
     sound("Liquid Lead", "Stock", "The square, half open, a little delay: a gliding lead.",
-          square=True, cutoff=0.45, resonance=0.60, envMod=0.35, decay=0.70, accent=0.50, delayOn=True, feedback=0.35, mix=0.25),
+          square=True, cutoff=0.4419, resonance=0.60, envMod=0.3521, decay=0.70, accent=0.50, delayOn=True, feedback=0.35, mix=0.25),
     sound("FX Chirp", "Stock", "Resonance full and a short sweep: chirps and zaps.",
-          cutoff=0.30, resonance=1.00, envMod=0.80, decay=0.30, accent=0.90),
+          cutoff=0.3177, resonance=1.00, envMod=0.6962, decay=0.30, accent=0.90),
     sound("Trance Stab", "Stock", "Short and bright with drive and an eighth-note delay: stabs.",
-          cutoff=0.50, resonance=0.65, envMod=0.65, decay=0.20, accent=0.80, driveOn=True, drive=0.40, delayOn=True,
+          cutoff=0.4999, resonance=0.65, envMod=0.5731, decay=0.20, accent=0.80, driveOn=True, drive=0.40, delayOn=True,
           delayDivision=1, feedback=0.30, mix=0.25),
     sound("Devil Screamer", "Devil Fish", "Overdrive and the high-resonance accent sweep: it screams on the accents.",
-          devilFish=True, cutoff=0.35, resonance=0.85, envMod=0.60, decay=0.50, accent=0.80, overdrive=0.70,
+          devilFish=True, cutoff=0.3521, resonance=0.85, envMod=0.5444, decay=0.50, accent=0.80, overdrive=0.70,
           accentSweep=1, filterFm=0.30),
     sound("Devil Sustain", "Devil Fish", "Long decays, a soft attack and slow slides: notes that sing.",
-          devilFish=True, cutoff=0.40, resonance=0.70, envMod=0.40, decay=0.90, accent=0.60, normalDecay=0.90,
+          devilFish=True, cutoff=0.3931, resonance=0.70, envMod=0.3931, decay=0.90, accent=0.60, normalDecay=0.90,
           accentDecay=0.50, softAttack=0.30, slideTime=0.40),
     sound("Devil Grit", "Devil Fish", "Heavy Filter FM and tracking: bright and gritty, as Whittle's own.",
-          devilFish=True, cutoff=0.50, resonance=0.90, envMod=0.30, decay=0.60, accent=0.60, overdrive=0.50,
+          devilFish=True, cutoff=0.4999, resonance=0.90, envMod=0.3177, decay=0.60, accent=0.60, overdrive=0.50,
           filterFm=0.80, tracking=0.50),
     sound("Devil Muffled Bass", "Devil Fish", "Overdriven into the Muffler: a fat, squashed bass.",
-          devilFish=True, cutoff=0.25, resonance=0.60, envMod=0.50, decay=0.40, accent=0.70, overdrive=0.90, muffler=1),
+          devilFish=True, cutoff=0.2887, resonance=0.60, envMod=0.4999, decay=0.40, accent=0.70, overdrive=0.90, muffler=1),
 ]
 
 
