@@ -167,6 +167,44 @@ namespace
                 p->undo();
                 expect(p->project() == before);
 
+                // A click on a line keeps the library open (D358): the list's clicks reach the shelf too (its hover
+                // light listens to them), and were taken for a click on the veil. A click on the veil still closes.
+                {
+                    juce::ListBox* listBox = nullptr;
+                    std::function<void(juce::Component&)> find = [&](juce::Component& c)
+                    {
+                        for (auto* child : c.getChildren())
+                        {
+                            if (auto* l = dynamic_cast<juce::ListBox*>(child); l != nullptr && listBox == nullptr)
+                                listBox = l;
+                            find(*child);
+                        }
+                    };
+                    find(*shelf);
+                    // off screen the list makes no row components: its own click stands for a row's (both reach the
+                    // shelf from inside the list)
+                    juce::Component* row = listBox;
+                    expect(row != nullptr, "the list");
+                    const auto click = [](juce::Component& on, juce::Point<float> at)
+                    {
+                        const auto now = juce::Time::getCurrentTime();
+                        return juce::MouseEvent(juce::Desktop::getInstance().getMainMouseSource(), at, {}, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+                                                &on, &on, now, at, now, 1, false);
+                    };
+                    if (row != nullptr)
+                    {
+                        const auto kept = shelf->onClose;
+                        bool closed = false;
+                        shelf->onClose = [&closed] { closed = true; };
+                        // a row's own place: near its top left, outside the shelf's box as the shelf counts
+                        shelf->mouseUp(click(*row, { 4.0f, 4.0f }));
+                        expect(! closed, "a click on a line leaves the library open");
+                        shelf->mouseUp(click(*shelf, { 4.0f, 4.0f }));
+                        expect(closed, "a click on the veil closes it");
+                        shelf->onClose = kept;
+                    }
+                }
+
                 shelf->showShelf("lines:Trance");
                 shelf->selectRow(1);
                 shelf->keepCopy();

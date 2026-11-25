@@ -711,6 +711,10 @@ namespace cs303::ui
 
     void LibraryShelf::mouseUp(const juce::MouseEvent& e)
     {
+        // Only a click on the shelf itself: the list's own clicks reach here too (it is listened to for its hover
+        // light, D353), their positions in a row's own place, and were taken for a click on the veil (D358).
+        if (e.eventComponent != this)
+            return;
         const auto p = e.position;
         for (const auto& r : side)
             if (! r.heading && r.area.contains(p))
