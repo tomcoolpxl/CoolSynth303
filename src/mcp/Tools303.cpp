@@ -6,7 +6,9 @@
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "Editor.h"
 #include "Pattern.h"
+#include "ui/LidView.h"
 #include "Processor.h"
 
 namespace cs303
@@ -285,6 +287,20 @@ namespace cs303
                               juce::PNGImageFormat().writeImageToStream(image, png);
                               return imageResult(png.getMemoryBlock(), "CoolSynth 303's window, " + juce::String(image.getWidth()) + " x "
                                                                            + juce::String(image.getHeight()) + " pixels.");
+                          } });
+
+        // as the 808's: what the window shows, as its Lid key does (the README's pictures of the lid, D363)
+        tools.push_back({ "view",
+                          "Lifts (true) or lowers (false) the lid, as the Lid key does: the whole voice as one schematic, live.",
+                          objectSchema({ { "lid", typeSchema("boolean", "Lift (true) or lower (false) the lid") } }),
+                          [&processor = processor](const juce::var& args)
+                          {
+                              auto* editor = dynamic_cast<Editor*>(processor.getActiveEditor());
+                              if (editor == nullptr)
+                                  return textResult("No window open.", true);
+                              if (args.hasProperty("lid"))
+                                  editor->setLidOpen(static_cast<bool>(args["lid"]));
+                              return textResult(editor->lidView().isOpen() ? "The lid is lifted." : "The lid is down.");
                           } });
 
         return tools;

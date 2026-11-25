@@ -47,8 +47,19 @@ namespace
                 if (const auto* tools = list["result"]["tools"].getArray())
                     for (const auto& t : *tools)
                         names.add(t["name"].toString());
-                for (const char* wanted : { "get_sound", "set_values", "transport", "play", "record", "screenshot" })
+                for (const char* wanted : { "get_sound", "set_values", "transport", "play", "record", "screenshot", "view" })
                     expect(names.contains(wanted), juce::String("listed: ") + wanted);
+            }
+
+            beginTest("view_lifts_and_lowers_the_lid");
+            {
+                expectEquals(tool("view", "{\"lid\": true}"), juce::String("No window open."));
+                std::unique_ptr<juce::AudioProcessorEditor> editor(processor->createEditorAndMakeActive());
+                editor->setSize(1280, 800);
+                expectEquals(tool("view", "{\"lid\": true}"), juce::String("The lid is lifted."));
+                expectEquals(tool("view", "{\"lid\": false}"), juce::String("The lid is down."));
+                processor->editorBeingDeleted(editor.get());
+                editor = nullptr;
             }
 
             beginTest("get_sound_reads_the_panel_and_set_values_changes_it");
