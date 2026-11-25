@@ -37,6 +37,8 @@ namespace cs303::ui
         options = &add("Options"); // the options' own window (D349), lit while it is open
         options->isOn = [this] { return editor.optionsOpen(); };
         options->onClick = [this] { editor.toggleOptions(); };
+        init = &add("Init"); // the sound back to its defaults, the patterns kept (CoolSynth's D353)
+        init->onClick = [&p = p] { p.edit([](Project& pr) { pr.panel = Panel {}; }); };
         play = &add("Play");
         play->textOf = [&p = p] { return juce::String(p.isPlaying() ? "Stop" : "Play"); };
         play->isOn = [&p = p] { return p.isPlaying(); };
@@ -76,6 +78,7 @@ namespace cs303::ui
         }
         library->setBounds(x + 6, y, 72, h);
         options->setBounds(library->getRight() + 6, y, 72, h);
+        init->setBounds(options->getRight() + 6, y, 52, h);
         int r = getWidth() - 16;
         mods->setBounds(r - 60, y, 60, h);
         r -= 68;
@@ -93,7 +96,7 @@ namespace cs303::ui
     void TopBar::paint(juce::Graphics& g)
     {
         const auto bounds = getLocalBounds().toFloat();
-        g.setGradientFill(juce::ColourGradient(juce::Colour(0xff141517), 0.0f, 0.0f, juce::Colour(0xff0f1012), 0.0f, bounds.getBottom(), false));
+        g.setGradientFill(juce::ColourGradient(palette().barTop, 0.0f, 0.0f, palette().barBottom, 0.0f, bounds.getBottom(), false));
         g.fillAll();
         g.setColour(juce::Colours::white.withAlpha(0.06f));
         g.fillRect(0.0f, bounds.getBottom() - 2.0f, bounds.getWidth(), 1.0f);
@@ -129,7 +132,7 @@ namespace cs303::ui
 
         // the audio thread's share of its time, small, at the far left of the transport
         const float load = editor.processor.load();
-        g.setColour(load > 0.8f ? colour::lampOn : juce::Colour(0xff6f7176));
+        g.setColour(load > 0.8f ? colour::lampOn : palette().barDim);
         g.setFont(monoFont(9.5f));
         shapedText(g, "DSP " + juce::String(juce::roundToInt(load * 100.0f)) + "%", juce::Rectangle<int>(play->getX() - 74, 8, 64, 26),
                    juce::Justification::centredRight, false);
@@ -264,7 +267,7 @@ namespace cs303::ui
                 return isC11 ? juce::String(v, 2) + " uF" : juce::String(v, 3);
             };
             value->font = monoFont(11.0f);
-            value->ink = colour::amber;
+            value->inkRole = &colour::valueInk;
             value->justification = juce::Justification::centred;
             value->setBounds(x, faceTop + 22 + b.getHeight() + 2, b.getWidth() + 14, 16);
             addAndMakeVisible(*value);
@@ -293,7 +296,7 @@ namespace cs303::ui
         auto trimNote = std::make_unique<Caption>();
         trimNote->multiline = true;
         trimNote->font = bodyFont(11.0f);
-        trimNote->ink = colour::hint;
+        trimNote->inkRole = &colour::hint;
         trimNote->justification = juce::Justification::topLeft;
         trimNote->text = [] {
             return juce::String("Inside the case: TM3 the cutoff's reach, TM4 the tune, TM5 an octave's width, C11 the "
@@ -427,7 +430,7 @@ namespace cs303::ui
             const auto shown = k.value;
             value->text = [&p = p, field, shown] { return shown(p.project().panel.*field); };
             value->font = monoFont(11.0f);
-            value->ink = colour::amber;
+            value->inkRole = &colour::valueInk;
             value->justification = juce::Justification::centred;
             value->setBounds(x - 6, faceTop + 22 + b.getHeight() + 2, b.getWidth() + 30, 16);
             addAndMakeVisible(*value);
@@ -501,7 +504,7 @@ namespace cs303::ui
         auto note = std::make_unique<Caption>();
         note->multiline = true;
         note->font = bodyFont(11.0f);
-        note->ink = colour::hint;
+        note->inkRole = &colour::hint;
         note->justification = juce::Justification::topLeft;
         note->text = [fishOn] {
             return fishOn() ? juce::String("Robin Whittle's mod: the panel's Decay now sets the volume's decay (held notes past "

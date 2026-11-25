@@ -26,7 +26,8 @@ namespace cs303::ui
         std::function<juce::String()> valueText; // when set: a value shown beside the name (the delay's division)
         float defaultValue = 0.5f;
         bool showRange = true;
-        bool accentRim = false;                 // an orange body: the accent's lock knob
+        bool accentRim = false;
+        bool onScreen = false;                  // in a dark screen (the locks): its name printed light on every theme                 // an orange body: the accent's lock knob
 
         [[nodiscard]] float diameter() const noexcept { return size; }
         /** Repaints only if the value it would draw differs from the one it drew. */
@@ -116,6 +117,7 @@ namespace cs303::ui
         std::function<juce::String()> text;
         juce::Font font { juce::FontOptions(11.0f) };
         juce::Colour ink { 0xff9fa1a5 };
+        const juce::Colour* inkRole = nullptr; // when set: a colour of the palette, read as it paints (themes change it)
         juce::Justification justification { juce::Justification::centredLeft };
         bool multiline = false;
         void paint(juce::Graphics&) override;

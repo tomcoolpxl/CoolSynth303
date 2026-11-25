@@ -26,6 +26,8 @@ namespace cs303::ui
         std::function<void(int)> chooseAccuracy;
         // The window's size, in percent of the panel's 1280 by 800.
         std::function<int()> windowSize;
+        std::function<int()> theme;            // 0 Graphite, 1 Silver, 2 Steel, 3 Olive (D352)
+        std::function<void(int)> chooseTheme;
         std::function<void(int)> chooseWindowSize;
     };
 

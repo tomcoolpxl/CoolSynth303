@@ -62,7 +62,7 @@ namespace cs303::ui
         g.setColour(juce::Colours::black);
         g.fillEllipse(body.expanded(1.0f));
         {
-            const auto [k0, k1] = accentRim ? std::pair { juce::Colour(0xff3a1a08), juce::Colour(0xff5a2a0e) } : std::pair { juce::Colour(0xff0d0d0e), juce::Colour(0xff232427) };
+            const auto [k0, k1] = accentRim ? std::pair { palette().orange.interpolatedWith(juce::Colours::black, 0.78f), palette().orange.interpolatedWith(juce::Colours::black, 0.66f) } : std::pair { juce::Colour(0xff0d0d0e), juce::Colour(0xff232427) };
             g.setColour(k0);
             g.fillEllipse(body);
             const int ridges = 45;
@@ -87,7 +87,7 @@ namespace cs303::ui
         g.fillEllipse(cap.translated(0.0f, 1.0f).expanded(1.0f));
         if (accentRim)
         {
-            juce::ColourGradient grad(juce::Colour(0xffffd2a6), cap.getX() + capD * 0.4f, cap.getY() + capD * 0.3f, juce::Colour(0xffb8501a), cap.getRight(), cap.getBottom(), true);
+            juce::ColourGradient grad(palette().accentNote, cap.getX() + capD * 0.4f, cap.getY() + capD * 0.3f, palette().hotBottom, cap.getRight(), cap.getBottom(), true);
             grad.addColour(0.6, colour::orange);
             g.setGradientFill(grad);
             g.fillEllipse(cap);
@@ -167,7 +167,7 @@ namespace cs303::ui
             const auto nameFont = labelFont(11.0f);
             const auto text = name.toUpperCase();
             g.setFont(nameFont);
-            g.setColour(isMouseOver(true) ? juce::Colours::white : colour::label);
+            g.setColour(isMouseOver(true) ? (onScreen ? juce::Colours::white : palette().labelHover) : onScreen ? colour::screenLabel : colour::label);
             if (! valueText)
                 shapedText(g, text, line, juce::Justification::centred, false);
             else
@@ -179,7 +179,7 @@ namespace cs303::ui
                 const float x = line.getCentreX() - (nw + 6.0f + vw) * 0.5f;
                 shapedText(g, text, line.withX(x).withWidth(nw + 2.0f), juce::Justification::centredLeft, false);
                 g.setFont(valueFont);
-                g.setColour(colour::amber);
+                g.setColour(colour::valueInk);
                 shapedText(g, shownValue, line.withX(x + nw + 6.0f).withWidth(vw + 2.0f), juce::Justification::centredLeft, false);
             }
         }
@@ -282,7 +282,7 @@ namespace cs303::ui
                 p.lineTo(x + w, y);
                 p.lineTo(x + w, y + h);
             }
-            g.setColour(on ? juce::Colours::white : juce::Colour(0xffc9c8c3));
+            g.setColour(on ? palette().capInkOn : colour::capInk.withMultipliedAlpha(0.85f));
             g.strokePath(p, juce::PathStrokeType(1.5f, juce::PathStrokeType::mitered, juce::PathStrokeType::square));
         }
     }
@@ -347,7 +347,7 @@ namespace cs303::ui
         g.drawRoundedRectangle(cap, 3.0f, 0.8f);
         g.setColour(colour::orange);
         g.fillRoundedRectangle(cap.getX() + 3.0f, cap.getY() + 7.0f, cap.getWidth() - 6.0f, 2.0f, 1.0f);
-        g.setColour(isMouseOver() ? juce::Colours::white : colour::label);
+        g.setColour(isMouseOver() ? palette().labelHover : colour::label);
         g.setFont(labelFont(11.0f));
         shapedText(g, name.toUpperCase(), juce::Rectangle<float>(-10.0f, trackH + 6.0f, getWidth() + 20.0f, 14.0f), juce::Justification::centred, false);
     }
@@ -404,13 +404,14 @@ namespace cs303::ui
 
     void Caption::paint(juce::Graphics& g)
     {
-        g.setColour(ink);
+        const auto colourNow = inkRole != nullptr ? *inkRole : ink;
+        g.setColour(colourNow);
         g.setFont(font);
         const auto t = text ? text() : juce::String();
         if (multiline)
         {
             juce::AttributedString s;
-            s.append(t, font, ink);
+            s.append(t, font, colourNow);
             s.setJustification(justification);
             s.setLineSpacing(3.0f);
             s.draw(g, getLocalBounds().toFloat());

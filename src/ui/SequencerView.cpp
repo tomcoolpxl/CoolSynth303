@@ -30,7 +30,7 @@ namespace cs303::ui
                 g.beginTransparencyLayer(alpha);
             g.setColour(juce::Colour(0xff08090a));
             g.fillRoundedRectangle(r.expanded(1.0f), 4.0f);
-            const auto upper = has ? juce::Colour(0xff36373b) : juce::Colour(0xff26272b), bottom = has ? juce::Colour(0xff2b2c30) : juce::Colour(0xff1f2023);
+            const auto upper = has ? palette().slotHasTop : palette().slotEmptyTop, bottom = has ? palette().slotHasBottom : palette().slotEmptyBottom;
             g.setGradientFill(juce::ColourGradient(upper, 0.0f, r.getY(), bottom, 0.0f, r.getBottom(), false));
             g.fillRoundedRectangle(r, 3.0f);
             g.setColour(juce::Colours::white.withAlpha(0.08f));
@@ -158,7 +158,7 @@ namespace cs303::ui
                 g.setColour(colour::orange);
                 g.drawRoundedRectangle(r.reduced(0.75f), 3.0f, 1.5f);
             }
-            g.setColour(hearing ? colour::orangeInk : edited ? colour::amber : has ? colour::rowName : juce::Colour(0xff77797e));
+            g.setColour(hearing ? colour::orangeInk : edited ? colour::amber : has ? colour::screenLabel : colour::screenDim);
             g.setFont(font);
             shapedText(g, two(i), r, juce::Justification::centred, false);
         }
@@ -197,7 +197,7 @@ namespace cs303::ui
             shapedText(g, "+" + juce::String(static_cast<int>(proj.chain.size()) - shown) + " more", chainBounds(shown), juce::Justification::centred, false);
         }
         drawCell(g, addBounds().toFloat(), Cell::off);
-        g.setColour(colour::rowName);
+        g.setColour(colour::screenLabel);
         g.setFont(labelFont(13.0f));
         shapedText(g, "+", addBounds(), juce::Justification::centred, false);
         drawKey(g, loopBounds().toFloat().withTrimmedBottom(1.0f), "Loop", proj.loop, true, true, false, hover.area == loopBounds());
@@ -449,7 +449,7 @@ namespace cs303::ui
     void ToolRow::paint(juce::Graphics& g)
     {
         g.setFont(labelFont(10.5f).withExtraKerningFactor(0.1f));
-        g.setColour(colour::dim);
+        g.setColour(colour::screenDim);
         for (const auto& [name, place] : labels)
             shapedText(g, name, place, juce::Justification::centredLeft, false);
     }
@@ -531,7 +531,7 @@ namespace cs303::ui
         {
             const auto r = rowBounds(Row::pitch);
             shapedText(g, "PITCH", juce::Rectangle<float>(4.0f, r.getCentreY() - 24.0f, 70.0f, 14.0f), juce::Justification::centredLeft, false);
-            g.setColour(juce::Colour(0xff6f7176));
+            g.setColour(colour::hint);
             g.setFont(bodyFont(10.5f));
             shapedText(g, "Drag up or", juce::Rectangle<float>(4.0f, r.getCentreY() - 6.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
             shapedText(g, "down, or", juce::Rectangle<float>(4.0f, r.getCentreY() + 7.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
@@ -608,6 +608,7 @@ namespace cs303::ui
                 // a tie draws the note it holds: the last note before it, through any ties (none after a rest)
                 int shownNote = s.note;
                 bool shown = s.gate == Gate::note;
+                bool heldAccent = s.accent;
                 if (s.gate == Gate::tie)
                     for (int j = i - 1; j >= 0; --j)
                     {
@@ -617,6 +618,7 @@ namespace cs303::ui
                         if (b.gate == Gate::note)
                         {
                             shownNote = b.note;
+                            heldAccent = b.accent;
                             shown = true;
                             break;
                         }
@@ -625,27 +627,33 @@ namespace cs303::ui
                 {
                     const float y = c.getBottom() - (shownNote + 1) * rh - 1.0f;
                     auto capR = juce::Rectangle<float>(c.getX() + 3.0f, y, c.getWidth() - 6.0f, rh + 2.0f);
-                    if (s.gate == Gate::tie)
-                        capR = capR.withLeft(c.getX() - 6.0f);
-                    const bool playingHere = i == head;
-                    // lit from inside: an accent near white, a tie the held note's darker tail
+                    // a note and the ties that hold it read as one long bar (D354): the note runs on to its column's
+                    // edge when a tie follows, the tie reaches back over the gap to meet it
                     const bool tie = s.gate == Gate::tie;
-                    const auto lit = playingHere ? colour::light : s.accent ? colour::accentNote : colour::orange;
-                    if (! tie)
-                        glowRounded(g, capR, 2.0f, lit, 3.0f, 0.3f * alpha);
-                    const auto upper = tie ? juce::Colour(0xffb2581f) : playingHere ? juce::Colours::white : s.accent ? juce::Colour(0xfffff1e0) : juce::Colour(0xffffa560);
-                    const auto bottom = tie ? juce::Colour(0xff8e4416) : lit;
+                    const bool tiedOn = i + 1 < pat.length && i + 1 < 16 && pat.step[static_cast<size_t>(i + 1)].gate == Gate::tie;
+                    if (tie)
+                        capR = capR.withLeft(c.getX() - 8.0f);
+                    if (tiedOn)
+                        capR = capR.withRight(c.getRight() + 2.0f);
+                    const bool playingHere = i == head;
+                    // lit from inside: an accent near white; a tie the held note's own colour, a little darker
+                    const bool accented = tie ? heldAccent : s.accent;
+                    const auto lit = playingHere ? colour::light : accented ? colour::accentNote : colour::orange;
+                    const float held = tie ? 0.78f : 1.0f;
+                    glowRounded(g, capR, 2.0f, lit, 3.0f, 0.3f * alpha * held);
+                    const auto upper = (playingHere ? juce::Colours::white : accented ? colour::light : palette().hotTop).withMultipliedBrightness(held);
+                    const auto bottom = lit.withMultipliedBrightness(held);
                     g.setGradientFill(juce::ColourGradient(upper.withMultipliedAlpha(alpha), 0.0f, capR.getY(), bottom.withMultipliedAlpha(alpha), 0.0f, capR.getBottom(), false));
                     g.fillRoundedRectangle(capR, 2.0f);
                     if (s.slide)
                     {
-                        g.setColour(juce::Colour(0xffffb067).withAlpha(alpha));
+                        g.setColour(palette().lensLit.withAlpha(alpha));
                         g.fillRect(juce::Rectangle<float>(c.getRight() - 3.0f, y + rh * 0.5f, 10.0f, 2.0f));
                     }
                 }
                 if (s.hasLocks())
                 {
-                    g.setColour(juce::Colour(0xffffb45c));
+                    g.setColour(colour::amber);
                     g.fillEllipse(juce::Rectangle<float>(5.0f, 5.0f).withCentre({ c.getRight() - 5.5f, c.getBottom() - 5.5f }));
                 }
                 if (i == editor.pick)
@@ -657,7 +665,7 @@ namespace cs303::ui
                 }
                 if (off)
                 {
-                    g.setColour(juce::Colour(0xff111214).withAlpha(0.65f));
+                    g.setColour(palette().screenTop.withAlpha(0.65f));
                     g.fillRect(c);
                 }
             }
@@ -693,8 +701,8 @@ namespace cs303::ui
                 {
                     const auto bar = m.reduced(2.0f).withTop(m.getY() + 2.0f + (1.0f - v) * (m.getHeight() - 4.0f));
                     glowRounded(g, bar.withHeight(std::max(3.0f, bar.getHeight())), 2.0f, colour::orange, 3.0f, 0.25f);
-                    g.setGradientFill(juce::ColourGradient(i == head ? juce::Colour(0xfffff3e0) : juce::Colour(0xffffd09f), bar.getX(), bar.getY(),
-                                                           i == head ? juce::Colour(0xffffb067) : colour::orange, bar.getX(), bar.getBottom(), false));
+                    g.setGradientFill(juce::ColourGradient(i == head ? colour::light : colour::accentNote, bar.getX(), bar.getY(),
+                                                           i == head ? palette().lensLit : colour::orange, bar.getX(), bar.getBottom(), false));
                     g.fillRoundedRectangle(bar.withHeight(std::max(3.0f, bar.getHeight())), 2.0f);
                 }
             }
@@ -707,7 +715,19 @@ namespace cs303::ui
     {
         const auto row = rowAt(e.position.y);
         const int i = e.position.x >= static_cast<float>(labelWidth) ? columnAt(e.position.x) : -1;
-        hover.moveTo(*this, i >= 0 && row != Row::none && row != Row::lights && row != Row::names ? cell(row, i).toNearestInt() : juce::Rectangle<int>());
+        juce::Rectangle<float> at;
+        if (i >= 0 && row != Row::none && row != Row::lights && row != Row::names)
+        {
+            at = cell(row, i);
+            if (row == Row::pitch)
+            {
+                // the pitch lane: only the note's slot a click would set, not the whole column
+                const float rh = at.getHeight() / 13.0f;
+                const int n = juce::jlimit(0, 12, static_cast<int>((at.getBottom() - e.position.y) / rh));
+                at = juce::Rectangle<float>(at.getX(), at.getBottom() - static_cast<float>(n + 1) * rh, at.getWidth(), rh);
+            }
+        }
+        hover.moveTo(*this, at.toNearestInt());
     }
 
     juce::String StepGrid::hintAt(juce::Point<int> p) const
@@ -884,6 +904,7 @@ namespace cs303::ui
             auto k = std::make_unique<Knob>(name, 28.0f);
             k->setHelpText("Hold " + juce::String(name).toLowerCase() + " at this value on the picked step only; the panel's knob sets the other steps." + juce::String(knobHelp));
             k->showRange = false;
+            k->onScreen = true;
             k->accentRim = which == Knob_t::accent;
             k->get = [this, &p = p, i] {
                 const float lock = editor.edited().step[static_cast<size_t>(editor.pick)].lock[i];
@@ -917,10 +938,10 @@ namespace cs303::ui
 
     void LocksStrip::paint(juce::Graphics& g)
     {
-        g.setColour(colour::caption);
+        g.setColour(colour::screenCaption);
         g.setFont(labelFont(11.0f).withExtraKerningFactor(0.08f));
         shapedText(g, "STEP " + juce::String(editor.pick + 1), 14, 6, 130, 16, juce::Justification::centredLeft, false);
-        g.setColour(colour::hint);
+        g.setColour(colour::screenHint);
         g.setFont(bodyFont(10.5f));
         g.drawFittedText("Turn a knob to hold its value on this step.", juce::Rectangle<int>(14, 200, 124, 60), juce::Justification::topLeft, 4);
     }

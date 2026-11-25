@@ -19,10 +19,10 @@ namespace cs303::ui
                 if (over || down)
                 {
                     g.setColour(close ? juce::Colour(0xffc8372d).withMultipliedBrightness(down ? 0.85f : 1.0f)
-                                      : colour::label.withAlpha(down ? 0.22f : 0.14f));
+                                      : colour::screenLabel.withAlpha(down ? 0.22f : 0.14f));
                     g.fillRoundedRectangle(r, 3.0f);
                 }
-                g.setColour(close && (over || down) ? juce::Colours::white : colour::label);
+                g.setColour(close && (over || down) ? juce::Colours::white : colour::screenLabel);
                 const auto c = r.getCentre();
                 const float s = std::min(r.getWidth(), r.getHeight()) * 0.24f;
                 if (close)
@@ -46,13 +46,15 @@ namespace cs303::ui
         };
     }
 
-    WindowLook::WindowLook()
+    WindowLook::WindowLook() { recolour(); }
+
+    void WindowLook::recolour()
     {
         using C = juce::Colour;
         const std::pair<int, C> scheme[] = {
-            { juce::PopupMenu::backgroundColourId, colour::plateTop },
-            { juce::PopupMenu::textColourId, colour::label },
-            { juce::PopupMenu::headerTextColourId, colour::dim },
+            { juce::PopupMenu::backgroundColourId, palette().dialogTop },
+            { juce::PopupMenu::textColourId, colour::screenLabel },
+            { juce::PopupMenu::headerTextColourId, colour::screenDim },
             { juce::PopupMenu::highlightedBackgroundColourId, colour::orange },
             { juce::PopupMenu::highlightedTextColourId, colour::orangeInk },
             { juce::ScrollBar::thumbColourId, C(0xff4f5156) },
@@ -64,8 +66,8 @@ namespace cs303::ui
             { juce::TextEditor::highlightColourId, colour::orange.withAlpha(0.35f) },
             { juce::CaretComponent::caretColourId, colour::amber },
             { juce::ListBox::backgroundColourId, colour::face },
-            { juce::AlertWindow::backgroundColourId, colour::plateTop },
-            { juce::AlertWindow::textColourId, colour::label },
+            { juce::AlertWindow::backgroundColourId, palette().dialogTop },
+            { juce::AlertWindow::textColourId, colour::screenLabel },
             { juce::AlertWindow::outlineColourId, colour::wellLine },
             { juce::TextButton::buttonColourId, C(0xff2b2c30) },
             { juce::TextButton::textColourOffId, colour::capInk },
@@ -97,7 +99,7 @@ namespace cs303::ui
     void WindowLook::drawPopupMenuBackground(juce::Graphics& g, int width, int height)
     {
         const auto r = juce::Rectangle<int>(width, height).toFloat();
-        g.setGradientFill(juce::ColourGradient(colour::plateTop, 0.0f, 0.0f, colour::plateBottom, 0.0f, r.getBottom(), false));
+        g.setGradientFill(juce::ColourGradient(palette().dialogTop, 0.0f, 0.0f, palette().dialogBottom, 0.0f, r.getBottom(), false));
         g.fillAll();
         g.setColour(juce::Colours::black);
         g.drawRect(r, 1.0f);
@@ -115,7 +117,7 @@ namespace cs303::ui
         g.fillRect(bar);
         g.setColour(juce::Colours::black);
         g.fillRect(bar.withTop(bar.getBottom() - 1.0f));
-        g.setColour(window.isActiveWindow() ? colour::caption : colour::dim);
+        g.setColour(window.isActiveWindow() ? colour::screenCaption : colour::screenDim);
         g.setFont(labelFont(11.0f).withExtraKerningFactor(0.12f));
         g.drawText(window.getName().toUpperCase(), bar, juce::Justification::centred, true);
     }

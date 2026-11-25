@@ -17,6 +17,7 @@
 #include "ui/LidView.h"
 #include "ui/Panel.h"
 #include "ui/SequencerView.h"
+#include "ui/Theme.h"
 
 namespace
 {
@@ -335,6 +336,15 @@ namespace
                 snapshot(*e, dir, "panel-devil-fish");
                 p->edit([](Project& pr) { pr.panel = Panel {}; }, false);
                 e->setModsOpen(false);
+                // every theme (D352), stopped, then back to the one in use
+                const int themeBefore = ui::currentTheme();
+                const auto names = ui::themeNames();
+                for (int t = 0; t < names.size(); ++t)
+                {
+                    e->chooseThemeForTesting(t);
+                    snapshot(*e, dir, "theme-" + names[t].toLowerCase());
+                }
+                e->chooseThemeForTesting(themeBefore);
                 // the lid while the first line plays, at the window's base size and at 1920 by 1080
                 for (auto [w, h, shot] : { std::tuple { 1280, 800, "lid" }, std::tuple { 1920, 1080, "lid-1080" } })
                 {

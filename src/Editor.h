@@ -77,6 +77,10 @@ namespace cs303
         /** The window's size in percent of the base size, and a size chosen in the options (kept in the app's settings). */
         [[nodiscard]] int windowSizePercent() const;
         void chooseWindowSize(int percent);
+        /** A theme chosen in the options (D352), kept in the app's settings: the whole panel drawn in it at once. */
+        void chooseTheme(int index);
+        /** As chooseTheme, without keeping it in the app's settings (the tests' pictures of every theme). */
+        void chooseThemeForTesting(int index) { applyChosenTheme(index); }
         Knob motionKnob = Knob::cutoff;
         MutateWhat mutateWhat {};
         std::optional<Pattern> clipboard; // a pattern copied from a pattern key's menu
@@ -111,6 +115,7 @@ namespace cs303
         std::unique_ptr<juce::Component> boardHolder;
         std::unique_ptr<juce::Component> hintLine;          // the panel's foot: what the control under the mouse does (D353)
         std::unique_ptr<juce::MouseListener> hintWatcher;
+        void applyChosenTheme(int index);
         std::unique_ptr<ui::OptionsWindow> optionsWindow;
         juce::Component* watchedWindow = nullptr; // the window this editor is in, while the options keep above it
         std::unique_ptr<ui::TopBar> top;

@@ -14,6 +14,8 @@ namespace cs303::ui
     public:
         /** The panel's colours for JUCE's own pieces: pop-up menus, scroll bars, text fields, lists, alert windows. */
         WindowLook();
+        /** Takes the colours of the theme in use (again after a theme is chosen). */
+        void recolour();
         void drawScrollbar(juce::Graphics&, juce::ScrollBar&, int x, int y, int width, int height, bool isScrollbarVertical, int thumbStartPosition,
                            int thumbSize, bool isMouseOver, bool isMouseDown) override;
         int getDefaultScrollbarWidth() override { return 10; }

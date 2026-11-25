@@ -7,43 +7,80 @@
 #include <functional>
 
 /*
-    The machined look the user chose (CoolSynth's D348, the mockups' 2 Redesign): graphite plates on a brushed panel,
-    each section's name in a head band with the signal path printed through them, knurled knobs with an aluminium
-    cap and a lit value arc, dark keys with a lens that lights, amber displays, the sequencer under a dark screen.
-    Colours and sizes as the mockup gives them (docs/design/mockups/coolsynth-303-redesign.src.html in CoolSynth's
-    repository).
+    The machined look the user chose (CoolSynth's D348, the mockups' 2 Redesign): plates on a brushed panel, each
+    section's name in a head band with the signal path printed through them, knurled knobs with an aluminium cap and a
+    lit value arc, keys with a lens that lights, amber displays, the sequencer under a dark screen. Its colours are a
+    palette per theme (D352, docs/design/mockups/coolsynth-303-themes.src.html in CoolSynth's repository): Graphite,
+    Silver after the TB-303's face, the 808's Steel and Olive. The names below refer into the palette in use, so a
+    theme chosen changes them all; the plates' printing (label, dim...) and the screens' (screenLabel...) are apart,
+    because on Silver the plates are light and the screens stay dark.
 */
 namespace cs303::ui
 {
+    struct Palette
+    {
+        // the frame: the top bar, the title strip, the dialogs (dark glass in every theme)
+        juce::Colour desk, face, dialogTop, dialogBottom, bar, barTop, barBottom, barDim, stencil, stencilRight, titleInk;
+        // the panel's ground and its plates
+        juce::Colour faceTop, faceBottom, plateTop, plateBottom, plateEdge;
+        float brush, sheen, plateLit, plateShadow;
+        // printing on the plates, and inside the dark screens
+        juce::Colour caption, label, dim, hint, rowName, labelHover, valueInk;
+        juce::Colour screenCaption, screenLabel, screenDim, screenHint;
+        // the keys
+        juce::Colour capTop, capMid, capBottom, capEdge, capInk, capInkOn, capEngrave;
+        float capLit, engraveDy;
+        // the signal
+        juce::Colour orange, orangeInk, hotTop, hotBottom, hotDeep, amber, accentNote, light, lensLit, lensCore, lensGlow, tieTop, tieBottom;
+        // the screens, displays and the grid's keys
+        juce::Colour screenTop, screenBottom, screenEdge, displayTop, displayBottom, well, wellLine, outline;
+        juce::Colour cell, cellOff, litTop, litBottom, halfTop, halfBottom, slotHasTop, slotHasBottom, slotEmptyTop, slotEmptyBottom, key, keyInk;
+        juce::Colour lampOff, lampOn, ink;
+    };
+
+    /** The palette in use; themes() lists them, Graphite first (the default). */
+    [[nodiscard]] Palette& palette();
+    [[nodiscard]] juce::StringArray themeNames();
+    [[nodiscard]] int currentTheme();
+    /** Makes theme i the palette in use and drops the pictures kept in the old one's colours; the caller repaints. */
+    void applyTheme(int i);
+
     namespace colour
     {
-        inline const juce::Colour desk { 0xff0b0a09 };      // around the panel when the window's shape differs
-        inline const juce::Colour face { 0xff1c1d20 };      // the panel (a window's or a list's ground)
-        inline const juce::Colour faceTop { 0xff1f2023 }, faceBottom { 0xff18191b };
-        inline const juce::Colour bar { 0xff121315 };       // the top bar
-        inline const juce::Colour stencil { 0xff141517 };   // the strip with the name
-        inline const juce::Colour plateTop { 0xff26272b }, plateBottom { 0xff212226 };
-        inline const juce::Colour outline { 0xff3a3c41 };   // a line where a plate would be too much
-        inline const juce::Colour caption { 0xffecebe6 };   // a section's name
-        inline const juce::Colour label { 0xffe2e1dc };     // a knob's name
-        inline const juce::Colour dim { 0xff7d7f84 };       // a group's name
-        inline const juce::Colour hint { 0xff8f9196 };
-        inline const juce::Colour rowName { 0xffd9d7d0 };
-        inline const juce::Colour key { 0xff4f5156 };       // a lit cell, a chosen page
-        inline const juce::Colour keyInk { 0xfff2efe8 };
-        inline const juce::Colour capInk { 0xffe7e5df };    // a key's name
-        inline const juce::Colour orange { 0xfff0782a };    // on
-        inline const juce::Colour orangeInk { 0xff1d0f05 };
-        inline const juce::Colour amber { 0xffffb35c };     // a display's figures
-        inline const juce::Colour lampOff { 0xff5a2a20 };
-        inline const juce::Colour lampOn { 0xffff3b28 };    // the load's warning
-        inline const juce::Colour well { 0xff0d0e0f };      // a display
-        inline const juce::Colour wellLine { 0xff2a2b2f };
-        inline const juce::Colour cell { 0xff2a2b2f };      // a grid's key, off
-        inline const juce::Colour cellOff { 0xff222326 };
-        inline const juce::Colour light { 0xfffff1e0 };     // the note playing
-        inline const juce::Colour accentNote { 0xffffc489 };
-        inline const juce::Colour ink { 0xfff1ebde };
+        inline const juce::Colour& desk = palette().desk;
+        inline const juce::Colour& face = palette().face;          // a dialog's or a list's ground
+        inline const juce::Colour& faceTop = palette().faceTop;
+        inline const juce::Colour& faceBottom = palette().faceBottom;
+        inline const juce::Colour& bar = palette().bar;            // the window's title bar
+        inline const juce::Colour& stencil = palette().stencil;    // the strip with the name
+        inline const juce::Colour& plateTop = palette().plateTop;
+        inline const juce::Colour& plateBottom = palette().plateBottom;
+        inline const juce::Colour& outline = palette().outline;
+        inline const juce::Colour& caption = palette().caption;    // on the plates: a section's name
+        inline const juce::Colour& label = palette().label;        // a knob's name
+        inline const juce::Colour& dim = palette().dim;            // a group's name
+        inline const juce::Colour& hint = palette().hint;
+        inline const juce::Colour& rowName = palette().rowName;
+        inline const juce::Colour& screenCaption = palette().screenCaption; // inside the dark screens and dialogs
+        inline const juce::Colour& screenLabel = palette().screenLabel;
+        inline const juce::Colour& screenDim = palette().screenDim;
+        inline const juce::Colour& screenHint = palette().screenHint;
+        inline const juce::Colour& key = palette().key;            // a lit cell, a chosen page
+        inline const juce::Colour& keyInk = palette().keyInk;
+        inline const juce::Colour& capInk = palette().capInk;      // a key's name
+        inline const juce::Colour& orange = palette().orange;      // on: the signal colour
+        inline const juce::Colour& orangeInk = palette().orangeInk;
+        inline const juce::Colour& amber = palette().amber;        // a display's figures
+        inline const juce::Colour& lampOff = palette().lampOff;
+        inline const juce::Colour& lampOn = palette().lampOn;      // the load's warning
+        inline const juce::Colour& well = palette().well;          // a display
+        inline const juce::Colour& wellLine = palette().wellLine;
+        inline const juce::Colour& cell = palette().cell;          // a grid's key, off
+        inline const juce::Colour& cellOff = palette().cellOff;
+        inline const juce::Colour& light = palette().light;        // the note playing
+        inline const juce::Colour& accentNote = palette().accentNote;
+        inline const juce::Colour& ink = palette().ink;            // text on dark glass
+        inline const juce::Colour& valueInk = palette().valueInk;  // a value printed on a plate
     }
 
     enum class Face { label, labelBold, head, mono, monoBold, body, stencil };

@@ -85,11 +85,11 @@ namespace cs303::ui
             g.setGradientFill(vertical(area, { { 0.0f, colour::faceTop }, { 1.0f, colour::faceBottom } }));
             g.fillRect(area);
             // the brushing: a hairline every other pixel, barely there
-            g.setColour(juce::Colours::white.withAlpha(0.014f));
+            g.setColour(juce::Colours::white.withAlpha(palette().brush));
             for (float x = area.getX(); x < area.getRight(); x += 2.0f)
                 g.fillRect(x, area.getY(), 1.0f, area.getHeight());
             // the sheen from above
-            juce::ColourGradient sheen(juce::Colours::white.withAlpha(0.07f), area.getX() + area.getWidth() * 0.55f, area.getY() - 40.0f,
+            juce::ColourGradient sheen(juce::Colours::white.withAlpha(palette().sheen), area.getX() + area.getWidth() * 0.55f, area.getY() - 40.0f,
                                        juce::Colours::white.withAlpha(0.0f), area.getX() + area.getWidth() * 0.55f, area.getY() + 260.0f, true);
             g.setGradientFill(sheen);
             g.fillRect(area);
@@ -126,18 +126,296 @@ namespace cs303::ui
         g.drawImageTransformed(found->second, juce::AffineTransform::scale(1.0f / scale).translated(area.getX(), area.getY()));
     }
 
+    void forgetKept() { KeptImages::getInstance()->images.clear(); }
+
+    // ---------------------------------------------------------------- the themes (D352), as the mockup gives them
+    namespace
+    {
+        using C = juce::Colour;
+
+        Palette graphite()
+        {
+            Palette p;
+            p.desk = C(0xff0b0a09);
+            p.face = C(0xff1c1d20);
+            p.dialogTop = C(0xff26272b);
+            p.dialogBottom = C(0xff212226);
+            p.bar = C(0xff121315);
+            p.barTop = C(0xff141517);
+            p.barBottom = C(0xff0f1012);
+            p.barDim = C(0xff6f7176);
+            p.stencil = C(0xff141517);
+            p.stencilRight = C(0xff18191c);
+            p.titleInk = C(0xffcfcfcb);
+            p.faceTop = C(0xff1f2023);
+            p.faceBottom = C(0xff18191b);
+            p.plateTop = C(0xff26272b);
+            p.plateBottom = C(0xff212226);
+            p.plateEdge = C(0xff0c0c0d);
+            p.brush = 0.014f;
+            p.sheen = 0.07f;
+            p.plateLit = 0.045f;
+            p.plateShadow = 0.3f;
+            p.caption = C(0xffecebe6);
+            p.label = C(0xffe2e1dc);
+            p.dim = C(0xff7d7f84);
+            p.hint = C(0xff8f9196);
+            p.rowName = C(0xffd9d7d0);
+            p.labelHover = juce::Colours::white;
+            p.valueInk = C(0xffffb35c);
+            p.screenCaption = C(0xffecebe6);
+            p.screenLabel = C(0xffe2e1dc);
+            p.screenDim = C(0xff7d7f84);
+            p.screenHint = C(0xff8f9196);
+            p.capTop = C(0xff3d3e43);
+            p.capMid = C(0xff2b2c30);
+            p.capBottom = C(0xff232427);
+            p.capEdge = C(0xff08090a);
+            p.capInk = C(0xffe7e5df);
+            p.capInkOn = juce::Colours::white;
+            p.capEngrave = juce::Colours::black.withAlpha(0.6f);
+            p.capLit = 0.14f;
+            p.engraveDy = -1.0f;
+            p.orange = C(0xfff0782a);
+            p.orangeInk = C(0xff1d0f05);
+            p.hotTop = C(0xffffa25c);
+            p.hotBottom = C(0xffc95a17);
+            p.hotDeep = C(0xffcc5c18);
+            p.amber = C(0xffffb35c);
+            p.accentNote = C(0xffffc489);
+            p.light = C(0xfffff1e0);
+            p.lensLit = C(0xffffb067);
+            p.lensCore = C(0xfffff4e6);
+            p.lensGlow = C(0xffff8c32);
+            p.tieTop = C(0xffb2581f);
+            p.tieBottom = C(0xff8e4416);
+            p.screenTop = C(0xff0f1012);
+            p.screenBottom = C(0xff141518);
+            p.screenEdge = C(0xff050506);
+            p.displayTop = C(0xff0a0b0b);
+            p.displayBottom = C(0xff121314);
+            p.well = C(0xff0d0e0f);
+            p.wellLine = C(0xff2a2b2f);
+            p.outline = C(0xff3a3c41);
+            p.cell = C(0xff2a2b2f);
+            p.cellOff = C(0xff222326);
+            p.litTop = C(0xff55575c);
+            p.litBottom = C(0xff44464b);
+            p.halfTop = C(0xff36373b);
+            p.halfBottom = C(0xff2e2f33);
+            p.slotHasTop = C(0xff36373b);
+            p.slotHasBottom = C(0xff2b2c30);
+            p.slotEmptyTop = C(0xff26272b);
+            p.slotEmptyBottom = C(0xff1f2023);
+            p.key = C(0xff4f5156);
+            p.keyInk = C(0xfff2efe8);
+            p.lampOff = C(0xff5a2a20);
+            p.lampOn = C(0xffff3b28);
+            p.ink = C(0xfff1ebde);
+            return p;
+        }
+
+        /** Silver: the TB-303's face. The plates brushed aluminium printed in black, the keys light grey; the top bar,
+            the title strip, the displays, the bays and the screens stay dark glass, as the TB-303's black boxes. */
+        Palette silver()
+        {
+            auto p = graphite();
+            p.faceTop = C(0xffd1d4d7);
+            p.faceBottom = C(0xffb5b9bd);
+            p.plateTop = C(0xffe7e9eb);
+            p.plateBottom = C(0xffcbced2);
+            p.plateEdge = C(0xff868a90);
+            p.brush = 0.10f;
+            p.sheen = 0.45f;
+            p.plateLit = 0.5f;
+            p.plateShadow = 0.2f;
+            p.caption = C(0xff18191b);
+            p.label = C(0xff1c1d20);
+            p.dim = C(0xff4b4e54);
+            p.hint = C(0xff44474c);
+            p.rowName = C(0xff1c1d20);
+            p.labelHover = juce::Colours::black;
+            p.valueInk = C(0xffb4501a);
+            p.capTop = C(0xfff4f5f6);
+            p.capMid = C(0xffdcdee1);
+            p.capBottom = C(0xffc2c5c9);
+            p.capEdge = C(0xff5f6368);
+            p.capInk = C(0xff1b1c1e);
+            p.capInkOn = juce::Colours::black;
+            p.capEngrave = juce::Colours::white.withAlpha(0.65f);
+            p.capLit = 0.9f;
+            p.engraveDy = 1.0f;
+            return p;
+        }
+
+        /** Steel: the 808's blue-grey anodised aluminium, white printing, the glass tinted blue, its orange. */
+        Palette steel()
+        {
+            auto p = graphite();
+            p.face = C(0xff1c2127);
+            p.dialogTop = C(0xff2a3038);
+            p.dialogBottom = C(0xff242a31);
+            p.bar = C(0xff171b20);
+            p.barTop = C(0xff1a1f24);
+            p.barBottom = C(0xff14181c);
+            p.barDim = C(0xff7f8a94);
+            p.stencil = C(0xff15191d);
+            p.stencilRight = C(0xff1b2026);
+            p.faceTop = C(0xff56606a);
+            p.faceBottom = C(0xff454e58);
+            p.plateTop = C(0xff636d78);
+            p.plateBottom = C(0xff56606a);
+            p.plateEdge = C(0xff262c32);
+            p.brush = 0.015f;
+            p.sheen = 0.08f;
+            p.plateLit = 0.06f;
+            p.plateShadow = 0.35f;
+            p.caption = C(0xfff5f8fa);
+            p.label = C(0xffe8eef3);
+            p.dim = C(0xffa3aeb8);
+            p.hint = C(0xffb8c2cb);
+            p.rowName = C(0xffe8eef3);
+            p.valueInk = C(0xffffa04a);
+            p.screenCaption = C(0xfff0f4f7);
+            p.screenDim = C(0xff8f9aa5);
+            p.screenHint = C(0xff9aa5af);
+            p.capTop = C(0xff6e7883);
+            p.capMid = C(0xff56606a);
+            p.capBottom = C(0xff47505a);
+            p.capEdge = C(0xff20252a);
+            p.capInk = C(0xfff3f6f8);
+            p.capLit = 0.18f;
+            p.orange = C(0xffe8742a);
+            p.orangeInk = C(0xff1a120c);
+            p.hotTop = C(0xfff5a066);
+            p.hotBottom = C(0xffc3581b);
+            p.hotDeep = C(0xffc3581b);
+            p.amber = C(0xffffa04a);
+            p.screenTop = C(0xff10151a);
+            p.screenBottom = C(0xff151b21);
+            p.screenEdge = C(0xff040607);
+            p.displayTop = C(0xff0b0f13);
+            p.displayBottom = C(0xff12171c);
+            p.well = C(0xff0d1115);
+            p.wellLine = C(0xff2a3038);
+            p.outline = C(0xff3d4650);
+            p.cell = C(0xff2b333c);
+            p.cellOff = C(0xff232a32);
+            p.litTop = C(0xff5b6773);
+            p.litBottom = C(0xff4b5661);
+            p.halfTop = C(0xff38414b);
+            p.halfBottom = C(0xff2f3740);
+            p.slotHasTop = C(0xff3a434d);
+            p.slotHasBottom = C(0xff2e363f);
+            p.slotEmptyTop = C(0xff262d35);
+            p.slotEmptyBottom = C(0xff1f252c);
+            p.key = C(0xff56606b);
+            return p;
+        }
+
+        /** Olive: the 808's olive drab, cream printing, the glass tinted green, signal red in place of orange. */
+        Palette olive()
+        {
+            auto p = graphite();
+            p.face = C(0xff1f2018);
+            p.dialogTop = C(0xff2d2e24);
+            p.dialogBottom = C(0xff27281f);
+            p.bar = C(0xff1a1b14);
+            p.barTop = C(0xff1d1e16);
+            p.barBottom = C(0xff171812);
+            p.barDim = C(0xff8a8873);
+            p.stencil = C(0xff17180f);
+            p.stencilRight = C(0xff1e1f16);
+            p.faceTop = C(0xff5c5e49);
+            p.faceBottom = C(0xff4a4c3a);
+            p.plateTop = C(0xff686a55);
+            p.plateBottom = C(0xff5a5c48);
+            p.plateEdge = C(0xff24251b);
+            p.brush = 0.015f;
+            p.sheen = 0.07f;
+            p.plateLit = 0.06f;
+            p.plateShadow = 0.35f;
+            p.caption = C(0xfff7f4e8);
+            p.label = C(0xffeeead6);
+            p.dim = C(0xffaaa78f);
+            p.hint = C(0xffc4c0a8);
+            p.rowName = C(0xffeeead6);
+            p.valueInk = C(0xffff7a55);
+            p.screenCaption = C(0xfff4f1e4);
+            p.screenDim = C(0xff9a977f);
+            p.screenHint = C(0xffa9a58d);
+            p.capTop = C(0xff74765e);
+            p.capMid = C(0xff5d5f49);
+            p.capBottom = C(0xff4c4e3b);
+            p.capEdge = C(0xff1f2017);
+            p.capInk = C(0xfff7f4e8);
+            p.capLit = 0.17f;
+            p.orange = C(0xffe2512b);
+            p.orangeInk = C(0xff230b04);
+            p.hotTop = C(0xfff68866);
+            p.hotBottom = C(0xffb33a1a);
+            p.hotDeep = C(0xffb33a1a);
+            p.amber = C(0xffff7a55);
+            p.accentNote = C(0xffffb59c);
+            p.light = C(0xfffff0ea);
+            p.lensLit = C(0xffff8a66);
+            p.lensCore = C(0xfffff0ea);
+            p.lensGlow = C(0xffff6a43);
+            p.tieTop = C(0xffa83c1c);
+            p.tieBottom = C(0xff7e2c14);
+            p.screenTop = C(0xff12130d);
+            p.screenBottom = C(0xff171810);
+            p.screenEdge = C(0xff050604);
+            p.displayTop = C(0xff0e0f0a);
+            p.displayBottom = C(0xff14150f);
+            p.well = C(0xff10110c);
+            p.wellLine = C(0xff2d2e24);
+            p.outline = C(0xff45473a);
+            p.cell = C(0xff2d2f24);
+            p.cellOff = C(0xff25271d);
+            p.litTop = C(0xff5f6250);
+            p.litBottom = C(0xff4f5242);
+            p.halfTop = C(0xff3a3c2f);
+            p.halfBottom = C(0xff313327);
+            p.slotHasTop = C(0xff3c3e31);
+            p.slotHasBottom = C(0xff313327);
+            p.slotEmptyTop = C(0xff292a20);
+            p.slotEmptyBottom = C(0xff222319);
+            p.key = C(0xff5a5d4b);
+            return p;
+        }
+
+        int themeInUse = 0;
+    }
+
+    Palette& palette()
+    {
+        static Palette p = graphite();
+        return p;
+    }
+
+    juce::StringArray themeNames() { return { "Graphite", "Silver", "Steel", "Olive" }; }
+    int currentTheme() { return themeInUse; }
+
+    void applyTheme(int i)
+    {
+        themeInUse = juce::jlimit(0, 3, i);
+        palette() = themeInUse == 1 ? silver() : themeInUse == 2 ? steel() : themeInUse == 3 ? olive() : graphite();
+        forgetKept();
+    }
+
     void drawGround(juce::Graphics& g, juce::Rectangle<float> area)
     {
-        drawKept(g, "ground", area, paintGround);
+        drawKept(g, "ground" + juce::String(currentTheme()), area, paintGround);
     }
 
     float drawSection(juce::Graphics& g, juce::Rectangle<float> area, const juce::String& name, juce::Colour, int number)
     {
         const auto plate = area.withTop(area.getY() - 8.0f);
         constexpr float corner = 7.0f;
-        g.setColour(juce::Colours::black.withAlpha(0.3f));
+        g.setColour(juce::Colours::black.withAlpha(palette().plateShadow));
         g.fillRoundedRectangle(plate.translated(0.0f, 3.0f).expanded(1.0f), corner + 1.0f);
-        g.setColour(juce::Colour(0xff0c0c0d));
+        g.setColour(palette().plateEdge);
         g.fillRoundedRectangle(plate.expanded(1.0f), corner + 1.0f);
         g.setGradientFill(vertical(plate, { { 0.0f, colour::plateTop }, { 1.0f, colour::plateBottom } }));
         g.fillRoundedRectangle(plate, corner);
@@ -148,15 +426,15 @@ namespace cs303::ui
             juce::Path clip;
             clip.addRoundedRectangle(band.getX(), band.getY(), band.getWidth(), band.getHeight(), corner, corner, true, true, false, false);
             g.reduceClipRegion(clip);
-            g.setGradientFill(vertical(band, { { 0.0f, juce::Colours::white.withAlpha(0.045f) }, { 1.0f, juce::Colours::white.withAlpha(0.015f) } }));
+            g.setGradientFill(vertical(band, { { 0.0f, juce::Colours::white.withAlpha(palette().plateLit) }, { 1.0f, juce::Colours::white.withAlpha(palette().plateLit / 3.0f) } }));
             g.fillRect(band);
         }
-        g.setColour(juce::Colours::black.withAlpha(0.45f));
+        g.setColour(juce::Colours::black.withAlpha(palette().plateShadow * 1.2f));
         g.fillRect(band.getX(), band.getBottom() - 1.0f, band.getWidth(), 1.0f);
         g.setColour(juce::Colours::white.withAlpha(0.04f));
         g.fillRect(band.getX(), band.getBottom(), band.getWidth(), 1.0f);
         // the plate's lit top edge
-        g.setColour(juce::Colours::white.withAlpha(0.07f));
+        g.setColour(juce::Colours::white.withAlpha(juce::jmin(0.9f, palette().plateLit * 1.6f)));
         g.fillRect(plate.getX() + corner, plate.getY(), plate.getWidth() - 2.0f * corner, 1.0f);
 
         float x = plate.getX() + 12.0f;
@@ -186,13 +464,13 @@ namespace cs303::ui
         {
             for (int i = 3; i >= 1; --i)
             {
-                g.setColour(juce::Colour(0xffff8c32).withAlpha(0.12f + 0.1f * static_cast<float>(3 - i)));
+                g.setColour(palette().lensGlow.withAlpha(0.12f + 0.1f * static_cast<float>(3 - i)));
                 g.fillEllipse(r.expanded(static_cast<float>(i) * 1.6f));
             }
             g.setColour(juce::Colours::black.withAlpha(0.5f));
             g.fillEllipse(r.expanded(1.0f));
-            juce::ColourGradient grad(juce::Colour(0xfffff4e6), r.getX() + d * 0.38f, r.getY() + d * 0.32f, colour::orange, r.getRight(), r.getBottom(), true);
-            grad.addColour(0.45, juce::Colour(0xffffb067));
+            juce::ColourGradient grad(palette().lensCore, r.getX() + d * 0.38f, r.getY() + d * 0.32f, colour::orange, r.getRight(), r.getBottom(), true);
+            grad.addColour(0.45, palette().lensLit);
             g.setGradientFill(grad);
             g.fillEllipse(r);
         }
@@ -229,12 +507,12 @@ namespace cs303::ui
         g.fillRoundedRectangle(area.translated(0.0f, 2.0f), corner);
         if (hot)
             glowRounded(g, area, corner, colour::orange, 4.0f, 0.3f);
-        g.setColour(juce::Colour(0xff08090a));
+        g.setColour(palette().capEdge);
         g.fillRoundedRectangle(area.expanded(1.0f), corner + 1.0f);
         if (hot)
-            g.setGradientFill(vertical(area, { { 0.0f, juce::Colour(0xffffa25c) }, { 0.52f, colour::orange }, { 1.0f, juce::Colour(0xffc95a17) } }));
+            g.setGradientFill(vertical(area, { { 0.0f, palette().hotTop }, { 0.52f, colour::orange }, { 1.0f, palette().hotBottom } }));
         else
-            g.setGradientFill(vertical(area, { { 0.0f, juce::Colour(0xff3d3e43) }, { 0.55f, juce::Colour(0xff2b2c30) }, { 1.0f, juce::Colour(0xff232427) } }));
+            g.setGradientFill(vertical(area, { { 0.0f, palette().capTop }, { 0.55f, palette().capMid }, { 1.0f, palette().capBottom } }));
         g.fillRoundedRectangle(area, corner);
         if (hover || down)
         {
@@ -242,7 +520,7 @@ namespace cs303::ui
             g.setColour(down ? juce::Colours::black.withAlpha(0.18f) : juce::Colours::white.withAlpha(hot ? 0.12f : 0.07f));
             g.fillRoundedRectangle(area, corner);
         }
-        g.setColour(juce::Colours::white.withAlpha(hot ? 0.4f : hover ? 0.24f : 0.14f));
+        g.setColour(juce::Colours::white.withAlpha(hot ? 0.4f : juce::jmin(1.0f, palette().capLit + (hover ? 0.1f : 0.0f))));
         g.fillRect(area.getX() + corner, area.getY(), area.getWidth() - 2.0f * corner, 1.0f);
         g.setColour(juce::Colours::black.withAlpha(hot ? 0.15f : 0.35f));
         g.fillRect(area.getX() + corner * 0.5f, area.getBottom() - 2.0f, area.getWidth() - corner, 2.0f);
@@ -261,9 +539,9 @@ namespace cs303::ui
         {
             g.setFont(font);
             // the engraving's shadow, then the name
-            g.setColour(hot ? juce::Colours::white.withAlpha(0.25f) : juce::Colours::black.withAlpha(0.6f));
-            shapedText(g, t, juce::Rectangle<float>(x, area.getY() + (hot ? 1.0f : -1.0f), tw + 2.0f, area.getHeight()), juce::Justification::centredLeft, false);
-            g.setColour(hot ? colour::orangeInk : on ? juce::Colours::white : colour::capInk);
+            g.setColour(hot ? juce::Colours::white.withAlpha(0.25f) : palette().capEngrave);
+            shapedText(g, t, juce::Rectangle<float>(x, area.getY() + (hot ? 1.0f : palette().engraveDy), tw + 2.0f, area.getHeight()), juce::Justification::centredLeft, false);
+            g.setColour(hot ? colour::orangeInk : on ? palette().capInkOn : colour::capInk);
             shapedText(g, t, juce::Rectangle<float>(x, area.getY(), tw + 2.0f, area.getHeight()), juce::Justification::centredLeft, false);
         }
         if (! enabled)
@@ -275,7 +553,7 @@ namespace cs303::ui
         constexpr float corner = 4.0f;
         g.setColour(juce::Colours::white.withAlpha(0.06f));
         g.fillRoundedRectangle(area.translated(0.0f, 1.0f), corner);
-        g.setGradientFill(vertical(area, { { 0.0f, juce::Colour(0xff0a0b0b) }, { 1.0f, juce::Colour(0xff121314) } }));
+        g.setGradientFill(vertical(area, { { 0.0f, palette().displayTop }, { 1.0f, palette().displayBottom } }));
         g.fillRoundedRectangle(area, corner);
         g.setColour(juce::Colours::black);
         g.fillRect(area.getX() + corner, area.getY(), area.getWidth() - 2.0f * corner, 1.5f);
@@ -304,9 +582,9 @@ namespace cs303::ui
     {
         g.setColour(juce::Colours::white.withAlpha(0.06f));
         g.fillRoundedRectangle(area.translated(0.0f, 1.0f), corner);
-        g.setColour(juce::Colour(0xff050506));
+        g.setColour(palette().screenEdge);
         g.fillRoundedRectangle(area, corner);
-        g.setGradientFill(vertical(area, { { 0.0f, juce::Colour(0xff0f1012) }, { 1.0f, juce::Colour(0xff141518) } }));
+        g.setGradientFill(vertical(area, { { 0.0f, palette().screenTop }, { 1.0f, palette().screenBottom } }));
         g.fillRoundedRectangle(area.reduced(1.0f), corner - 1.0f);
         // the shadow its rim casts inside
         g.setGradientFill(vertical(area.withHeight(8.0f), { { 0.0f, juce::Colours::black.withAlpha(0.7f) }, { 1.0f, juce::Colours::black.withAlpha(0.0f) } }));
@@ -322,7 +600,7 @@ namespace cs303::ui
         if (look == Cell::hot)
         {
             glowRounded(g, r, corner, colour::orange, 4.0f, 0.35f);
-            juce::ColourGradient grad(juce::Colour(0xffffc489), r.getCentreX(), r.getY() + r.getHeight() * 0.3f, juce::Colour(0xffcc5c18),
+            juce::ColourGradient grad(palette().accentNote, r.getCentreX(), r.getY() + r.getHeight() * 0.3f, palette().hotDeep,
                                       r.getRight(), r.getBottom() + r.getHeight() * 0.4f, true);
             grad.addColour(0.6, colour::orange);
             g.setGradientFill(grad);
@@ -334,8 +612,8 @@ namespace cs303::ui
         {
             g.setColour(juce::Colours::black);
             g.fillRoundedRectangle(r.translated(0.0f, 1.0f), corner);
-            const auto [a, b] = look == Cell::lit ? std::pair { juce::Colour(0xff55575c), juce::Colour(0xff44464b) }
-                              : look == Cell::half ? std::pair { juce::Colour(0xff36373b), juce::Colour(0xff2e2f33) }
+            const auto [a, b] = look == Cell::lit ? std::pair { palette().litTop, palette().litBottom }
+                              : look == Cell::half ? std::pair { palette().halfTop, palette().halfBottom }
                                                    : std::pair { colour::cell, colour::cellOff };
             g.setGradientFill(vertical(r, { { 0.0f, a }, { 1.0f, b } }));
             g.fillRoundedRectangle(r, corner);

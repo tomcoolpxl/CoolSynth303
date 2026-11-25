@@ -16,6 +16,17 @@ namespace
 {
     using namespace cs303;
 
+    /** A few blocks of audio, so what the transport was asked to do has happened. */
+    void run(Processor& p)
+    {
+        juce::AudioBuffer<float> buffer(2, 480);
+        for (int b = 0; b < 4; ++b)
+        {
+            juce::MidiBuffer midi;
+            p.processBlock(buffer, midi);
+        }
+    }
+
     class LibraryTests final : public juce::UnitTest
     {
     public:
@@ -121,6 +132,30 @@ namespace
                 expect(p->canUndo());
                 p->undo();
                 expect(p->project() == before, "one undo step takes the load back");
+
+                // Walking the list while listening (D354): the audition moves along in one step, the transport keeps
+                // playing, the shelf's key stays on Stop, and Stop gives yours back.
+                shelf->selectRow(0);
+                shelf->toggleAudition();
+                run(*p);
+                expect(e->isAuditioning() && shelf->isAuditioning() && p->isPlaying());
+                shelf->selectRow(1);
+                run(*p);
+                expect(shelf->isAuditioning() && p->isPlaying(), "the next line plays at once, no stop between");
+                expect(p->project().pattern(0, false) == shelf->chosenLine()->pattern, "the second line in place of yours");
+                shelf->showShelf("sounds:Stock");
+                expect(! shelf->isAuditioning(), "another shelf stops it");
+                shelf->selectRow(0);
+                shelf->toggleAudition();
+                run(*p);
+                shelf->selectRow(2);
+                run(*p);
+                expect(shelf->isAuditioning() && p->isPlaying(), "from sound to sound, still sounding");
+                shelf->toggleAudition();
+                run(*p);
+                expect(! p->isPlaying(), "Stop stops the transport the audition started");
+                expect(! shelf->isAuditioning() && ! e->isAuditioning());
+                expect(p->project() == before, "stopped, yours comes back as it was");
 
                 shelf->showShelf("sounds:Devil Fish");
                 shelf->selectRow(0);

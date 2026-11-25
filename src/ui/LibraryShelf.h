@@ -52,8 +52,13 @@ namespace cs303::ui
         [[nodiscard]] int shownCount() const noexcept { return static_cast<int>(shown.size()); }
         [[nodiscard]] const LibraryLine* chosenLine() const;
         [[nodiscard]] const LibrarySound* chosenSound() const;
-        [[nodiscard]] bool isAuditioning() const noexcept { return auditioning; }
+        /** Whether an audition is sounding: asked of the editor, which alone holds it (D354: the shelf's own copy of
+            this went out of step with the transport). */
+        std::function<bool()> auditionActive;
+        [[nodiscard]] bool isAuditioning() const { return auditionActive && auditionActive(); }
         void toggleAudition();
+        /** Auditions the entry chosen, in place of whatever is sounding. */
+        void startAudition();
         void load();
         void keepCopy();
         [[nodiscard]] juce::StringArray shelfKeys() const;
@@ -93,7 +98,6 @@ namespace cs303::ui
         std::vector<SideRow> side;
         juce::String shelf = "lines:all", query;
         int chosen = -1;
-        bool auditioning = false;
         juce::ListBox list;
         juce::TextEditor search;
         std::unique_ptr<Key> close, audition, loadKey, keep, rename, recycle, keepMine;

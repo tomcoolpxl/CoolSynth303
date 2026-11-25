@@ -26,7 +26,7 @@ namespace cs303
                 ui::drawGround(g, getLocalBounds().toFloat());
                 // the name up the left edge, in tall capitals, engraved in a darker strip
                 const juce::Rectangle<int> strip(0, 42, 52, Editor::baseHeight - 42);
-                g.setGradientFill(juce::ColourGradient(ui::colour::stencil, 0.0f, 0.0f, juce::Colour(0xff18191c), static_cast<float>(strip.getRight()), 0.0f, false));
+                g.setGradientFill(juce::ColourGradient(ui::colour::stencil, 0.0f, 0.0f, ui::palette().stencilRight, static_cast<float>(strip.getRight()), 0.0f, false));
                 g.fillRect(strip);
                 g.setColour(juce::Colours::black);
                 g.drawVerticalLine(strip.getRight(), static_cast<float>(strip.getY()), static_cast<float>(strip.getBottom()));
@@ -48,7 +48,7 @@ namespace cs303
                     };
                     title(juce::Colours::black, juce::Colours::black, { 0.0f, -1.0f });                                   // the engraving's dark edge
                     title(juce::Colours::white.withAlpha(0.08f), juce::Colours::white.withAlpha(0.08f), { 0.0f, 1.0f });  // and its lit one
-                    title(juce::Colour(0xffcfcfcb), ui::colour::orange, {});
+                    title(ui::palette().titleInk, ui::colour::orange, {});
                 }
             }
         };
@@ -125,6 +125,12 @@ namespace cs303
 
     Editor::Editor(Processor& p) : juce::AudioProcessorEditor(p), processor(p)
     {
+        {
+            // the theme kept from last time (D352), before anything is drawn
+            const juce::PropertiesFile settings(Processor::settingsOptions());
+            ui::applyTheme(settings.getIntValue("theme", 0));
+            ui::WindowLook::shared().recolour();
+        }
         setLookAndFeel(&ui::WindowLook::shared()); // pop-up menus, scroll bars and text fields in the panel's look
         boardHolder = std::make_unique<Board>();
         addAndMakeVisible(*boardHolder);
@@ -217,6 +223,8 @@ namespace cs303
         hooks.chooseAccuracy = [this](int level) { processor.setAccuracy(level); }; // kept by the processor in its settings
         hooks.windowSize = [this] { return windowSizePercent(); };
         hooks.chooseWindowSize = [this](int percent) { chooseWindowSize(percent); };
+        hooks.theme = [] { return ui::currentTheme(); };
+        hooks.chooseTheme = [this](int index) { chooseTheme(index); };
         return hooks;
     }
 
@@ -256,6 +264,24 @@ namespace cs303
     {
         if (optionsOpen())
             optionsWindow->toFront(false);
+    }
+
+    void Editor::chooseTheme(int index)
+    {
+        applyChosenTheme(index);
+        juce::PropertiesFile settings(Processor::settingsOptions());
+        settings.setValue("theme", ui::currentTheme());
+        settings.saveIfNeeded();
+    }
+
+    void Editor::applyChosenTheme(int index)
+    {
+        ui::applyTheme(index);
+        ui::WindowLook::shared().recolour();
+        refreshAll(true);
+        repaint(); // every part of the panel, the library and the lid with it
+        if (optionsWindow != nullptr)
+            optionsWindow->repaint();
     }
 
     int Editor::windowSizePercent() const
@@ -303,6 +329,7 @@ namespace cs303
         library->onLoadSound = [this](const LibrarySound& s) { loadSound(s); };
         library->onAuditionLine = [this](const LibraryLine* l) { auditionLine(l); };
         library->onAuditionSound = [this](const LibrarySound* s) { auditionSound(s); };
+        library->auditionActive = [this] { return auditionSaved != nullptr; };
         library->currentLine = [this]
         {
             LibraryLine l;
@@ -340,7 +367,7 @@ namespace cs303
         if (auditionSaved == nullptr)
         {
             auditionSaved = std::make_unique<Project>(processor.project());
-            auditionStartedPlaying = ! processor.isPlaying();
+            auditionStartedPlaying = ! processor.willPlay();
         }
         else
         {
@@ -378,7 +405,7 @@ namespace cs303
         const double bpm = line->bpm;
         processor.edit([&](Project& p) { p.pattern(index, b) = pattern; p.bpm = bpm; }, false);
         processor.hearPattern(index, b);
-        if (! processor.isPlaying())
+        if (! processor.willPlay())
             processor.setPlaying(true);
         refreshAll();
     }
@@ -393,7 +420,7 @@ namespace cs303
         beginAudition();
         const auto values = sound->values;
         processor.edit([&values](Project& p) { p.panel = applySound(p.panel, values); }, false);
-        if (! processor.isPlaying())
+        if (! processor.willPlay())
             processor.setPlaying(true);
         refreshAll();
     }

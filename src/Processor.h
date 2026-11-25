@@ -89,6 +89,13 @@ namespace cs303
         // ---------------------------------------------------------------- live (message thread)
         void setPlaying(bool shouldPlay) noexcept { playRequest.store(shouldPlay ? 1 : 0); }
         [[nodiscard]] bool isPlaying() const noexcept { return playingNow.load(); }
+        /** The transport as it will be once a request not yet taken by the audio thread is: what to decide on right after
+            asking (CoolSynth's D354: an audition read isPlaying() just after a stop and kept the transport going). */
+        [[nodiscard]] bool willPlay() const noexcept
+        {
+            const int r = playRequest.load();
+            return r >= 0 ? r == 1 : playingNow.load();
+        }
         /** The pattern to hear: at once while stopped, at the end of the one that plays while playing. */
         void hearPattern(int index, bool variationB) noexcept { patternRequest.store(index * 2 + (variationB ? 1 : 0)); }
         void setTranspose(int semitones) noexcept { transposeRequest.store(semitones); }

@@ -192,6 +192,16 @@ namespace cs303::ui
             };
             addChildComponent(windowSize);
 
+            theme.value = [this] { return themeNames()[hooks.theme ? hooks.theme() : 0]; };
+            theme.items = [] { return themeNames(); };
+            theme.choose = [this](int i)
+            {
+                if (hooks.chooseTheme)
+                    hooks.chooseTheme(i);
+                repaint();
+            };
+            addChildComponent(theme);
+
             rebuildInputs();
             startTimer(500);
         }
@@ -250,21 +260,21 @@ namespace cs303::ui
                     g.fillRoundedRectangle(r, 2.0f);
                 }
                 drawLamp(g, { r.getX() + 13.0f, r.getCentreY() }, shown);
-                g.setColour(shown ? colour::keyInk : i == hoverPage ? colour::caption : colour::label);
+                g.setColour(shown ? colour::keyInk : i == hoverPage ? colour::screenCaption : colour::screenLabel);
                 g.setFont(labelFont(11.0f));
                 g.drawText(pageName(i).toUpperCase(), r.withTrimmedLeft(26.0f), juce::Justification::centredLeft, false);
             }
 
             // The page: its name over a thin line, and each row's label.
             const int x = sideWidth + pad, w = getWidth() - x - pad;
-            g.setColour(colour::caption);
+            g.setColour(colour::screenCaption);
             g.setFont(labelFont(12.0f).withExtraKerningFactor(0.12f));
             g.drawText(nameOf(page).toUpperCase(), juce::Rectangle<int>(x, topPad, w, headHeight), juce::Justification::centredLeft, false);
             g.setColour(colour::outline);
             g.fillRect(x, topPad + headHeight, w, 1);
             for (const auto& [text, y] : labels)
             {
-                g.setColour(colour::dim);
+                g.setColour(colour::screenDim);
                 g.setFont(labelFont(10.5f));
                 g.drawText(text.toUpperCase(), juce::Rectangle<int>(x, y, labelWidth, rowHeight), juce::Justification::centredLeft, false);
             }
@@ -274,7 +284,7 @@ namespace cs303::ui
                 g.setColour(colour::orange);
                 g.setFont(monoFont(11.5f));
                 g.drawText(readout(), juce::Rectangle<int>(x + labelWidth, readoutY, w - labelWidth - 120, rowHeight), juce::Justification::centredLeft, false);
-                g.setColour(colour::hint);
+                g.setColour(colour::screenHint);
                 g.setFont(bodyFont(11.5f));
                 g.drawFittedText(status, juce::Rectangle<int>(x + labelWidth, readoutY + rowHeight + 4, w - labelWidth, 36), juce::Justification::topLeft, 2);
             }
@@ -282,7 +292,7 @@ namespace cs303::ui
             {
                 if (inputList.rows.empty())
                 {
-                    g.setColour(colour::hint);
+                    g.setColour(colour::screenHint);
                     g.setFont(bodyFont(12.0f));
                     g.drawText("No MIDI input is connected.", juce::Rectangle<int>(x + labelWidth, inputsY, w - labelWidth, rowHeight), juce::Justification::centredLeft, false);
                 }
@@ -297,7 +307,7 @@ namespace cs303::ui
             }
             if (hint.isNotEmpty())
             {
-                g.setColour(colour::hint);
+                g.setColour(colour::screenHint);
                 g.setFont(bodyFont(12.0f));
                 g.drawFittedText(hint, juce::Rectangle<int>(x, hintY, w, 36), juce::Justification::topLeft, 2);
             }
@@ -546,6 +556,7 @@ namespace cs303::ui
                     break;
                 case panelPage:
                     row(windowSize, "Window size", 150);
+                    row(theme, "Theme", 150);
                     break;
                 case exportPage:
                     hint = "The WAV export comes here.";
@@ -619,7 +630,7 @@ namespace cs303::ui
         std::vector<Page> pages;
         Page page = audioPage;
         int hoverPage = -1;
-        Picker driver, output, rate, buffer, midiOut, windowSize;
+        Picker driver, output, rate, buffer, midiOut, windowSize, theme;
         Key controlPanel { "Control panel", false }, testTone { "Test tone", false };
         std::array<std::unique_ptr<Key>, 2> accuracyKeys;
         InputList inputList;

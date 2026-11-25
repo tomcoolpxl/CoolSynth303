@@ -190,7 +190,7 @@ namespace cs303::ui
         auto hint = std::make_unique<Caption>();
         hint->multiline = true;
         hint->font = bodyFont(11.5f);
-        hint->ink = colour::hint;
+        hint->inkRole = &colour::hint;
         hint->justification = juce::Justification::topLeft;
         hint->text = [this, &p = p] {
             if (editor.transposeMode)
@@ -210,7 +210,7 @@ namespace cs303::ui
             const juce::String text(name);
             c->text = [text] { return text.toUpperCase(); };
             c->font = labelFont(9.5f).withExtraKerningFactor(0.1f);
-            c->ink = juce::Colour(0xff77797e);
+            c->inkRole = &colour::dim;
             c->justification = juce::Justification::centredBottom;
             c->setBounds(104 + span.first * Piano::whiteWidth + 3, top + 100, span.second * Piano::whiteWidth - 6, 14);
             addAndMakeVisible(*c);

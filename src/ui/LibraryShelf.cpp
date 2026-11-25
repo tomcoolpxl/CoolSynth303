@@ -63,7 +63,7 @@ namespace cs303::ui
             const float a = juce::degreesToRadians(-135.0f + 270.0f * value);
             g.setColour(red ? devilRed : colour::orange);
             g.drawLine(c.x, c.y, c.x + 15.0f * std::sin(a), c.y - 15.0f * std::cos(a), 3.0f);
-            g.setColour(colour::dim);
+            g.setColour(colour::screenDim);
             g.setFont(labelFont(9.5f));
             shapedText(g, name, juce::Rectangle<float>(c.x - 40.0f, c.y + 20.0f, 80.0f, 14.0f), juce::Justification::centred, false);
         }
@@ -76,10 +76,10 @@ namespace cs303::ui
         setWantsKeyboardFocus(true);
         list.setModel(this);
         list.setRowHeight(48);
-        list.setColour(juce::ListBox::backgroundColourId, colour::plateBottom);
+        list.setColour(juce::ListBox::backgroundColourId, palette().dialogBottom);
         list.setOutlineThickness(0);
         addAndMakeVisible(list);
-        search.setTextToShowWhenEmpty("Search lines and sounds", colour::dim);
+        search.setTextToShowWhenEmpty("Search lines and sounds", colour::screenDim);
         search.setColour(juce::TextEditor::backgroundColourId, colour::well);
         search.setColour(juce::TextEditor::outlineColourId, colour::wellLine);
         search.setColour(juce::TextEditor::textColourId, colour::ink);
@@ -95,8 +95,8 @@ namespace cs303::ui
         close = make(juce::String::charToString(0x2715));
         close->onClick = [this] { if (onClose) onClose(); };
         audition = make("Audition");
-        audition->isOn = [this] { return auditioning; };
-        audition->textOf = [this] { return juce::String(auditioning ? "Stop" : "Audition"); };
+        audition->isOn = [this] { return isAuditioning(); };
+        audition->textOf = [this] { return juce::String(isAuditioning() ? "Stop" : "Audition"); };
         audition->onClick = [this] { toggleAudition(); };
         loadKey = make("Load");
         loadKey->onClick = [this] { load(); };
@@ -274,7 +274,7 @@ namespace cs303::ui
 
     void LibraryShelf::showShelf(const juce::String& key)
     {
-        if (auditioning)
+        if (isAuditioning())
             toggleAudition();
         shelf = key;
         query.clear();
@@ -300,23 +300,14 @@ namespace cs303::ui
     {
         if (lastRowSelected == chosen)
             return;
-        const bool wasAuditioning = auditioning;
+        const bool wasAuditioning = isAuditioning();
         chosen = lastRowSelected;
         updateKeys();
-        // Walking the list while listening moves the audition along with it.
+        // Walking the list while listening moves the audition along with it, in one step: the editor gives yours back
+        // and puts the next one in its place, the transport untouched (no stop between them).
         if (wasAuditioning)
-        {
-            if (const auto* l = chosenLine())
-            {
-                if (onAuditionSound) onAuditionSound(nullptr);
-                if (onAuditionLine) onAuditionLine(l);
-            }
-            else if (const auto* s = chosenSound())
-            {
-                if (onAuditionLine) onAuditionLine(nullptr);
-                if (onAuditionSound) onAuditionSound(s);
-            }
-        }
+            startAudition();
+        repaint();
     }
 
     void LibraryShelf::listBoxItemClicked(int row, const juce::MouseEvent& e)
@@ -341,28 +332,37 @@ namespace cs303::ui
         }
     }
 
-    void LibraryShelf::toggleAudition()
+    void LibraryShelf::startAudition()
     {
-        auditioning = ! auditioning;
         if (const auto* line = chosenLine())
         {
             if (onAuditionLine)
-                onAuditionLine(auditioning ? line : nullptr);
+                onAuditionLine(line);
         }
         else if (const auto* sound = chosenSound())
         {
             if (onAuditionSound)
-                onAuditionSound(auditioning ? sound : nullptr);
+                onAuditionSound(sound);
+        }
+    }
+
+    void LibraryShelf::toggleAudition()
+    {
+        if (isAuditioning())
+        {
+            if (onAuditionLine)
+                onAuditionLine(nullptr); // the editor stops whichever is sounding and gives yours back
         }
         else
-            auditioning = false;
+            startAudition();
         repaint();
     }
 
     void LibraryShelf::auditionEnded()
     {
-        auditioning = false;
         repaint();
+        if (audition != nullptr)
+            audition->repaint();
     }
 
     void LibraryShelf::load()
@@ -375,7 +375,6 @@ namespace cs303::ui
         {
             if (onLoadSound) onLoadSound(*s);
         }
-        auditioning = false;
         repaint();
     }
 
@@ -437,7 +436,7 @@ namespace cs303::ui
         const auto file = line != nullptr ? line->file : sound != nullptr ? sound->file : juce::File();
         if (file == juce::File())
             return;
-        if (auditioning)
+        if (isAuditioning())
             toggleAudition();
         recycleUserEntry(file);
         const int was = chosen;
@@ -450,7 +449,7 @@ namespace cs303::ui
         if (row < 0 || row >= shownCount())
             return;
         const auto& s = shown[static_cast<size_t>(row)];
-        g.fillAll(selected ? pickFill : colour::plateBottom);
+        g.fillAll(selected ? pickFill : palette().dialogBottom);
         if (selected)
         {
             g.setColour(colour::orange);
@@ -478,7 +477,7 @@ namespace cs303::ui
         g.setColour(colour::ink);
         g.setFont(labelFont(12.5f));
         shapedText(g, name, 14, 7, width - 170, 18, juce::Justification::centredLeft, true);
-        g.setColour(colour::dim);
+        g.setColour(colour::screenDim);
         g.setFont(monoFont(10.5f));
         shapedText(g, meta, 14, 25, width - 170, 15, juce::Justification::centredLeft, true);
     }
@@ -491,7 +490,7 @@ namespace cs303::ui
         g.fillRoundedRectangle(b.translated(0.0f, 8.0f).expanded(6.0f), 14.0f);
         g.setColour(juce::Colour(0xff0c0c0d));
         g.fillRoundedRectangle(b.expanded(1.0f), 11.0f);
-        g.setGradientFill(juce::ColourGradient(colour::plateTop, 0.0f, b.getY(), colour::plateBottom, 0.0f, b.getBottom(), false));
+        g.setGradientFill(juce::ColourGradient(palette().dialogTop, 0.0f, b.getY(), palette().dialogBottom, 0.0f, b.getBottom(), false));
         g.fillRoundedRectangle(b, 10.0f);
         // the top: the title in a head band
         {
@@ -505,16 +504,16 @@ namespace cs303::ui
         g.setColour(juce::Colours::white.withAlpha(0.07f));
         g.fillRect(b.getX() + 10.0f, b.getY(), b.getWidth() - 20.0f, 1.0f);
         g.setFont(labelFont(13.0f).withExtraKerningFactor(0.14f));
-        g.setColour(colour::caption);
+        g.setColour(colour::screenCaption);
         shapedText(g, "COOLSYNTH", juce::Rectangle<float>(b.getX() + 16.0f, b.getY(), 90.0f, 52.0f), juce::Justification::centredLeft, false);
         g.setColour(colour::orange);
         shapedText(g, "303", juce::Rectangle<float>(b.getX() + 104.0f, b.getY(), 36.0f, 52.0f), juce::Justification::centredLeft, false);
-        g.setColour(colour::caption);
+        g.setColour(colour::screenCaption);
         shapedText(g, juce::String::charToString(0xb7) + " LIBRARY", juce::Rectangle<float>(b.getX() + 138.0f, b.getY(), 90.0f, 52.0f),
                    juce::Justification::centredLeft, false);
         // the shelves
         const auto sa = sideArea().toFloat();
-        g.setGradientFill(juce::ColourGradient(juce::Colour(0xff17181a), 0.0f, sa.getY(), juce::Colour(0xff1b1c1f), 0.0f, sa.getBottom(), false));
+        g.setGradientFill(juce::ColourGradient(palette().screenTop.brighter(0.15f), 0.0f, sa.getY(), palette().screenBottom.brighter(0.15f), 0.0f, sa.getBottom(), false));
         g.fillRect(sa.withTrimmedBottom(1.0f).withTrimmedLeft(1.0f));
         g.setColour(juce::Colours::black.withAlpha(0.6f));
         g.fillRect(sa.getRight(), sa.getY(), 1.0f, sa.getHeight());
@@ -524,7 +523,7 @@ namespace cs303::ui
         {
             if (r.heading)
             {
-                g.setColour(colour::dim);
+                g.setColour(colour::screenDim);
                 g.setFont(labelFont(10.0f).withExtraKerningFactor(0.16f));
                 shapedText(g, r.label, r.area.withTrimmedLeft(16.0f).withTrimmedTop(10.0f), juce::Justification::centredLeft, false);
                 continue;
@@ -537,16 +536,16 @@ namespace cs303::ui
                 g.setColour(colour::orange);
                 g.fillRect(r.area.withWidth(3.0f));
             }
-            g.setColour(on ? colour::ink : colour::label);
+            g.setColour(on ? colour::ink : colour::screenLabel);
             g.setFont(bodyFont(12.5f));
             shapedText(g, r.label, r.area.withTrimmedLeft(16.0f), juce::Justification::centredLeft, false);
-            g.setColour(colour::dim);
+            g.setColour(colour::screenDim);
             g.setFont(monoFont(10.5f));
             shapedText(g, juce::String(r.count), r.area.withTrimmedRight(14.0f), juce::Justification::centredRight, false);
         }
         if (shown.empty())
         {
-            g.setColour(colour::hint);
+            g.setColour(colour::screenHint);
             g.setFont(bodyFont(12.0f));
             g.drawFittedText(shelf.startsWith("mine:") ? "Nothing here yet: Keep a copy of a line or a sound, or keep yours from the panel with the key below."
                                                         : "Nothing found.",
@@ -570,12 +569,12 @@ namespace cs303::ui
             text(l->name, labelFont(20.0f), colour::ink, 30.0f);
             text("Style " + l->style + "   Tempo " + juce::String(juce::roundToInt(l->bpm)) + " BPM   Length " + juce::String(l->pattern.length)
                      + " steps" + (l->sound.isNotEmpty() ? "   Written for " + l->sound : juce::String()),
-                 monoFont(11.0f), colour::dim, 24.0f);
-            text(l->about, bodyFont(12.5f), colour::label, 40.0f);
+                 monoFont(11.0f), colour::screenDim, 24.0f);
+            text(l->about, bodyFont(12.5f), colour::screenLabel, 40.0f);
             // the grid: pitch bars, the accent row and the slide row, as the sequencer draws them
             const auto grid = juce::Rectangle<float>(d.getX(), y + 4.0f, d.getWidth(), 210.0f);
             drawScreen(g, grid, 8.0f);
-            if (auditioning)
+            if (isAuditioning())
             {
                 g.setColour(colour::orange);
                 g.drawRoundedRectangle(grid, 8.0f, 2.0f);
@@ -603,7 +602,7 @@ namespace cs303::ui
                     g.fillRoundedRectangle(bar, 2.0f);
                     if (s.gate != Gate::tie)
                     {
-                        g.setColour(colour::label);
+                        g.setColour(colour::screenLabel);
                         g.setFont(monoFont(9.5f));
                         shapedText(g, juce::String(noteNames[s.note]) + (s.octave > 0 ? "+" : s.octave < 0 ? "-" : ""),
                                    juce::Rectangle<float>(x, ny - 19.0f, cw, 12.0f), juce::Justification::centred, false);
@@ -624,11 +623,11 @@ namespace cs303::ui
         else if (const auto* s = chosenSound())
         {
             text(s->name, labelFont(20.0f), colour::ink, 30.0f);
-            text("Family " + s->family, monoFont(11.0f), colour::dim, 24.0f);
-            text(s->about, bodyFont(12.5f), colour::label, 40.0f);
+            text("Family " + s->family, monoFont(11.0f), colour::screenDim, 24.0f);
+            text(s->about, bodyFont(12.5f), colour::screenLabel, 40.0f);
             const auto card = juce::Rectangle<float>(d.getX(), y + 4.0f, d.getWidth(), 170.0f);
             drawScreen(g, card, 8.0f);
-            if (auditioning)
+            if (isAuditioning())
             {
                 g.setColour(colour::orange);
                 g.drawRoundedRectangle(card, 8.0f, 2.0f);
@@ -667,7 +666,7 @@ namespace cs303::ui
                 const auto r = juce::Rectangle<float>(cx, cy, w, 20.0f);
                 g.setColour(isRed ? devilRed : colour::wellLine);
                 g.drawRoundedRectangle(r, 10.0f, 1.0f);
-                g.setColour(isRed ? juce::Colour(0xfff09a90) : colour::label);
+                g.setColour(isRed ? juce::Colour(0xfff09a90) : colour::screenLabel);
                 shapedText(g, t, r, juce::Justification::centred, false);
                 cx += w + 6.0f;
             };
