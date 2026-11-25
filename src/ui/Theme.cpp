@@ -636,6 +636,29 @@ namespace cs303::ui
         }
     }
 
+    void drawStepLamp(juce::Graphics& g, juce::Point<float> centre, bool on, float d)
+    {
+        if (! on)
+        {
+            drawLens(g, centre, false, d);
+            return;
+        }
+        // the 808's red step light: its glow, then a lens lit white at its hot spot through red to a deep red edge
+        const auto r = juce::Rectangle<float>(d, d).withCentre(centre);
+        for (int i = 3; i >= 1; --i)
+        {
+            g.setColour(juce::Colour(0xffff3c28).withAlpha(0.12f + 0.1f * static_cast<float>(3 - i)));
+            g.fillEllipse(r.expanded(static_cast<float>(i) * 1.6f));
+        }
+        g.setColour(juce::Colours::black.withAlpha(0.5f));
+        g.fillEllipse(r.expanded(1.0f));
+        juce::ColourGradient grad(juce::Colour(0xffffe0d6), r.getX() + d * 0.38f, r.getY() + d * 0.32f, juce::Colour(0xffc8241a),
+                                  r.getRight(), r.getBottom(), true);
+        grad.addColour(0.42, juce::Colour(0xffff5a3c));
+        g.setGradientFill(grad);
+        g.fillEllipse(r);
+    }
+
     void drawHover(juce::Graphics& g, juce::Rectangle<float> r, float corner)
     {
         g.setColour(juce::Colours::white.withAlpha(palette().hoverFill));

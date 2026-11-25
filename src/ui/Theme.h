@@ -111,6 +111,8 @@ namespace cs303::ui
     /** A lens in a key, or a lamp on its own: dark red glass, amber and glowing when lit. */
     void drawLens(juce::Graphics& g, juce::Point<float> centre, bool on, float diameter = 6.0f);
     inline void drawLamp(juce::Graphics& g, juce::Point<float> centre, bool on) { drawLens(g, centre, on); }
+    /** The sequencer's step light over each step's number: red when lit, as the 808's (the user), else as a lamp off. */
+    void drawStepLamp(juce::Graphics& g, juce::Point<float> centre, bool on, float diameter = 6.0f);
     /** A display: a dark window behind glass holding a value. */
     void drawWell(juce::Graphics& g, juce::Rectangle<float> area, const juce::String& text, juce::Colour ink);
     void drawDisplay(juce::Graphics& g, juce::Rectangle<float> area);

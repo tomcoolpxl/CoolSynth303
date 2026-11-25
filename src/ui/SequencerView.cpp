@@ -580,7 +580,7 @@ namespace cs303::ui
             {
                 const auto c = cell(Row::lights, i);
                 const bool lit = i == head;
-                drawLamp(g, { c.getCentreX() - 8.0f, c.getCentreY() }, lit);
+                drawStepLamp(g, { c.getCentreX() - 8.0f, c.getCentreY() }, lit); // red, as the 808's (the user)
                 g.setColour(lit ? juce::Colour(0xfff4efe4) : palette().gridNumber);
                 g.setFont(monoFont(9.5f));
                 shapedText(g, juce::String(i + 1), c.withTrimmedLeft(c.getWidth() * 0.5f - 3.0f), juce::Justification::centredLeft, false);
