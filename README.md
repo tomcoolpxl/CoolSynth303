@@ -13,7 +13,8 @@ real unit.
 The panel, from the top:
 
 - The top bar: the pattern you edit between two arrows, New, Open and Save; Play (or Space), the tempo (drag it or
-  use the wheel, double-click for 128), Tap and Rec. Rec writes the knobs you turn while it plays into the pattern.
+  use the wheel, double-click for 128), SYNC, Tap and Rec. Rec writes the knobs you turn while it plays into the
+  pattern.
 - The sections in the order the sound flows: the oscillator (Tuning, Saw or Square), the filter (Cutoff, Resonance,
   Env mod), the envelope (Decay, Accent), the amplifier (Volume), then Drive (On, Amount, Tone) and Delay (On, Time
   in notes, Feedback, Mix). While a pattern plays, a knob the pattern moves shows where it is moved to.
@@ -60,13 +61,19 @@ MIDI: while stopped, a note plays the voice (the middle C at MIDI note 36); whil
 pattern from middle C (note 60). It follows a MIDI clock when one comes in (its start, stop, continue, song position
 and tempo, the top bar then showing CLOCK), and sends its own while it plays when none does.
 
-With CoolSynth 808 on the same computer, one leads and the other follows by MIDI clock through a loopback port
-(Windows 11's MIDI Settings app makes one; loopMIDI too): the leader's MIDI output and the follower's input set to it
-in Options, both apps on the same audio device. The follower plays within about a millisecond of the leader. The two
-take some two and a half cores; a busy program beside them can make the 808 stutter, and the 303 then follows it.
+The beat sync plays the 303 in time with CoolSynth 808 and the other apps and DAWs that have it, on this computer or
+the network (the standalone app only; in a DAW the DAW's transport leads):
+- on from the start; SYNC beside the tempo lights while on and counts the others ("SYNC 2"), a click switches it
+- with others, the tempo is shared (the top bar shows SYNC) and a Play starts on their next bar line; Play and Stop
+  go to all of them, unless Options, MIDI, "Share Play and Stop" is off
+- the first time, Windows asks about its firewall: allow private networks to sync with other computers
 
-Options, in the top bar, opens the 303's own options: the audio device and the accuracy, the MIDI ports, the
-window's size and theme, and the WAV export (in a DAW, the Host page has the accuracy).
+For hardware it follows an incoming MIDI clock and sends its own, also while the beat sync leads. While the beat sync
+has others with it, an incoming clock is ignored. The 303 and the 808 together take some two and a half cores; a busy
+program beside them can make the 808 stutter.
+
+Options, in the top bar, opens the 303's own options: the audio device and the accuracy, the MIDI ports and the
+beat sync's Play and Stop, the window's size and theme, and the WAV export (in a DAW, the Host page has the accuracy).
 - Accuracy: Best, or Light: the voice at the output's own rate and solved a little less tightly, some 40 % less CPU,
   the top octave up to 3.5 dB duller. A DAW's export always renders at Best.
 - Export: the pattern shown or the chain, 1 to 16 times, cut, rung out or as a seamless loop, the mix or the dry
