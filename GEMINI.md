@@ -27,6 +27,8 @@ The shared project memory for every AI tool (`CLAUDE.md` points here).
 - `src/Editor` and `src/ui`: the panel at 1280 by 800, scaled to the window: the top bar and the synth's sections
   (`ui/Panel`), the three-octave keyboard (`ui/Keyboard`), the pattern row, step grid and the inspector column (Locks and Line tabs)
   (`ui/SequencerView`), the widgets and the machined look, graphite plates and knurled knobs (`ui/Widgets`, `ui/Theme`; CoolSynth's D348).
+- The release (CoolSynth's D363): `installer/CoolSynth303.iss` (Inno Setup), `scripts/ci` (build, test, package),
+  `.github/workflows/release.yml` on a version tag; `tools/release/make_notices.py` writes `THIRD_PARTY_NOTICES.txt`.
 - `tests/`: `CoolSynth303Tests`, the built VST3 hosted as a DAW would (`HostingTests`).
   `COOLSYNTH303_SNAPSHOTS=<folder>` makes the editor's test write pictures of the panel there;
   `COOLSYNTH303_RENDER=<folder>` makes the processor's write listening files.

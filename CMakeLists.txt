@@ -118,6 +118,7 @@ if(BUILD_TESTING)
             JUCE_STANDALONE_APPLICATION=1
             COOLSYNTH303_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
             COOLSYNTH303_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}"
+            COOLSYNTH303_CONFIG="$<CONFIG>" # the hosting test loads the VST3 of its own configuration
             JUCE_PLUGINHOST_VST3=1)
     target_link_libraries(CoolSynth303Tests
         PRIVATE

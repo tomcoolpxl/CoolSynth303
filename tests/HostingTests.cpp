@@ -15,7 +15,7 @@ namespace
         void runTest() override
         {
             beginTest("the_vst3_loads_plays_with_the_host_and_keeps_its_state");
-            const juce::File bundle = juce::File(COOLSYNTH303_BINARY_DIR).getChildFile("CoolSynth303_artefacts/Debug/VST3/CoolSynth 303.vst3");
+            const juce::File bundle = juce::File(COOLSYNTH303_BINARY_DIR).getChildFile("CoolSynth303_artefacts/" COOLSYNTH303_CONFIG "/VST3/CoolSynth 303.vst3"); // the test's own build
             if (! bundle.exists())
             {
                 logMessage("no VST3 built at " + bundle.getFullPathName() + ": skipped");

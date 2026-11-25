@@ -8,6 +8,24 @@ TB-303 is a trademark of Roland Corporation. CoolSynth 303 is not made, approved
 the published service notes of the machine and checked against ngspice renders of its circuit and recordings of a
 real unit.
 
+## Install
+
+Get the latest `CoolSynth303-Setup` installer from the [Releases page](https://github.com/tomcoolpxl/CoolSynth303/releases).
+It runs on 64-bit Windows 10 or 11.
+
+Windows may warn that the publisher is unknown, because the installer isn't code-signed: click More info, then Run
+anyway.
+
+The installer puts the app in `C:\Program Files\CoolSynth 303` with a Start menu entry, and the VST3 in
+`C:\Program Files\Common Files\VST3`; it installs both, the app only or the VST3 only. Uninstalling it (Windows'
+Installed apps) removes them and leaves your own lines and sounds in `%APPDATA%\CoolSynth303\Library` and the app's
+settings.
+
+The first time the app starts, Windows asks whether it may use the network. Allow it on private networks (your home's):
+the beat sync needs that to play in time with other computers.
+
+The release page also has a zip with the app, the VST3 and the notices, for those who would rather copy them by hand.
+
 ## Playing it
 
 The panel, from the top:
@@ -132,7 +150,16 @@ The Debug build is compiled optimised (the engine's `cmake/CoolSynthFlags.cmake`
 `build/CoolSynth303_artefacts/Debug/Standalone/CoolSynth 303.exe`; the plugin is
 `build/CoolSynth303_artefacts/Debug/VST3/CoolSynth 303.vst3` (copy it to `C:\Program Files\Common Files\VST3`).
 
+Use `--config Release` for a build to give to someone else: it carries the C++ runtime inside it.
+`scripts/ci/BuildAndTest.ps1 -Configuration Release -RunTests`, then
+`scripts/ci/PackageRelease.ps1 -Configuration Release -Installer`, build, test and package as the release does (the
+installer needs Inno Setup 6.5 or newer, `installer/CoolSynth303.iss`). A version tag (`v0.1.0`) makes GitHub build
+and publish a release.
+
 In a DAW the host's transport runs the sequencer: it plays while the host plays, from where it is, at its tempo
 (the top bar shows HOST), and a loop in the host starts the pattern again; the save file is the host's project.
 
-MIT licence. The fonts are Archivo and IBM Plex Mono, under the SIL Open Font License (`resources/fonts`).
+MIT licence. The fonts are Archivo and IBM Plex Mono, under the SIL Open Font License (`resources/fonts`). It's built
+with [JUCE](https://juce.com) 9 under the free Starter licence. `THIRD_PARTY_NOTICES.txt`, which the installer puts
+beside the app, holds the notices of what it carries: JUCE's image, font and audio libraries, the VST3 SDK, Open303
+and the fonts (`tools/release/make_notices.py` writes it).
