@@ -2,6 +2,10 @@
 
 #include "AppData.h"
 
+#include <functional>
+#include <map>
+#include <tuple>
+
 namespace cs303::ui
 {
     namespace
@@ -29,9 +33,26 @@ namespace cs303::ui
         }
     }
 
+    namespace
+    {
+        /** Fonts made once and kept (CoolSynth's D306: each made anew cost some 22 us), deleted with JUCE's shutdown. */
+        struct KeptFonts final : public juce::DeletedAtShutdown
+        {
+            std::map<std::tuple<int, int, int>, juce::Font> fonts;
+            ~KeptFonts() override { clearSingletonInstance(); }
+            JUCE_DECLARE_SINGLETON_SINGLETHREADED_INLINE(KeptFonts, false)
+        };
+    }
+
     juce::Font fontOf(Face face, float height, float tracking)
     {
-        return juce::Font(juce::FontOptions().withTypeface(typefaceOf(face)).withHeight(height)).withExtraKerningFactor(tracking);
+        auto& kept = KeptFonts::getInstance()->fonts;
+        const auto key = std::make_tuple(static_cast<int>(face), juce::roundToInt(height * 100.0f), juce::roundToInt(tracking * 1000.0f));
+        if (const auto found = kept.find(key); found != kept.end())
+            return found->second;
+        const auto font = juce::Font(juce::FontOptions().withTypeface(typefaceOf(face)).withHeight(height)).withExtraKerningFactor(tracking);
+        kept.emplace(key, font);
+        return font;
     }
 
     namespace
@@ -57,19 +78,57 @@ namespace cs303::ui
         }
     }
 
+    namespace
+    {
+        void paintGround(juce::Graphics& g, juce::Rectangle<float> area)
+        {
+            g.setGradientFill(vertical(area, { { 0.0f, colour::faceTop }, { 1.0f, colour::faceBottom } }));
+            g.fillRect(area);
+            // the brushing: a hairline every other pixel, barely there
+            g.setColour(juce::Colours::white.withAlpha(0.014f));
+            for (float x = area.getX(); x < area.getRight(); x += 2.0f)
+                g.fillRect(x, area.getY(), 1.0f, area.getHeight());
+            // the sheen from above
+            juce::ColourGradient sheen(juce::Colours::white.withAlpha(0.07f), area.getX() + area.getWidth() * 0.55f, area.getY() - 40.0f,
+                                       juce::Colours::white.withAlpha(0.0f), area.getX() + area.getWidth() * 0.55f, area.getY() + 260.0f, true);
+            g.setGradientFill(sheen);
+            g.fillRect(area);
+        }
+
+        /** Still pictures drawn once and kept, at the scale they are shown at (CoolSynth's D306: the panel redrawn
+            whole on every press showed it late). Deleted with JUCE's shutdown. */
+        struct KeptImages final : public juce::DeletedAtShutdown
+        {
+            std::map<juce::String, juce::Image> images;
+            ~KeptImages() override { clearSingletonInstance(); }
+            JUCE_DECLARE_SINGLETON_SINGLETHREADED_INLINE(KeptImages, false)
+        };
+    }
+
+    void drawKept(juce::Graphics& g, const juce::String& name, juce::Rectangle<float> area, const std::function<void(juce::Graphics&, juce::Rectangle<float>)>& paint)
+    {
+        const float scale = std::max(1.0f, g.getInternalContext().getPhysicalPixelScaleFactor());
+        const auto key = name + "|" + juce::String(area.getWidth(), 1) + "x" + juce::String(area.getHeight(), 1) + "@" + juce::String(scale, 3);
+        auto& kept = KeptImages::getInstance()->images;
+        auto found = kept.find(key);
+        if (found == kept.end())
+        {
+            if (kept.size() > 200)
+                kept.clear(); // a bound, should the window's scale keep changing
+            juce::Image image(juce::Image::ARGB, std::max(1, juce::roundToInt(area.getWidth() * scale)), std::max(1, juce::roundToInt(area.getHeight() * scale)), true);
+            {
+                juce::Graphics c(image);
+                c.addTransform(juce::AffineTransform::scale(scale));
+                paint(c, area.withPosition(0.0f, 0.0f));
+            }
+            found = kept.emplace(key, image).first;
+        }
+        g.drawImageTransformed(found->second, juce::AffineTransform::scale(1.0f / scale).translated(area.getX(), area.getY()));
+    }
+
     void drawGround(juce::Graphics& g, juce::Rectangle<float> area)
     {
-        g.setGradientFill(vertical(area, { { 0.0f, colour::faceTop }, { 1.0f, colour::faceBottom } }));
-        g.fillRect(area);
-        // the brushing: a hairline every other pixel, barely there
-        g.setColour(juce::Colours::white.withAlpha(0.014f));
-        for (float x = area.getX(); x < area.getRight(); x += 2.0f)
-            g.fillRect(x, area.getY(), 1.0f, area.getHeight());
-        // the sheen from above
-        juce::ColourGradient sheen(juce::Colours::white.withAlpha(0.07f), area.getX() + area.getWidth() * 0.55f, area.getY() - 40.0f,
-                                   juce::Colours::white.withAlpha(0.0f), area.getX() + area.getWidth() * 0.55f, area.getY() + 260.0f, true);
-        g.setGradientFill(sheen);
-        g.fillRect(area);
+        drawKept(g, "ground", area, paintGround);
     }
 
     float drawSection(juce::Graphics& g, juce::Rectangle<float> area, const juce::String& name, juce::Colour, int number)
@@ -107,8 +166,8 @@ namespace cs303::ui
             const auto t = juce::String(number).paddedLeft('0', 2);
             g.setColour(colour::orange);
             g.setFont(font);
-            g.drawText(t, juce::Rectangle<float>(x, band.getY(), 30.0f, band.getHeight()), juce::Justification::centredLeft, false);
-            x += juce::GlyphArrangement::getStringWidth(font, t) + 7.0f;
+            shapedText(g, t, juce::Rectangle<float>(x, band.getY(), 30.0f, band.getHeight()), juce::Justification::centredLeft, false);
+            x += shapedWidth(font, t) + 7.0f;
         }
         if (name.isEmpty())
             return x;
@@ -116,8 +175,8 @@ namespace cs303::ui
         const auto text = name.toUpperCase();
         g.setColour(colour::caption);
         g.setFont(font);
-        g.drawText(text, juce::Rectangle<float>(x, band.getY(), plate.getRight() - x - 8.0f, band.getHeight()), juce::Justification::centredLeft, false);
-        return x + juce::GlyphArrangement::getStringWidth(font, text);
+        shapedText(g, text, juce::Rectangle<float>(x, band.getY(), plate.getRight() - x - 8.0f, band.getHeight()), juce::Justification::centredLeft, false);
+        return x + shapedWidth(font, text);
     }
 
     void drawLens(juce::Graphics& g, juce::Point<float> centre, bool on, float d)
@@ -171,7 +230,7 @@ namespace cs303::ui
 
         const auto font = labelFont(10.5f);
         const auto t = text.toUpperCase();
-        const float tw = t.isEmpty() ? 0.0f : juce::GlyphArrangement::getStringWidth(font, t);
+        const float tw = t.isEmpty() ? 0.0f : shapedWidth(font, t);
         const float total = (lens ? 6.0f + (tw > 0.0f ? 5.0f : 0.0f) : 0.0f) + tw;
         float x = area.getCentreX() - total * 0.5f;
         if (lens)
@@ -184,9 +243,9 @@ namespace cs303::ui
             g.setFont(font);
             // the engraving's shadow, then the name
             g.setColour(hot ? juce::Colours::white.withAlpha(0.25f) : juce::Colours::black.withAlpha(0.6f));
-            g.drawText(t, juce::Rectangle<float>(x, area.getY() + (hot ? 1.0f : -1.0f), tw + 2.0f, area.getHeight()), juce::Justification::centredLeft, false);
+            shapedText(g, t, juce::Rectangle<float>(x, area.getY() + (hot ? 1.0f : -1.0f), tw + 2.0f, area.getHeight()), juce::Justification::centredLeft, false);
             g.setColour(hot ? colour::orangeInk : on ? juce::Colours::white : colour::capInk);
-            g.drawText(t, juce::Rectangle<float>(x, area.getY(), tw + 2.0f, area.getHeight()), juce::Justification::centredLeft, false);
+            shapedText(g, t, juce::Rectangle<float>(x, area.getY(), tw + 2.0f, area.getHeight()), juce::Justification::centredLeft, false);
         }
         if (! enabled)
             g.endTransparencyLayer();
@@ -217,9 +276,9 @@ namespace cs303::ui
         const auto font = fontOf(Face::monoBold, 11.5f);
         g.setFont(font);
         g.setColour(ink.withAlpha(0.22f));
-        g.drawText(text, area.translated(0.0f, 0.5f).expanded(0.6f, 0.0f), juce::Justification::centred, false);
+        shapedText(g, text, area.translated(0.0f, 0.5f).expanded(0.6f, 0.0f), juce::Justification::centred, false);
         g.setColour(ink);
-        g.drawText(text, area, juce::Justification::centred, false);
+        shapedText(g, text, area, juce::Justification::centred, false);
     }
 
     void drawScreen(juce::Graphics& g, juce::Rectangle<float> area, float corner)

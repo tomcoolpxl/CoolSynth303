@@ -29,6 +29,8 @@ namespace cs303::ui
         bool accentRim = false;                 // an orange body: the accent's lock knob
 
         [[nodiscard]] float diameter() const noexcept { return size; }
+        /** Repaints only if the value it would draw differs from the one it drew. */
+        void repaintIfMoved();
         /** The size this knob takes: the dial with its ticks, the range and the name. */
         [[nodiscard]] juce::Rectangle<int> preferredBounds(int x, int y) const;
 
@@ -43,7 +45,10 @@ namespace cs303::ui
         juce::String name;
         float size;
         float dragStartValue = 0.0f;
+        float drawnShown = -2.0f, drawnValue = -2.0f; // what the last paint showed
         void change(float v);
+        /** The knurled skirt and the turned cap, centred on c (still: drawn once per size and kept). */
+        static void paintBody(juce::Graphics& g, juce::Point<float> c, float size, bool accentRim);
     };
 
     /** A light grey key that turns orange when on, its lamp above it (lit when on) unless it is plain. */

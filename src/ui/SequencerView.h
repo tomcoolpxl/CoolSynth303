@@ -76,6 +76,8 @@ namespace cs303::ui
         [[nodiscard]] juce::Rectangle<float> rowBounds(Row row) const;
         [[nodiscard]] int columnAt(float x) const;
         [[nodiscard]] Row rowAt(float y) const;
+        /** Repaints one step's column, from its light to its motion (a tie's bar and a slide's tail reach past it). */
+        void repaintStep(int step);
 
     private:
         Editor& editor;
@@ -124,7 +126,7 @@ namespace cs303::ui
         explicit SequencerSection(Editor&);
         void paint(juce::Graphics&) override;
         void refresh();
-        void repaintPlaying();
+        void repaintPlaying(int previousStep, int step, bool patternMoved);
         [[nodiscard]] StepGrid& grid() noexcept { return *stepGrid; }
 
     private:

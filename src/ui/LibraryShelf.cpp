@@ -6,15 +6,13 @@ namespace cs303::ui
 {
     namespace
     {
-        const juce::Colour shelfFill { 0xff1c1d20 }, pickFill { 0xff3a3326 }, rowLine { 0xff2a2b2f }, thumbFill { 0xff1a1b1e },
-            devilRed { 0xffd2453a };
+        const juce::Colour pickFill { 0xff3a3326 }, rowLine { 0xff2a2b2f }, devilRed { 0xffd2453a };
         constexpr const char* noteNames[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C" };
 
         /** A line's steps as small bars by pitch (accents lighter, ties darker, slides as a link), off steps shaded. */
         void drawLineThumb(juce::Graphics& g, juce::Rectangle<float> r, const Pattern& p)
         {
-            g.setColour(thumbFill);
-            g.fillRoundedRectangle(r, 4.0f);
+            drawDisplay(g, r);
             const float cw = r.getWidth() / 16.0f;
             for (int i = 0; i < Pattern::steps; ++i)
             {
@@ -41,8 +39,7 @@ namespace cs303::ui
         /** A sound as five bars: cutoff, resonance, env mod, decay, accent; red on a Devil Fish. */
         void drawSoundThumb(juce::Graphics& g, juce::Rectangle<float> r, const juce::var& v)
         {
-            g.setColour(thumbFill);
-            g.fillRoundedRectangle(r, 4.0f);
+            drawDisplay(g, r);
             const bool fish = static_cast<bool>(v["devilFish"]);
             int i = 0;
             for (const char* k : { "cutoff", "resonance", "envMod", "decay", "accent" })
@@ -68,7 +65,7 @@ namespace cs303::ui
             g.drawLine(c.x, c.y, c.x + 15.0f * std::sin(a), c.y - 15.0f * std::cos(a), 3.0f);
             g.setColour(colour::dim);
             g.setFont(labelFont(9.5f));
-            g.drawText(name, juce::Rectangle<float>(c.x - 40.0f, c.y + 20.0f, 80.0f, 14.0f), juce::Justification::centred, false);
+            shapedText(g, name, juce::Rectangle<float>(c.x - 40.0f, c.y + 20.0f, 80.0f, 14.0f), juce::Justification::centred, false);
         }
 
         juce::String percentText(const juce::var& v) { return juce::String(juce::roundToInt(static_cast<double>(v) * 10.0)); }
@@ -79,7 +76,7 @@ namespace cs303::ui
         setWantsKeyboardFocus(true);
         list.setModel(this);
         list.setRowHeight(48);
-        list.setColour(juce::ListBox::backgroundColourId, colour::face);
+        list.setColour(juce::ListBox::backgroundColourId, colour::plateBottom);
         list.setOutlineThickness(0);
         addAndMakeVisible(list);
         search.setTextToShowWhenEmpty("Search lines and sounds", colour::dim);
@@ -453,7 +450,7 @@ namespace cs303::ui
         if (row < 0 || row >= shownCount())
             return;
         const auto& s = shown[static_cast<size_t>(row)];
-        g.fillAll(selected ? pickFill : colour::face);
+        g.fillAll(selected ? pickFill : colour::plateBottom);
         if (selected)
         {
             g.setColour(colour::orange);
@@ -480,10 +477,10 @@ namespace cs303::ui
         }
         g.setColour(colour::ink);
         g.setFont(labelFont(12.5f));
-        g.drawText(name, 14, 7, width - 170, 18, juce::Justification::centredLeft, true);
+        shapedText(g, name, 14, 7, width - 170, 18, juce::Justification::centredLeft, true);
         g.setColour(colour::dim);
         g.setFont(monoFont(10.5f));
-        g.drawText(meta, 14, 25, width - 170, 15, juce::Justification::centredLeft, true);
+        shapedText(g, meta, 14, 25, width - 170, 15, juce::Justification::centredLeft, true);
     }
 
     void LibraryShelf::paint(juce::Graphics& g)
@@ -492,26 +489,34 @@ namespace cs303::ui
         const auto b = box().toFloat();
         g.setColour(juce::Colours::black.withAlpha(0.45f));
         g.fillRoundedRectangle(b.translated(0.0f, 8.0f).expanded(6.0f), 14.0f);
-        g.setColour(colour::face);
+        g.setColour(juce::Colour(0xff0c0c0d));
+        g.fillRoundedRectangle(b.expanded(1.0f), 11.0f);
+        g.setGradientFill(juce::ColourGradient(colour::plateTop, 0.0f, b.getY(), colour::plateBottom, 0.0f, b.getBottom(), false));
         g.fillRoundedRectangle(b, 10.0f);
-        g.setColour(colour::wellLine);
-        g.drawRoundedRectangle(b, 10.0f, 1.0f);
-        // the top: the title
-        g.setColour(colour::bar);
-        g.fillRect(b.withHeight(52.0f).reduced(1.0f, 1.0f));
+        // the top: the title in a head band
+        {
+            juce::Graphics::ScopedSaveState state(g);
+            juce::Path band;
+            band.addRoundedRectangle(b.getX(), b.getY(), b.getWidth(), 52.0f, 10.0f, 10.0f, true, true, false, false);
+            g.reduceClipRegion(band);
+            g.setGradientFill(juce::ColourGradient(juce::Colours::white.withAlpha(0.045f), 0.0f, b.getY(), juce::Colours::white.withAlpha(0.015f), 0.0f, b.getY() + 52.0f, false));
+            g.fillRect(b.withHeight(52.0f));
+        }
+        g.setColour(juce::Colours::white.withAlpha(0.07f));
+        g.fillRect(b.getX() + 10.0f, b.getY(), b.getWidth() - 20.0f, 1.0f);
         g.setFont(labelFont(13.0f).withExtraKerningFactor(0.14f));
         g.setColour(colour::caption);
-        g.drawText("COOLSYNTH", juce::Rectangle<float>(b.getX() + 16.0f, b.getY(), 90.0f, 52.0f), juce::Justification::centredLeft, false);
+        shapedText(g, "COOLSYNTH", juce::Rectangle<float>(b.getX() + 16.0f, b.getY(), 90.0f, 52.0f), juce::Justification::centredLeft, false);
         g.setColour(colour::orange);
-        g.drawText("303", juce::Rectangle<float>(b.getX() + 104.0f, b.getY(), 36.0f, 52.0f), juce::Justification::centredLeft, false);
+        shapedText(g, "303", juce::Rectangle<float>(b.getX() + 104.0f, b.getY(), 36.0f, 52.0f), juce::Justification::centredLeft, false);
         g.setColour(colour::caption);
-        g.drawText(juce::String::charToString(0xb7) + " LIBRARY", juce::Rectangle<float>(b.getX() + 138.0f, b.getY(), 90.0f, 52.0f),
+        shapedText(g, juce::String::charToString(0xb7) + " LIBRARY", juce::Rectangle<float>(b.getX() + 138.0f, b.getY(), 90.0f, 52.0f),
                    juce::Justification::centredLeft, false);
         // the shelves
         const auto sa = sideArea().toFloat();
-        g.setColour(shelfFill);
+        g.setGradientFill(juce::ColourGradient(juce::Colour(0xff17181a), 0.0f, sa.getY(), juce::Colour(0xff1b1c1f), 0.0f, sa.getBottom(), false));
         g.fillRect(sa.withTrimmedBottom(1.0f).withTrimmedLeft(1.0f));
-        g.setColour(colour::wellLine);
+        g.setColour(juce::Colours::black.withAlpha(0.6f));
         g.fillRect(sa.getRight(), sa.getY(), 1.0f, sa.getHeight());
         g.fillRect(listArea().toFloat().getRight(), sa.getY(), 1.0f, sa.getHeight());
         g.fillRect(b.getX(), sa.getY(), b.getWidth(), 1.0f);
@@ -521,7 +526,7 @@ namespace cs303::ui
             {
                 g.setColour(colour::dim);
                 g.setFont(labelFont(10.0f).withExtraKerningFactor(0.16f));
-                g.drawText(r.label, r.area.withTrimmedLeft(16.0f).withTrimmedTop(10.0f), juce::Justification::centredLeft, false);
+                shapedText(g, r.label, r.area.withTrimmedLeft(16.0f).withTrimmedTop(10.0f), juce::Justification::centredLeft, false);
                 continue;
             }
             const bool on = query.isEmpty() && r.key == shelf;
@@ -534,10 +539,10 @@ namespace cs303::ui
             }
             g.setColour(on ? colour::ink : colour::label);
             g.setFont(bodyFont(12.5f));
-            g.drawText(r.label, r.area.withTrimmedLeft(16.0f), juce::Justification::centredLeft, false);
+            shapedText(g, r.label, r.area.withTrimmedLeft(16.0f), juce::Justification::centredLeft, false);
             g.setColour(colour::dim);
             g.setFont(monoFont(10.5f));
-            g.drawText(juce::String(r.count), r.area.withTrimmedRight(14.0f), juce::Justification::centredRight, false);
+            shapedText(g, juce::String(r.count), r.area.withTrimmedRight(14.0f), juce::Justification::centredRight, false);
         }
         if (shown.empty())
         {
@@ -569,10 +574,12 @@ namespace cs303::ui
             text(l->about, bodyFont(12.5f), colour::label, 40.0f);
             // the grid: pitch bars, the accent row and the slide row, as the sequencer draws them
             const auto grid = juce::Rectangle<float>(d.getX(), y + 4.0f, d.getWidth(), 210.0f);
-            g.setColour(juce::Colour(0xff1c1d20));
-            g.fillRoundedRectangle(grid, 8.0f);
-            g.setColour(auditioning ? colour::orange : colour::wellLine);
-            g.drawRoundedRectangle(grid, 8.0f, auditioning ? 2.0f : 1.0f);
+            drawScreen(g, grid, 8.0f);
+            if (auditioning)
+            {
+                g.setColour(colour::orange);
+                g.drawRoundedRectangle(grid, 8.0f, 2.0f);
+            }
             const auto pitch = grid.reduced(10.0f).withHeight(140.0f);
             const float cw = pitch.getWidth() / 16.0f;
             for (int k = 0; k <= 36; k += 12)
@@ -589,26 +596,24 @@ namespace cs303::ui
                 if (! off && s.gate != Gate::rest)
                 {
                     const float ny = pitch.getBottom() - 6.0f - (s.key() / 36.0f) * (pitch.getHeight() - 12.0f);
-                    g.setColour(s.gate == Gate::tie ? juce::Colour(0xffb65a20) : colour::orange);
-                    g.fillRoundedRectangle(x + 3.0f, ny - 5.0f, cw - 6.0f, 10.0f, 2.0f);
+                    const auto bar = juce::Rectangle<float>(x + 3.0f, ny - 5.0f, cw - 6.0f, 10.0f);
+                    if (s.gate != Gate::tie)
+                        glowRounded(g, bar, 2.0f, s.accent ? colour::accentNote : colour::orange, 3.0f, 0.3f);
+                    g.setColour(s.gate == Gate::tie ? juce::Colour(0xff9c4c1b) : s.accent ? colour::accentNote : colour::orange);
+                    g.fillRoundedRectangle(bar, 2.0f);
                     if (s.gate != Gate::tie)
                     {
                         g.setColour(colour::label);
                         g.setFont(monoFont(9.5f));
-                        g.drawText(juce::String(noteNames[s.note]) + (s.octave > 0 ? "+" : s.octave < 0 ? "-" : ""),
+                        shapedText(g, juce::String(noteNames[s.note]) + (s.octave > 0 ? "+" : s.octave < 0 ? "-" : ""),
                                    juce::Rectangle<float>(x, ny - 19.0f, cw, 12.0f), juce::Justification::centred, false);
                     }
                 }
                 const float ry = pitch.getBottom() + 8.0f;
-                g.setColour(off ? juce::Colour(0xff18191b) : s.accent ? colour::orange : juce::Colour(0xff2c2d31));
-                g.fillRoundedRectangle(x + 3.0f, ry, cw - 6.0f, 18.0f, 3.0f);
-                g.setColour(off ? juce::Colour(0xff18191b) : juce::Colour(0xff2c2d31));
-                g.fillRoundedRectangle(x + 3.0f, ry + 24.0f, cw - 6.0f, 18.0f, 3.0f);
-                if (! off && s.slide)
-                {
-                    g.setColour(colour::orange);
-                    g.fillEllipse(x + cw / 2.0f - 4.0f, ry + 29.0f, 8.0f, 8.0f);
-                }
+                drawCell(g, { x + 3.0f, ry, cw - 6.0f, 18.0f }, ! off && s.accent ? Cell::hot : Cell::off, off ? 0.4f : 1.0f);
+                drawCell(g, { x + 3.0f, ry + 24.0f, cw - 6.0f, 18.0f }, ! off && s.slide ? Cell::lit : Cell::off, off ? 0.4f : 1.0f);
+                if (! off)
+                    drawLens(g, { x + cw / 2.0f, ry + 33.0f }, s.slide);
                 if (off)
                 {
                     g.setColour(juce::Colour(0xff141517).withAlpha(0.7f));
@@ -625,10 +630,12 @@ namespace cs303::ui
             text("Family " + s->family, monoFont(11.0f), colour::dim, 24.0f);
             text(s->about, bodyFont(12.5f), colour::label, 40.0f);
             const auto card = juce::Rectangle<float>(d.getX(), y + 4.0f, d.getWidth(), 170.0f);
-            g.setColour(juce::Colour(0xff1c1d20));
-            g.fillRoundedRectangle(card, 8.0f);
-            g.setColour(auditioning ? colour::orange : colour::wellLine);
-            g.drawRoundedRectangle(card, 8.0f, auditioning ? 2.0f : 1.0f);
+            drawScreen(g, card, 8.0f);
+            if (auditioning)
+            {
+                g.setColour(colour::orange);
+                g.drawRoundedRectangle(card, 8.0f, 2.0f);
+            }
             const auto& v = s->values;
             const bool fish = static_cast<bool>(v["devilFish"]);
             const std::pair<const char*, const char*> knobs[] = { { "cutoff", "CUTOFF" }, { "resonance", "RESONANCE" }, { "envMod", "ENV MOD" },
@@ -658,13 +665,13 @@ namespace cs303::ui
             float cx = card.getX() + 12.0f, cy = card.getY() + 96.0f;
             g.setFont(monoFont(10.5f));
             const auto chip = [&](const juce::String& t, bool isRed) {
-                const float w = juce::GlyphArrangement::getStringWidth(g.getCurrentFont(), t) + 20.0f;
+                const float w = shapedWidth(g.getCurrentFont(), t) + 20.0f;
                 if (cx + w > card.getRight() - 10.0f) { cx = card.getX() + 12.0f; cy += 26.0f; }
                 const auto r = juce::Rectangle<float>(cx, cy, w, 20.0f);
                 g.setColour(isRed ? devilRed : colour::wellLine);
                 g.drawRoundedRectangle(r, 10.0f, 1.0f);
                 g.setColour(isRed ? juce::Colour(0xfff09a90) : colour::label);
-                g.drawText(t, r, juce::Justification::centred, false);
+                shapedText(g, t, r, juce::Justification::centred, false);
                 cx += w + 6.0f;
             };
             for (const auto& c : chips) chip(c, false);

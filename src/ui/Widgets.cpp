@@ -48,43 +48,8 @@ namespace cs303::ui
         }
     }
 
-    void Knob::paint(juce::Graphics& g)
+    void Knob::paintBody(juce::Graphics& g, juce::Point<float> c, float size, bool accentRim)
     {
-        const float value = get ? juce::jlimit(0.0f, 1.0f, get()) : 0.0f;
-        const float followed = follow ? follow() : -1.0f;
-        const float shown = followed >= 0.0f ? followed : value;
-        const bool isDim = dimmed && dimmed();
-        const juce::Point<float> c(getWidth() * 0.5f, tickRoom + size * 0.5f);
-        const float r = size * 0.5f;
-        const float start = -sweep * 0.5f;
-
-        // the value as a lit arc on a dark track
-        const float ar = r + 6.0f;
-        {
-            juce::Path track;
-            track.addCentredArc(c.x, c.y, ar, ar, 0.0f, start, start + sweep, true);
-            g.setColour(juce::Colours::white.withAlpha(0.06f));
-            g.strokePath(track, juce::PathStrokeType(1.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded), juce::AffineTransform::translation(0.0f, 1.5f));
-            g.setColour(juce::Colour(0xff0a0a0b));
-            g.strokePath(track, juce::PathStrokeType(3.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-            if (shown > 0.005f)
-            {
-                juce::Path lit;
-                lit.addCentredArc(c.x, c.y, ar, ar, 0.0f, start, start + sweep * shown, true);
-                const auto arc = (accentRim ? colour::accentNote : colour::orange).withMultipliedAlpha(isDim ? 0.4f : 1.0f);
-                g.setColour(arc.withMultipliedAlpha(0.25f));
-                g.strokePath(lit, juce::PathStrokeType(5.5f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-                g.setColour(arc);
-                g.strokePath(lit, juce::PathStrokeType(2.4f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-            }
-            if (followed >= 0.0f && std::abs(followed - value) > 0.004f)
-            {
-                // where the knob itself stands, while the pattern moves it
-                const float a0 = start + sweep * value;
-                g.setColour(juce::Colours::white.withAlpha(0.85f));
-                g.fillEllipse(juce::Rectangle<float>(3.5f, 3.5f).withCentre(c + juce::Point<float>(std::sin(a0), -std::cos(a0)) * ar));
-            }
-        }
         // the skirt: knurled, lit from above
         const auto body = juce::Rectangle<float>(size, size).withCentre(c);
         g.setColour(juce::Colours::black.withAlpha(0.6f));
@@ -135,6 +100,53 @@ namespace cs303::ui
             g.setColour(juce::Colours::white.withAlpha(0.5f));
             g.strokePath(rim, juce::PathStrokeType(0.8f));
         }
+    }
+
+    void Knob::paint(juce::Graphics& g)
+    {
+        const float value = get ? juce::jlimit(0.0f, 1.0f, get()) : 0.0f;
+        const float followed = follow ? follow() : -1.0f;
+        const float shown = followed >= 0.0f ? followed : value;
+        drawnShown = shown;
+        drawnValue = value;
+        const bool isDim = dimmed && dimmed();
+        const juce::Point<float> c(getWidth() * 0.5f, tickRoom + size * 0.5f);
+        const float r = size * 0.5f;
+        const float start = -sweep * 0.5f;
+
+        // the value as a lit arc on a dark track
+        const float ar = r + 6.0f;
+        {
+            juce::Path track;
+            track.addCentredArc(c.x, c.y, ar, ar, 0.0f, start, start + sweep, true);
+            g.setColour(juce::Colours::white.withAlpha(0.06f));
+            g.strokePath(track, juce::PathStrokeType(1.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded), juce::AffineTransform::translation(0.0f, 1.5f));
+            g.setColour(juce::Colour(0xff0a0a0b));
+            g.strokePath(track, juce::PathStrokeType(3.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+            if (shown > 0.005f)
+            {
+                juce::Path lit;
+                lit.addCentredArc(c.x, c.y, ar, ar, 0.0f, start, start + sweep * shown, true);
+                const auto arc = (accentRim ? colour::accentNote : colour::orange).withMultipliedAlpha(isDim ? 0.4f : 1.0f);
+                g.setColour(arc.withMultipliedAlpha(0.25f));
+                g.strokePath(lit, juce::PathStrokeType(5.5f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+                g.setColour(arc);
+                g.strokePath(lit, juce::PathStrokeType(2.4f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+            }
+            if (followed >= 0.0f && std::abs(followed - value) > 0.004f)
+            {
+                // where the knob itself stands, while the pattern moves it
+                const float a0 = start + sweep * value;
+                g.setColour(juce::Colours::white.withAlpha(0.85f));
+                g.fillEllipse(juce::Rectangle<float>(3.5f, 3.5f).withCentre(c + juce::Point<float>(std::sin(a0), -std::cos(a0)) * ar));
+            }
+        }
+        // the skirt and the cap: still, so drawn once per size and kept (CoolSynth's D306)
+        const float capD = size * 0.6f;
+        const auto bodyArea = juce::Rectangle<float>(size + 6.0f, size + 10.0f).withCentre(c.translated(0.0f, 2.0f));
+        drawKept(g, "knob|" + juce::String(size, 1) + (accentRim ? "|accent" : ""), bodyArea, [this](juce::Graphics& kg, juce::Rectangle<float> r) {
+            paintBody(kg, { r.getCentreX(), r.getCentreY() - 2.0f }, size, accentRim);
+        });
         // the pointer: an orange line across the skirt, a notch in the cap
         const float a = start + sweep * shown;
         const juce::Point<float> dir(std::sin(a), -std::cos(a));
@@ -152,20 +164,29 @@ namespace cs303::ui
             g.setFont(nameFont);
             g.setColour(colour::label);
             if (! valueText)
-                g.drawText(text, line, juce::Justification::centred, false);
+                shapedText(g, text, line, juce::Justification::centred, false);
             else
             {
                 // the name and its value side by side, centred together
                 const auto shownValue = valueText();
                 const auto valueFont = fontOf(Face::monoBold, 11.5f);
-                const float nw = juce::GlyphArrangement::getStringWidth(nameFont, text), vw = juce::GlyphArrangement::getStringWidth(valueFont, shownValue);
+                const float nw = shapedWidth(nameFont, text), vw = shapedWidth(valueFont, shownValue);
                 const float x = line.getCentreX() - (nw + 6.0f + vw) * 0.5f;
-                g.drawText(text, line.withX(x).withWidth(nw + 2.0f), juce::Justification::centredLeft, false);
+                shapedText(g, text, line.withX(x).withWidth(nw + 2.0f), juce::Justification::centredLeft, false);
                 g.setFont(valueFont);
                 g.setColour(colour::amber);
-                g.drawText(shownValue, line.withX(x + nw + 6.0f).withWidth(vw + 2.0f), juce::Justification::centredLeft, false);
+                shapedText(g, shownValue, line.withX(x + nw + 6.0f).withWidth(vw + 2.0f), juce::Justification::centredLeft, false);
             }
         }
+    }
+
+    void Knob::repaintIfMoved()
+    {
+        const float value = get ? juce::jlimit(0.0f, 1.0f, get()) : 0.0f;
+        const float followed = follow ? follow() : -1.0f;
+        const float shown = followed >= 0.0f ? followed : value;
+        if (std::abs(shown - drawnShown) > 0.0005f || std::abs(value - drawnValue) > 0.0005f)
+            repaint();
     }
 
     void Knob::change(float v)
@@ -315,7 +336,7 @@ namespace cs303::ui
         g.fillRoundedRectangle(cap.getX() + 3.0f, cap.getY() + 7.0f, cap.getWidth() - 6.0f, 2.0f, 1.0f);
         g.setColour(colour::label);
         g.setFont(labelFont(11.0f));
-        g.drawText(name.toUpperCase(), juce::Rectangle<float>(-10.0f, trackH + 6.0f, getWidth() + 20.0f, 14.0f), juce::Justification::centred, false);
+        shapedText(g, name.toUpperCase(), juce::Rectangle<float>(-10.0f, trackH + 6.0f, getWidth() + 20.0f, 14.0f), juce::Justification::centred, false);
     }
 
     void Fader::mouseDown(const juce::MouseEvent&)
@@ -377,6 +398,6 @@ namespace cs303::ui
             s.draw(g, getLocalBounds().toFloat());
         }
         else
-            g.drawText(t, getLocalBounds(), justification, false);
+            shapedText(g, t, getLocalBounds(), justification, false);
     }
 }

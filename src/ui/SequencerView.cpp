@@ -107,13 +107,14 @@ namespace cs303::ui
         addAndMakeVisible(*length);
     }
 
-    // The places as the mockup's layout B gives them (coolsynth-303-relayout.src.html), from the row's left at x 72.
-    juce::Rectangle<int> PatternRow::slotBounds(int i) const { return { 62 + i * 30 + (i / 4) * 6, rowY, 27, 26 }; }
-    juce::Rectangle<int> PatternRow::variationBounds(bool b) const { return { 577 + (b ? 30 : 0), rowY, 28, 26 }; }
-    juce::Rectangle<int> PatternRow::chainLabelBounds() const { return { 648, rowY, 60, 26 }; }
-    juce::Rectangle<int> PatternRow::chainBounds(int i) const { return { 716 + i * 55, rowY + 1, 51, 24 }; }
-    juce::Rectangle<int> PatternRow::addBounds() const { return { 946, rowY, 26, 26 }; }
-    juce::Rectangle<int> PatternRow::loopBounds() const { return { 978, rowY, 66, 26 }; }
+    // The places as the mockup's layout B gives them (coolsynth-303-relayout.src.html), from the row's left at x 72; the
+    // bank's bay moved 10 px right so its edge meets the grid screen's below.
+    juce::Rectangle<int> PatternRow::slotBounds(int i) const { return { 72 + i * 30 + (i / 4) * 6, rowY, 27, 26 }; }
+    juce::Rectangle<int> PatternRow::variationBounds(bool b) const { return { 587 + (b ? 30 : 0), rowY, 28, 26 }; }
+    juce::Rectangle<int> PatternRow::chainLabelBounds() const { return { 658, rowY, 60, 26 }; }
+    juce::Rectangle<int> PatternRow::chainBounds(int i) const { return { 726 + i * 55, rowY + 1, 51, 24 }; }
+    juce::Rectangle<int> PatternRow::addBounds() const { return { 956, rowY, 26, 26 }; }
+    juce::Rectangle<int> PatternRow::loopBounds() const { return { 988, rowY, 66, 26 }; }
     int PatternRow::shownChain() const
     {
         const int n = static_cast<int>(editor.processor.project().chain.size());
@@ -127,13 +128,13 @@ namespace cs303::ui
         const bool playing = p.isPlaying();
         const auto font = monoFont(12.0f);
         // the bays: the bank, A and B, the chain's display; the names beside them
-        drawScreen(g, juce::Rectangle<float>(58.0f, 0.0f, 504.0f, 32.0f), 5.0f);
-        drawScreen(g, juce::Rectangle<float>(574.0f, 0.0f, 64.0f, 32.0f), 5.0f);
-        drawDisplay(g, juce::Rectangle<float>(712.0f, 0.0f, 228.0f, 32.0f));
+        drawScreen(g, juce::Rectangle<float>(68.0f, 0.0f, 504.0f, 32.0f), 5.0f); // its left edge on the grid screen's
+        drawScreen(g, juce::Rectangle<float>(584.0f, 0.0f, 64.0f, 32.0f), 5.0f);
+        drawDisplay(g, juce::Rectangle<float>(722.0f, 0.0f, 228.0f, 32.0f));
         g.setColour(colour::dim);
         g.setFont(labelFont(10.5f).withExtraKerningFactor(0.1f));
-        g.drawText("PATTERN", juce::Rectangle<int>(0, rowY, 56, 26), juce::Justification::centredLeft, false);
-        g.drawText("LENGTH", juce::Rectangle<int>(1058, rowY, 54, 26), juce::Justification::centredLeft, false);
+        shapedText(g, "PATTERN", juce::Rectangle<int>(4, rowY, 62, 26), juce::Justification::centredLeft, false);
+        shapedText(g, "LENGTH", juce::Rectangle<int>(1064, rowY, 48, 26), juce::Justification::centredLeft, false);
         for (int i = 0; i < 16; ++i)
         {
             const auto r = slotBounds(i).toFloat();
@@ -158,7 +159,7 @@ namespace cs303::ui
             }
             g.setColour(hearing ? colour::orangeInk : edited ? colour::amber : has ? colour::rowName : juce::Colour(0xff77797e));
             g.setFont(font);
-            g.drawText(two(i), r, juce::Justification::centred, false);
+            shapedText(g, two(i), r, juce::Justification::centred, false);
         }
         for (bool b : { false, true })
         {
@@ -167,14 +168,14 @@ namespace cs303::ui
             drawCell(g, r, on ? Cell::lit : Cell::off);
             g.setColour(on ? colour::keyInk : juce::Colour(0xffa9aaa6));
             g.setFont(labelFont(11.0f));
-            g.drawText(b ? "B" : "A", r, juce::Justification::centred, false);
+            shapedText(g, b ? "B" : "A", r, juce::Justification::centred, false);
         }
         {
             const auto r = chainLabelBounds().toFloat();
             drawLens(g, { r.getX() + 8.0f, r.getCentreY() }, proj.chainOn);
             g.setColour(proj.chainOn ? colour::caption : colour::dim);
             g.setFont(labelFont(10.5f).withExtraKerningFactor(0.1f));
-            g.drawText("CHAIN", r.withTrimmedLeft(16.0f), juce::Justification::centredLeft, false);
+            shapedText(g, "CHAIN", r.withTrimmedLeft(16.0f), juce::Justification::centredLeft, false);
         }
         const int shown = shownChain();
         for (int i = 0; i < shown; ++i)
@@ -185,19 +186,19 @@ namespace cs303::ui
             drawSlot(g, r, true, cur, proj.chainOn ? 1.0f : 0.6f);
             g.setColour(cur ? colour::orangeInk : juce::Colour(0xffa9aaa6).withAlpha(proj.chainOn ? 1.0f : 0.7f));
             g.setFont(font);
-            g.drawText(two(e.pattern) + (e.variationB ? "B" : "") + (e.repeats > 1 ? juce::String::charToString(0xd7) + juce::String(e.repeats) : juce::String()),
+            shapedText(g, two(e.pattern) + (e.variationB ? "B" : "") + (e.repeats > 1 ? juce::String::charToString(0xd7) + juce::String(e.repeats) : juce::String()),
                        r, juce::Justification::centred, false);
         }
         if (static_cast<int>(proj.chain.size()) > shown)
         {
             g.setColour(colour::dim);
             g.setFont(font);
-            g.drawText("+" + juce::String(static_cast<int>(proj.chain.size()) - shown) + " more", chainBounds(shown), juce::Justification::centred, false);
+            shapedText(g, "+" + juce::String(static_cast<int>(proj.chain.size()) - shown) + " more", chainBounds(shown), juce::Justification::centred, false);
         }
         drawCell(g, addBounds().toFloat(), Cell::off);
         g.setColour(colour::rowName);
         g.setFont(labelFont(13.0f));
-        g.drawText("+", addBounds(), juce::Justification::centred, false);
+        shapedText(g, "+", addBounds(), juce::Justification::centred, false);
         drawKey(g, loopBounds().toFloat().withTrimmedBottom(1.0f), "Loop", proj.loop, true);
     }
 
@@ -400,7 +401,7 @@ namespace cs303::ui
         g.setFont(labelFont(10.5f).withExtraKerningFactor(0.1f));
         g.setColour(colour::dim);
         for (const auto& [name, place] : labels)
-            g.drawText(name, place, juce::Justification::centredLeft, false);
+            shapedText(g, name, place, juce::Justification::centredLeft, false);
         g.setColour(colour::hint);
         g.setFont(bodyFont(11.0f));
         g.drawFittedText("These change the whole line.", juce::Rectangle<int>(12, 246, 128, 28), juce::Justification::topLeft, 2);
@@ -479,15 +480,15 @@ namespace cs303::ui
         g.setColour(colour::rowName);
         for (auto [row, name] : { std::pair { Row::octave, "OCTAVE" }, std::pair { Row::accent, "ACCENT" }, std::pair { Row::slide, "SLIDE" },
                                   std::pair { Row::gate, "GATE" } })
-            g.drawText(name, rowBounds(row).withWidth(100.0f).translated(4.0f, 0.0f), juce::Justification::centredLeft, false);
+            shapedText(g, name, rowBounds(row).withWidth(100.0f).translated(4.0f, 0.0f), juce::Justification::centredLeft, false);
         {
             const auto r = rowBounds(Row::pitch);
-            g.drawText("PITCH", juce::Rectangle<float>(4.0f, r.getCentreY() - 24.0f, 70.0f, 14.0f), juce::Justification::centredLeft, false);
+            shapedText(g, "PITCH", juce::Rectangle<float>(4.0f, r.getCentreY() - 24.0f, 70.0f, 14.0f), juce::Justification::centredLeft, false);
             g.setColour(juce::Colour(0xff6f7176));
             g.setFont(bodyFont(10.5f));
-            g.drawText("Drag up or", juce::Rectangle<float>(4.0f, r.getCentreY() - 6.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
-            g.drawText("down, or", juce::Rectangle<float>(4.0f, r.getCentreY() + 7.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
-            g.drawText("wheel", juce::Rectangle<float>(4.0f, r.getCentreY() + 20.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
+            shapedText(g, "Drag up or", juce::Rectangle<float>(4.0f, r.getCentreY() - 6.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
+            shapedText(g, "down, or", juce::Rectangle<float>(4.0f, r.getCentreY() + 7.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
+            shapedText(g, "wheel", juce::Rectangle<float>(4.0f, r.getCentreY() + 20.0f, 64.0f, 13.0f), juce::Justification::centredLeft, false);
             // the notes down the lane's edge, as a piano roll's keys; the picked step's note lit
             const juce::Rectangle<float> strip(static_cast<float>(labelWidth) - 36.0f, r.getY(), 30.0f, r.getHeight());
             const auto& ps = pat.step[static_cast<size_t>(editor.pick)];
@@ -503,7 +504,7 @@ namespace cs303::ui
                 g.drawHorizontalLine(juce::roundToInt(rr.getBottom()) - 1, rr.getX(), rr.getRight());
                 g.setColour(lit ? colour::orangeInk : sharp ? juce::Colour(0xffa9abaf) : juce::Colour(0xff2a2b2e));
                 g.setFont(monoFont(8.0f));
-                g.drawText(juce::String(letters[n]) + (n == 12 ? juce::String::charToString(0x2032) : juce::String()), rr.withTrimmedRight(3.0f),
+                shapedText(g, juce::String(letters[n]) + (n == 12 ? juce::String::charToString(0x2032) : juce::String()), rr.withTrimmedRight(3.0f),
                            juce::Justification::centredRight, false);
             }
             g.setColour(juce::Colour(0xff111111));
@@ -513,12 +514,17 @@ namespace cs303::ui
             const auto r = rowBounds(Row::motion);
             g.setColour(colour::rowName);
             g.setFont(labelFont(11.0f).withExtraKerningFactor(0.08f));
-            g.drawText("MOTION", juce::Rectangle<float>(4.0f, r.getY() - 2.0f, 80.0f, 14.0f), juce::Justification::centredLeft, false);
+            shapedText(g, "MOTION", juce::Rectangle<float>(4.0f, r.getY() - 2.0f, 80.0f, 14.0f), juce::Justification::centredLeft, false);
             drawWell(g, juce::Rectangle<float>(4.0f, r.getY() + 14.0f, 62.0f, 20.0f), knobName(editor.motionKnob), colour::amber); // clear of the screen's edge
         }
 
+        const auto clip = g.getClipBounds().toFloat();
         for (int i = 0; i < 16; ++i)
         {
+            // only the columns the repaint reaches (a press or the beat repaints one or two)
+            const auto column = cell(Row::lights, i).withTop(0.0f).withBottom(static_cast<float>(getHeight())).expanded(8.0f, 0.0f);
+            if (! clip.intersects(column))
+                continue;
             const auto& s = pat.step[static_cast<size_t>(i)];
             const bool off = i >= pat.length;
             const float alpha = off ? 0.35f : 1.0f;
@@ -529,7 +535,7 @@ namespace cs303::ui
                 drawLamp(g, { c.getCentreX() - 8.0f, c.getCentreY() }, lit);
                 g.setColour(lit ? juce::Colour(0xfff4efe4) : juce::Colour(0xff6d6f74));
                 g.setFont(monoFont(9.5f));
-                g.drawText(juce::String(i + 1), c.withTrimmedLeft(c.getWidth() * 0.5f - 3.0f), juce::Justification::centredLeft, false);
+                shapedText(g, juce::String(i + 1), c.withTrimmedLeft(c.getWidth() * 0.5f - 3.0f), juce::Justification::centredLeft, false);
             }
             // the note's name and octave
             {
@@ -541,7 +547,7 @@ namespace cs303::ui
                     t << (s.octave > 0 ? "+" : juce::String::charToString(0x2212));
                 g.setColour(juce::Colour(0xffc9c4b8).withAlpha(alpha));
                 g.setFont(monoFont(10.5f));
-                g.drawText(t, c, juce::Justification::centred, false);
+                shapedText(g, t, c, juce::Justification::centred, false);
             }
             // the pitch lane
             {
@@ -618,7 +624,7 @@ namespace cs303::ui
                 {
                     g.setColour((own ? colour::keyInk : juce::Colour(0xff8d8f94)).withAlpha(alpha));
                     g.setFont(monoFont(11.0f));
-                    g.drawText(s.octave > 0 ? "Up" : "Down", o, juce::Justification::centred, false);
+                    shapedText(g, s.octave > 0 ? "Up" : "Down", o, juce::Justification::centred, false);
                 }
                 drawCell(g, cell(Row::accent, i), s.accent ? Cell::hot : Cell::off, alpha);
                 const auto sl = cell(Row::slide, i);
@@ -628,7 +634,7 @@ namespace cs303::ui
                 drawCell(g, gt, own ? Cell::lit : Cell::off, alpha);
                 g.setColour((own ? colour::keyInk : juce::Colour(0xff77797e)).withAlpha(alpha));
                 g.setFont(monoFont(11.0f));
-                g.drawText(s.gate == Gate::note ? "Note" : s.gate == Gate::tie ? "Tie" : "Rest", gt, juce::Justification::centred, false);
+                shapedText(g, s.gate == Gate::note ? "Note" : s.gate == Gate::tie ? "Tie" : "Rest", gt, juce::Justification::centred, false);
             }
             // the motion lane
             {
@@ -646,6 +652,13 @@ namespace cs303::ui
                 }
             }
         }
+    }
+
+    void StepGrid::repaintStep(int step)
+    {
+        if (step < 0 || step >= 16)
+            return;
+        repaint(cell(Row::lights, step).withTop(0.0f).withBottom(static_cast<float>(getHeight())).expanded(10.0f, 0.0f).toNearestInt());
     }
 
     void StepGrid::setPitchFromY(int step, float y)
@@ -824,7 +837,7 @@ namespace cs303::ui
     {
         g.setColour(colour::caption);
         g.setFont(labelFont(11.0f).withExtraKerningFactor(0.08f));
-        g.drawText("STEP " + juce::String(editor.pick + 1), 14, 6, 130, 16, juce::Justification::centredLeft, false);
+        shapedText(g, "STEP " + juce::String(editor.pick + 1), 14, 6, 130, 16, juce::Justification::centredLeft, false);
         g.setColour(colour::hint);
         g.setFont(bodyFont(10.5f));
         g.drawFittedText("Turn a knob to hold its value on this step.", juce::Rectangle<int>(14, 200, 124, 60), juce::Justification::topLeft, 4);
@@ -869,7 +882,7 @@ namespace cs303::ui
             drawCell(g, r, line == l ? Cell::lit : Cell::off);
             g.setColour(line == l ? colour::keyInk : juce::Colour(0xffa9aaa6));
             g.setFont(labelFont(10.5f));
-            g.drawText(l ? "LINE" : "LOCKS", r, juce::Justification::centred, false);
+            shapedText(g, l ? "LINE" : "LOCKS", r, juce::Justification::centred, false);
         }
     }
 
@@ -949,10 +962,14 @@ namespace cs303::ui
             k->repaint();
     }
 
-    void SequencerSection::repaintPlaying()
+    void SequencerSection::repaintPlaying(int previousStep, int step, bool patternMoved)
     {
-        repaint(0, 0, getWidth(), 20);
-        patterns->repaint();
-        stepGrid->repaint();
+        if (patternMoved)
+        {
+            repaint(0, 0, getWidth(), 22); // the head band's "hearing"
+            patterns->repaint();
+        }
+        stepGrid->repaintStep(previousStep);
+        stepGrid->repaintStep(step);
     }
 }

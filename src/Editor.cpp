@@ -10,6 +10,7 @@
 #include "ui/Panel.h"
 #include "ui/SequencerView.h"
 #include "ui/Theme.h"
+#include "ui/WindowLook.h"
 
 namespace cs303
 {
@@ -50,7 +51,7 @@ namespace cs303
                 }
                 g.setColour(juce::Colour(0xff66686d));
                 g.setFont(ui::bodyFont(10.5f));
-                g.drawText("CoolSynth 303 " + juce::String::charToString(0xb7) + " a bass line from its circuit", juce::Rectangle<int>(Editor::baseWidth - 420, 780, 404, 16),
+                ui::shapedText(g, "CoolSynth 303 " + juce::String::charToString(0xb7) + " a bass line from its circuit", juce::Rectangle<int>(Editor::baseWidth - 420, 780, 404, 16),
                            juce::Justification::centredRight, false);
             }
         };
@@ -66,6 +67,7 @@ namespace cs303
 
     Editor::Editor(Processor& p) : juce::AudioProcessorEditor(p), processor(p)
     {
+        setLookAndFeel(&ui::WindowLook::shared()); // pop-up menus, scroll bars and text fields in the panel's look
         boardHolder = std::make_unique<Board>();
         addAndMakeVisible(*boardHolder);
         top = std::make_unique<ui::TopBar>(*this);
@@ -104,6 +106,7 @@ namespace cs303
 
     Editor::~Editor()
     {
+        setLookAndFeel(nullptr);
         stopTimer();
         optionsWindow.reset(); // its hooks point here
         if (watchedWindow != nullptr)
@@ -443,13 +446,20 @@ namespace cs303
         refreshAll();
     }
 
-    void Editor::refreshAll()
+    void Editor::refreshAll(bool everything)
     {
+        lastEdits = processor.editCount(); // the timer need not draw this edit again
         top->refresh();
-        synth->refresh();
-        mods->refresh();
         keys->refresh();
         sequencer->refresh();
+        const auto& pn = processor.project().panel;
+        if (everything || ! panelShown || ! (pn == shownPanel))
+        {
+            shownPanel = pn;
+            panelShown = true;
+            synth->refresh();
+            mods->refresh();
+        }
     }
 
     bool Editor::keyPressed(const juce::KeyPress& key)
@@ -520,16 +530,19 @@ namespace cs303
         const int sounding = processor.soundingKey();
         if (edits != lastEdits || playing != lastPlaying)
         {
-            lastEdits = edits;
+            const bool started = playing != lastPlaying; // the knobs go back to their own values, or start to follow
             lastPlaying = playing;
-            refreshAll();
+            refreshAll(started);
         }
         else if (step != lastStep || pattern != lastPattern || queued != lastQueued || sounding != lastSounding)
         {
-            sequencer->repaintPlaying();
-            keys->refresh();
+            // only what the beat moved: the two steps' columns, the pattern row when the pattern changes, the piano's
+            // sounding key, the knobs the pattern turns
+            sequencer->repaintPlaying(lastStep, step, pattern != lastPattern || queued != lastQueued);
+            if (sounding != lastSounding)
+                keys->repaintPiano();
             if (playing)
-                synth->refresh(); // the knobs follow the pattern's locks and moves
+                synth->refreshMoving();
         }
         lastStep = step;
         lastPattern = pattern;

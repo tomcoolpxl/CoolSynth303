@@ -65,6 +65,8 @@ namespace cs303::ui
     {
     public:
         explicit SynthPanel(Editor&);
+        /** While playing: repaints only the knobs whose drawn value the pattern has moved. */
+        void refreshMoving();
         void paint(juce::Graphics&) override;
         void refresh();
 

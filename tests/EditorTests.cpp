@@ -1,7 +1,9 @@
 // The panel: it builds and lays out, its keys write and transpose; with COOLSYNTH303_SNAPSHOTS=<folder> it also
 // writes pictures of itself, stopped and playing, for a look without opening the app.
 
+#include <algorithm>
 #include <memory>
+#include <vector>
 #include <tuple>
 
 #include <juce_audio_processors/juce_audio_processors.h>
@@ -177,6 +179,41 @@ namespace
                     p->undo();
                 }
                 playFor(*p, 0.05);
+            }
+
+            beginTest("what_a_paint_costs");
+            {
+                // The board painted at the window's usual scale (1.75), whole and in the areas a press or the beat
+                // repaints: a step's key, a knob. The software renderer, not the window's Direct2D, so for comparing.
+                auto& board = e->board();
+                auto* grid = find<ui::StepGrid>(board);
+                auto* knob = find<ui::Knob>(board);
+                expect(grid != nullptr && knob != nullptr);
+                if (grid != nullptr && knob != nullptr)
+                {
+                    const auto cost = [&board](juce::Rectangle<int> area) {
+                        std::vector<double> ms;
+                        for (int i = 0; i < 9; ++i)
+                        {
+                            juce::Image image(juce::Image::ARGB, 2240, 1400, true);
+                            juce::Graphics g(image);
+                            g.addTransform(juce::AffineTransform::scale(1.75f));
+                            g.reduceClipRegion(area);
+                            const double t0 = juce::Time::getMillisecondCounterHiRes();
+                            board.paintEntireComponent(g, false);
+                            ms.push_back(juce::Time::getMillisecondCounterHiRes() - t0);
+                        }
+                        std::sort(ms.begin(), ms.end());
+                        return ms[ms.size() / 2];
+                    };
+                    using R = ui::StepGrid::Row;
+                    const auto step = board.getLocalArea(grid, grid->cell(R::accent, 3).toNearestInt());
+                    const auto knobArea = board.getLocalArea(knob, knob->getLocalBounds());
+                    const auto gridArea = board.getLocalArea(grid, grid->getLocalBounds());
+                    logMessage("paint, ms (median of 9): whole " + juce::String(cost(board.getLocalBounds()), 1) + ", the grid "
+                               + juce::String(cost(gridArea), 1) + ", a step's key " + juce::String(cost(step), 2) + ", a knob "
+                               + juce::String(cost(knobArea), 2));
+                }
             }
 
             beginTest("the_inspector_column_shows_the_locks_or_the_line_by_its_tabs");

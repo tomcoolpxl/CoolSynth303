@@ -41,6 +41,7 @@ namespace cs303::ui
         explicit KeyboardSection(Editor&);
         void paint(juce::Graphics&) override;
         void refresh();
+        void repaintPiano() { piano->repaint(); }
 
     private:
         Editor& editor;

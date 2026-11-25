@@ -2,6 +2,10 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "ui/Text.h"
+
+#include <functional>
+
 /*
     The machined look the user chose (CoolSynth's D348, the mockups' 2 Redesign): graphite plates on a brushed panel,
     each section's name in a head band with the signal path printed through them, knurled knobs with an aluminium
@@ -48,7 +52,10 @@ namespace cs303::ui
     [[nodiscard]] inline juce::Font monoFont(float h = 11.0f) { return fontOf(Face::mono, h); }
     [[nodiscard]] inline juce::Font bodyFont(float h = 11.0f) { return fontOf(Face::body, h, 0.02f); }
 
-    /** The panel's ground: brushed graphite, a sheen from above. */
+    /** A still picture drawn once by paint into an image at the scale it is shown at, kept by its name and size, and
+        drawn from there after (CoolSynth's D306). */
+    void drawKept(juce::Graphics& g, const juce::String& name, juce::Rectangle<float> area, const std::function<void(juce::Graphics&, juce::Rectangle<float>)>& paint);
+    /** The panel's ground: brushed graphite, a sheen from above (kept). */
     void drawGround(juce::Graphics& g, juce::Rectangle<float> area);
     /** A section: a raised plate from 8 px above the area's top, its name in a head band; a number (1 on) printed
         before the name in orange. Returns where the name ends, for the signal path. */

@@ -76,7 +76,7 @@ namespace cs303::ui
                 g.fillRect(body.getRight() - 1.0f, body.getY(), 1.0f, body.getHeight() - 2.0f);
                 g.setColour(hit ? colour::orangeInk : pick ? juce::Colour(0xff8a3e10) : juce::Colour(0xff8a877e));
                 g.setFont(labelFont(9.5f));
-                g.drawText(letters[k % 12], r.withTop(r.getBottom() - 20.0f), juce::Justification::centred, false);
+                shapedText(g, letters[k % 12], r.withTop(r.getBottom() - 20.0f), juce::Justification::centred, false);
             }
             else
             {
@@ -217,16 +217,16 @@ namespace cs303::ui
                                           + (st.octave > 0 ? "+" : st.octave < 0 ? juce::String::charToString(0x2212) : juce::String());
             g.setColour(juce::Colour(0xff8a7a68));
             g.setFont(monoFont(9.5f));
-            g.drawText("STEP " + juce::String(editor.pick + 1).paddedLeft('0', 2), r.withTrimmedLeft(8.0f), juce::Justification::centredLeft, false);
+            shapedText(g, "STEP " + juce::String(editor.pick + 1).paddedLeft('0', 2), r.withTrimmedLeft(8.0f), juce::Justification::centredLeft, false);
             g.setColour(colour::amber);
             g.setFont(fontOf(Face::monoBold, 13.5f));
-            g.drawText(note, r.withTrimmedRight(8.0f), juce::Justification::centredRight, false);
+            shapedText(g, note, r.withTrimmedRight(8.0f), juce::Justification::centredRight, false);
         }
         // the entry keys' and the switch's names, the switch's bay
         g.setColour(colour::dim);
         g.setFont(labelFont(9.5f).withExtraKerningFactor(0.14f));
-        g.drawText("STEP ENTRY", juce::Rectangle<int>(776, 32, 158, 14), juce::Justification::centred, false);
-        g.drawText("KEYS", juce::Rectangle<int>(modeBay.getX(), 32, modeBay.getWidth(), 14), juce::Justification::centred, false);
+        shapedText(g, "STEP ENTRY", juce::Rectangle<int>(776, 32, 158, 14), juce::Justification::centred, false);
+        shapedText(g, "KEYS", juce::Rectangle<int>(modeBay.getX(), 32, modeBay.getWidth(), 14), juce::Justification::centred, false);
         drawScreen(g, modeBay.toFloat(), 5.0f);
         // the keys' bed
         drawScreen(g, juce::Rectangle<float>(104.0f - 6.0f, top + 12.0f, Piano::whites * Piano::whiteWidth + 12.0f, 88.0f), 5.0f);

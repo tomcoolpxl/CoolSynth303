@@ -46,6 +46,67 @@ namespace cs303::ui
         };
     }
 
+    WindowLook::WindowLook()
+    {
+        using C = juce::Colour;
+        const std::pair<int, C> scheme[] = {
+            { juce::PopupMenu::backgroundColourId, colour::plateTop },
+            { juce::PopupMenu::textColourId, colour::label },
+            { juce::PopupMenu::headerTextColourId, colour::dim },
+            { juce::PopupMenu::highlightedBackgroundColourId, colour::orange },
+            { juce::PopupMenu::highlightedTextColourId, colour::orangeInk },
+            { juce::ScrollBar::thumbColourId, C(0xff4f5156) },
+            { juce::ScrollBar::trackColourId, colour::well },
+            { juce::TextEditor::backgroundColourId, colour::well },
+            { juce::TextEditor::textColourId, colour::ink },
+            { juce::TextEditor::outlineColourId, colour::wellLine },
+            { juce::TextEditor::focusedOutlineColourId, colour::orange },
+            { juce::TextEditor::highlightColourId, colour::orange.withAlpha(0.35f) },
+            { juce::CaretComponent::caretColourId, colour::amber },
+            { juce::ListBox::backgroundColourId, colour::face },
+            { juce::AlertWindow::backgroundColourId, colour::plateTop },
+            { juce::AlertWindow::textColourId, colour::label },
+            { juce::AlertWindow::outlineColourId, colour::wellLine },
+            { juce::TextButton::buttonColourId, C(0xff2b2c30) },
+            { juce::TextButton::textColourOffId, colour::capInk },
+            { juce::ComboBox::backgroundColourId, colour::well },
+            { juce::ComboBox::textColourId, colour::ink },
+            { juce::ComboBox::outlineColourId, colour::wellLine },
+            { juce::ComboBox::arrowColourId, colour::orange },
+            { juce::ResizableWindow::backgroundColourId, colour::face },
+        };
+        for (const auto& [id, c] : scheme)
+            setColour(id, c);
+    }
+
+    void WindowLook::drawScrollbar(juce::Graphics& g, juce::ScrollBar&, int x, int y, int width, int height, bool vertical, int thumbStart, int thumbSize,
+                                   bool over, bool down)
+    {
+        // a slim rounded thumb in a dark slot, lighter under the mouse
+        const auto slot = juce::Rectangle<int>(x, y, width, height).toFloat().reduced(2.0f);
+        g.setColour(colour::well);
+        g.fillRoundedRectangle(slot, std::min(slot.getWidth(), slot.getHeight()) * 0.5f);
+        if (thumbSize <= 0)
+            return;
+        const auto thumb = vertical ? juce::Rectangle<float>(slot.getX(), static_cast<float>(thumbStart) + 2.0f, slot.getWidth(), static_cast<float>(thumbSize) - 4.0f)
+                                    : juce::Rectangle<float>(static_cast<float>(thumbStart) + 2.0f, slot.getY(), static_cast<float>(thumbSize) - 4.0f, slot.getHeight());
+        g.setColour(down ? colour::orange : over ? juce::Colour(0xff6a6c71) : juce::Colour(0xff4f5156));
+        g.fillRoundedRectangle(thumb, std::min(thumb.getWidth(), thumb.getHeight()) * 0.5f);
+    }
+
+    void WindowLook::drawPopupMenuBackground(juce::Graphics& g, int width, int height)
+    {
+        const auto r = juce::Rectangle<int>(width, height).toFloat();
+        g.setGradientFill(juce::ColourGradient(colour::plateTop, 0.0f, 0.0f, colour::plateBottom, 0.0f, r.getBottom(), false));
+        g.fillAll();
+        g.setColour(juce::Colours::black);
+        g.drawRect(r, 1.0f);
+        g.setColour(juce::Colours::white.withAlpha(0.06f));
+        g.fillRect(1.0f, 1.0f, r.getWidth() - 2.0f, 1.0f);
+    }
+
+    juce::Font WindowLook::getPopupMenuFont() { return bodyFont(14.0f); }
+
     void WindowLook::drawDocumentWindowTitleBar(juce::DocumentWindow& window, juce::Graphics& g, int w, int h, int, int, const juce::Image*, bool)
     {
         // The top bar's charcoal with its black foot, the title centred in the sections' capitals.

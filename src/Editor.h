@@ -93,7 +93,10 @@ namespace cs303
         void togglePick(bool accent);
         void movePick(int by);
         void togglePlay();
-        void refreshAll();
+        /** Redraws what an edit may have changed: the top bar, the keyboard, the sequencer; the synth's knobs and the
+            Mods panel only when the panel's values changed, or with everything (CoolSynth's D306: a whole redraw is what
+            made a press show late on the 808). */
+        void refreshAll(bool everything = false);
         /** Lays every part out at the base size, for tests and snapshots without a window. */
         void layOut();
 
@@ -120,6 +123,8 @@ namespace cs303
         std::uint32_t lastEdits = 0;
         int lastStep = -2, lastPattern = -1, lastQueued = -2, lastSounding = -2;
         bool lastPlaying = false;
+        Panel shownPanel {};     // the panel's values as the knobs last drew them
+        bool panelShown = false;
         int heldComputerKey = -1;
     };
 }

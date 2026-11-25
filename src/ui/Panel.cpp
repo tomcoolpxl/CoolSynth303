@@ -105,7 +105,7 @@ namespace cs303::ui
         drawDisplay(g, nameBox.toFloat());
         g.setColour(juce::Colour(0xfff3e3cf));
         g.setFont(bodyFont(12.5f));
-        g.drawText(name, nameBox.reduced(8, 0), juce::Justification::centred, true);
+        shapedText(g, name, nameBox.reduced(8, 0), juce::Justification::centred, true);
 
         // following an incoming MIDI clock, its tempo, named so
         const bool byHost = editor.processor.isFollowingHost();
@@ -114,18 +114,18 @@ namespace cs303::ui
         const auto figures = juce::String(byClock ? editor.processor.tempoNow() : proj.bpm, 1);
         g.setFont(fontOf(Face::monoBold, 19.0f));
         g.setColour(colour::amber.withAlpha(0.22f));
-        g.drawText(figures, tempoBox.withTrimmedRight(40).toFloat().translated(0.0f, 0.5f).expanded(0.6f, 0.0f), juce::Justification::centredRight, false);
+        shapedText(g, figures, tempoBox.withTrimmedRight(40).toFloat().translated(0.0f, 0.5f).expanded(0.6f, 0.0f), juce::Justification::centredRight, false);
         g.setColour(colour::amber);
-        g.drawText(figures, tempoBox.withTrimmedRight(40), juce::Justification::centredRight, false);
+        shapedText(g, figures, tempoBox.withTrimmedRight(40), juce::Justification::centredRight, false);
         g.setColour(byClock ? colour::amber : juce::Colour(0xff8a7a68));
         g.setFont(labelFont(10.5f));
-        g.drawText(byHost ? "HOST" : byClock ? "CLOCK" : "BPM", tempoBox.withTrimmedLeft(68), juce::Justification::centredLeft, false);
+        shapedText(g, byHost ? "HOST" : byClock ? "CLOCK" : "BPM", tempoBox.withTrimmedLeft(68), juce::Justification::centredLeft, false);
 
         // the audio thread's share of its time, small, at the far left of the transport
         const float load = editor.processor.load();
         g.setColour(load > 0.8f ? colour::lampOn : juce::Colour(0xff6f7176));
         g.setFont(monoFont(9.5f));
-        g.drawText("DSP " + juce::String(juce::roundToInt(load * 100.0f)) + "%", juce::Rectangle<int>(play->getX() - 74, 8, 64, 26),
+        shapedText(g, "DSP " + juce::String(juce::roundToInt(load * 100.0f)) + "%", juce::Rectangle<int>(play->getX() - 74, 8, 64, 26),
                    juce::Justification::centredRight, false);
     }
 
@@ -321,7 +321,7 @@ namespace cs303::ui
                 g.fillEllipse(cap);
                 g.setColour(colour::label.withMultipliedAlpha(alpha));
                 g.setFont(labelFont(10.5f));
-                g.drawText("ACCENT", getLocalBounds().removeFromBottom(14), juce::Justification::centred, false);
+                shapedText(g, "ACCENT", getLocalBounds().removeFromBottom(14), juce::Justification::centred, false);
             }
             void mouseDown(const juce::MouseEvent&) override
             {
@@ -510,7 +510,7 @@ namespace cs303::ui
                                                        juce::Font::bold | juce::Font::italic));
         g.setColour(juce::Colour(0xffe0362a));
         g.setFont(font);
-        g.drawText("Devil Fish", juce::Rectangle<float>(fish.getX() + 12.0f, fish.getY() - 8.0f, 200.0f, 22.0f), juce::Justification::centredLeft, false);
+        shapedText(g, "Devil Fish", juce::Rectangle<float>(fish.getX() + 12.0f, fish.getY() - 8.0f, 200.0f, 22.0f), juce::Justification::centredLeft, false);
     }
 
     void ModsPanel::refresh()
@@ -625,7 +625,7 @@ namespace cs303::ui
     Key& SynthPanel::key(const juce::String& text, int sectionX, int x, int y, int w)
     {
         auto k = std::make_unique<Key>(text, true);
-        const int width = w > 0 ? w : juce::roundToInt(juce::GlyphArrangement::getStringWidth(labelFont(10.5f), text.toUpperCase())) + 22;
+        const int width = w > 0 ? w : juce::roundToInt(shapedWidth(labelFont(10.5f), text.toUpperCase())) + 22;
         k->setBounds(sectionX + x, faceTop + y, std::max(40, width), 24 + Key::lampRoom);
         addAndMakeVisible(*k);
         auto& ref = *k;
@@ -667,8 +667,15 @@ namespace cs303::ui
         drawScreen(g, waveBay.toFloat(), 5.0f);
         g.setColour(colour::dim);
         g.setFont(labelFont(9.5f).withExtraKerningFactor(0.14f));
-        g.drawText("SAW", juce::Rectangle<int>(waveBay.getX() + 2, waveBay.getBottom() + 3, 56, 12), juce::Justification::centred, false);
-        g.drawText("SQUARE", juce::Rectangle<int>(waveBay.getX() + 60, waveBay.getBottom() + 3, 56, 12), juce::Justification::centred, false);
+        shapedText(g, "SAW", juce::Rectangle<int>(waveBay.getX() + 2, waveBay.getBottom() + 3, 56, 12), juce::Justification::centred, false);
+        shapedText(g, "SQUARE", juce::Rectangle<int>(waveBay.getX() + 60, waveBay.getBottom() + 3, 56, 12), juce::Justification::centred, false);
+    }
+
+    void SynthPanel::refreshMoving()
+    {
+        for (auto& c : parts)
+            if (auto* k = dynamic_cast<Knob*>(c.get()))
+                k->repaintIfMoved();
     }
 
     void SynthPanel::refresh()
