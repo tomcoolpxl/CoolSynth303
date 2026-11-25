@@ -58,6 +58,11 @@ MIDI: while stopped, a note plays the voice (the middle C at MIDI note 36); whil
 pattern from middle C (note 60). It follows a MIDI clock when one comes in (its start, stop, continue, song position
 and tempo, the top bar then showing CLOCK), and sends its own while it plays when none does.
 
+With CoolSynth 808 on the same computer, one leads and the other follows by MIDI clock through a loopback port
+(Windows 11's MIDI Settings app makes one; loopMIDI too): the leader's MIDI output and the follower's input set to it
+in Options, both apps on the same audio device. The follower plays within about a millisecond of the leader. The two
+take some two and a half cores; a busy program beside them can make the 808 stutter, and the 303 then follows it.
+
 Options, in the top bar, opens the 303's own options: the audio device and the accuracy, the MIDI ports, the
 window's size and theme, and the WAV export (in a DAW, the Host page has the accuracy).
 - Accuracy: Best, or Light: the voice at the output's own rate and solved a little less tightly, some 40 % less CPU,
