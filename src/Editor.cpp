@@ -65,9 +65,9 @@ namespace cs303
     Editor::Editor(Processor& p) : juce::AudioProcessorEditor(p), processor(p)
     {
         {
-            // the theme kept from last time (D352), before anything is drawn
+            // the theme kept from last time (D352), before anything is drawn; Silver until one is chosen (the user)
             const juce::PropertiesFile settings(Processor::settingsOptions());
-            ui::applyTheme(settings.getIntValue("theme", 0));
+            ui::applyTheme(settings.getIntValue("theme", 1));
             ui::WindowLook::shared().recolour();
         }
         setLookAndFeel(&ui::WindowLook::shared()); // pop-up menus, scroll bars and text fields in the panel's look

@@ -44,7 +44,7 @@ namespace cs303::ui
         float laneHi, laneLo, motionFill, hoverFill, hoverEdge, wellRim;
     };
 
-    /** The palette in use; themes() lists them, Graphite first (the default). */
+    /** The palette in use; themes() lists them, Graphite first; Silver is the default (the user). */
     [[nodiscard]] Palette& palette();
     [[nodiscard]] juce::StringArray themeNames();
     [[nodiscard]] int currentTheme();

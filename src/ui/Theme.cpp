@@ -451,12 +451,12 @@ namespace cs303::ui
             return p;
         }
 
-        int themeInUse = 0;
+        int themeInUse = 1; // Silver, the default (the user)
     }
 
     Palette& palette()
     {
-        static Palette p = graphite();
+        static Palette p = silver();
         return p;
     }
 
