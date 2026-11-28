@@ -50,6 +50,10 @@ namespace cs303::ui
         std::function<bool()> mcpOn;
         std::function<void(bool)> chooseMcp;
         std::function<juce::String()> mcpStatus;
+        // Render ahead (CoolSynth's D372): the samples it adds to the latency, and the rendering's load (0..1), which
+        // the audio callback's own CPU figure no longer shows. Unset: neither.
+        std::function<int()> aheadSamples;
+        std::function<float()> renderLoad;
     };
 
     class OptionsWindow final : public juce::DocumentWindow

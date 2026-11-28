@@ -78,6 +78,7 @@ namespace cs303
         // only once switched on in Options (CoolSynth's D363).
         if (wrapperType == wrapperType_Standalone && ! offline)
         {
+            aheadWanted = true; // render ahead (D372)
             juce::SystemStats::setApplicationCrashHandler(writeCrashStack);
             mcpSwitchable = true;
             mcpListenPort = mcpPort;
@@ -125,6 +126,8 @@ namespace cs303
 
     Processor::~Processor()
     {
+        if (ahead != nullptr)
+            ahead->stop(); // the worker renders with everything below
         alive->store(false); // a tool's job still queued finds the processor gone and does nothing
         mcp = nullptr;
         syncTicker.reset();
@@ -345,6 +348,8 @@ namespace cs303
 
     void Processor::prepareToPlay(double sampleRate, int samplesPerBlock)
     {
+        if (ahead != nullptr)
+            ahead->stop(); // nothing renders while the state below is made again
         hostRate = sampleRate > 0.0 ? sampleRate : 48000.0;
         // The accuracy (D349): a host's offline render at Best whatever the setting.
         accuracyNow = isNonRealtime() ? 0 : accuracyLevel;
@@ -378,6 +383,43 @@ namespace cs303
         sixteenth = -1;
         dirty.store(true);
         prepared = true;
+
+        // Render ahead (D372): the worker renders from here on; the MIDI clock's pulses it follows are that much older.
+        const int lead = juce::roundToInt(aheadSeconds * hostRate);
+        clock.setLead(aheadWanted ? lead : 0);
+        if (aheadWanted)
+        {
+            if (ahead == nullptr)
+                ahead = std::make_unique<RenderAhead>();
+            ahead->start([this](juce::AudioBuffer<float>& block, juce::MidiBuffer& m, std::int64_t start, std::int64_t micros) {
+                samplesSoFar = start;
+                renderBlock(block, m, micros);
+            },
+                         hostRate, samplesPerBlock, lead, [this] {
+                             return hostClockForTesting ? hostClockForTesting() : coolsynth::sync::hostMicrosNow();
+                         });
+        }
+    }
+
+    void Processor::releaseResources()
+    {
+        if (ahead != nullptr)
+            ahead->stop();
+    }
+
+    int Processor::renderAheadSamples() const noexcept
+    {
+        return ahead != nullptr && ahead->isRunning() ? ahead->aheadSamples() : 0;
+    }
+
+    std::int64_t Processor::renderAheadShortfall() const noexcept
+    {
+        return ahead != nullptr ? ahead->shortfall() : 0;
+    }
+
+    bool Processor::waitForRenderAheadForTesting(int milliseconds)
+    {
+        return ahead != nullptr && ahead->waitUntilAhead(milliseconds);
     }
 
     // ---------------------------------------------------------------- the project
@@ -768,6 +810,17 @@ namespace cs303
 
     void Processor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
     {
+        // In the standalone app the worker has rendered this block already (D372): only handed over here.
+        if (ahead != nullptr && ahead->isRunning())
+        {
+            ahead->exchange(buffer, midi);
+            return;
+        }
+        renderBlock(buffer, midi, -1);
+    }
+
+    void Processor::renderBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi, std::int64_t callbackMicros) noexcept
+    {
         const juce::ScopedNoDenormals noDenormals;
         const auto started = juce::Time::getHighResolutionTicks();
         pullFromUi();
@@ -814,7 +867,8 @@ namespace cs303
         if (beatSync != nullptr && syncOn.load(std::memory_order_acquire))
         {
             auto& shared = beatSync->audio();
-            const std::int64_t now = hostClockForTesting ? hostClockForTesting() : coolsynth::sync::hostMicrosNow();
+            const std::int64_t now = callbackMicros >= 0 ? callbackMicros
+                                     : hostClockForTesting ? hostClockForTesting() : coolsynth::sync::hostMicrosNow();
             const auto t = blockClock.next(now, numSamples);
             const auto* beats = &shared.beginBlock(t.hostMicros + outputLatencyMicros.load(std::memory_order_relaxed), numSamples, t.microsPerSample);
             if (audio->bpm != syncPanelTempo)

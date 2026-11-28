@@ -145,6 +145,56 @@ namespace
                 expect(ra.left == rb.left);
             }
 
+            beginTest("rendered_ahead_it_plays_the_same_50_ms_later_and_its_midi_clock_with_it");
+            {
+                // D372: the standalone's worker renders 50 ms ahead; what the sound card gets is the direct render,
+                // that much later, sample for sample, and the clock out goes out with the samples it belongs to
+                const auto play = [](Processor& p, bool waitForWorker, std::vector<float>& left, std::vector<std::int64_t>& clocks) {
+                    juce::AudioBuffer<float> buffer(2, 480);
+                    for (int b = 0; b < 150; ++b)
+                    {
+                        if (waitForWorker)
+                            p.waitForRenderAheadForTesting(2000);
+                        juce::MidiBuffer midi;
+                        buffer.clear();
+                        p.processBlock(buffer, midi);
+                        for (const auto m : midi)
+                            if (m.getMessage().isMidiClock() || m.getMessage().isMidiStart())
+                                clocks.push_back(static_cast<std::int64_t>(b) * 480 + m.samplePosition);
+                        for (int i = 0; i < 480; ++i)
+                            left.push_back(buffer.getSample(0, i));
+                    }
+                };
+                auto direct = std::make_unique<Processor>();
+                direct->setPlaying(true);
+                direct->setPlayConfigDetails(0, 2, 48000.0, 480);
+                direct->prepareToPlay(48000.0, 480);
+                auto ahead = std::make_unique<Processor>();
+                ahead->useRenderAheadForTesting(true);
+                ahead->setPlaying(true);
+                ahead->setPlayConfigDetails(0, 2, 48000.0, 480);
+                ahead->prepareToPlay(48000.0, 480);
+                const int lead = ahead->renderAheadSamples();
+                expectEquals(lead, 2400);
+                std::vector<float> a, b;
+                std::vector<std::int64_t> clocksA, clocksB;
+                play(*direct, false, a, clocksA);
+                play(*ahead, true, b, clocksB);
+                expectEquals(static_cast<int>(ahead->renderAheadShortfall()), 0, "the worker kept ahead");
+                expect(peak(std::vector<float>(b.begin(), b.begin() + lead)) == 0.0f, "silence while the first block is rendered");
+                bool same = true;
+                for (size_t i = 0; i + static_cast<size_t>(lead) < b.size(); ++i)
+                    same = same && b[i + static_cast<size_t>(lead)] == a[i];
+                expect(same, "the direct render, 50 ms later");
+                expect(rms(b, 0, b.size()) > 0.01, "it plays");
+                bool clocksLater = clocksB.size() + 3 >= clocksA.size() && ! clocksB.empty();
+                for (size_t i = 0; i < clocksB.size() && i < clocksA.size(); ++i)
+                    clocksLater = clocksLater && clocksB[i] == clocksA[i] + lead;
+                expect(clocksLater, "the clock out moves with it: " + juce::String(static_cast<int>(clocksA.size())) + " and "
+                                        + juce::String(static_cast<int>(clocksB.size())) + " pulses");
+                ahead->releaseResources();
+            }
+
             beginTest("the_accuracy_levels_sound_alike_cost_less_and_an_offline_render_plays_at_best");
             {
                 // D349: Light (the host's rate, the looser solve) as loud as Best within 1 dB and cheaper; a host's

@@ -10,6 +10,7 @@
 
 #include "ClockFollower.h"
 #include "Pattern.h"
+#include "RenderAhead.h"
 #include "Sequencer.h"
 #include "sync/BeatSync.h"
 #include "sync/BlockClock.h"
@@ -74,7 +75,7 @@ namespace cs303
 
         // ---------------------------------------------------------------- juce::AudioProcessor
         void prepareToPlay(double sampleRate, int samplesPerBlock) override;
-        void releaseResources() override {}
+        void releaseResources() override;
         bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
         void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
         juce::AudioProcessorEditor* createEditor() override;
@@ -173,6 +174,20 @@ namespace cs303
         /** How much of the time the audio thread spent rendering, smoothed (0..1 of the block's own time). */
         [[nodiscard]] float load() const noexcept { return loadNow.load(); }
 
+        // ---------------------------------------------------------------- render ahead (CoolSynth's D372)
+        /** The standalone app renders this far ahead of the sound card (RenderAhead), so a slow block is covered by
+            the fast ones around it; keys, knobs and the transport answer this much later. A plugin and an export
+            render as the host asks. */
+        static constexpr double aheadSeconds = 0.05;
+        /** The latency render ahead adds now, in samples at the device's rate; 0 when it is off. */
+        [[nodiscard]] int renderAheadSamples() const noexcept;
+        /** Samples the sound card got silence for because the render ahead was behind. */
+        [[nodiscard]] std::int64_t renderAheadShortfall() const noexcept;
+        /** For the tests: render ahead on (from the next prepareToPlay) as in the standalone app, or off. */
+        void useRenderAheadForTesting(bool on) noexcept { aheadWanted = on; }
+        /** For the tests: waits until the render ahead is a whole lead ahead of the sound card. */
+        bool waitForRenderAheadForTesting(int milliseconds);
+
         // ---------------------------------------------------------------- the accuracy (D349; message thread)
         /** The circuits' accuracy: 0 Best; 1 Light, the voice at the host's rate, not near 96 kHz, and every
             circuit's solve to 1 uV but the pitch's (Tb303Voice::setLighter). A host's offline render always runs at
@@ -251,6 +266,9 @@ namespace cs303
         void renderVoice(float* v, int n, int key, double beatPerVoiceSample, double secondsPerStep, const Panel& panel) noexcept;
         void finishSpan(float* out, int start, int count, const Panel& panel) noexcept;
         void sendClock(juce::MidiBuffer& midi, int numSamples) noexcept;
+        /** One block as the audio thread rendered it before render ahead: on the audio thread, or on the render
+            ahead's worker, which gives the host clock at which the callback reaches the block (else -1: now). */
+        void renderBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi, std::int64_t callbackMicros) noexcept;
         void renderRange(int from, int to) noexcept;
         /** The transport starts or stops at the block's sample `at` (beat 0 for a start not led from outside). */
         void startOrStop(bool wantPlay, bool byClock, bool byHost, double clockBeat, int at) noexcept;
@@ -367,6 +385,10 @@ namespace cs303
         std::unique_ptr<juce::Timer> syncTicker;
         void startBeatSync(const SyncChoice& choice, bool network, coolsynth::sync::BeatSync::Options options);
         void keepSyncChoiceNow();
+
+        // Render ahead (D372): wanted in the standalone app; last, so it stops before anything it renders with goes.
+        bool aheadWanted = false;
+        std::unique_ptr<RenderAhead> ahead;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Processor)
     };

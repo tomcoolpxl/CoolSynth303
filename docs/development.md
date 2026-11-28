@@ -10,6 +10,8 @@ The Devil Fish is the same circuit with the parts Whittle changed set to his val
 
 The output ends in a soft saturation: untouched up to -3 dBFS, above it rounded off toward full scale, so a pushed Devil Fish never clips digitally.
 
+In the standalone app a worker thread renders 50 ms ahead of the sound card (`src/RenderAhead.h`, CoolSynth's D372), as REAPER's anticipative processing does: the voice averages some 60 % of a core at Best, but a note's attack or a fast knob can take a block over its time. The audio callback only hands samples and MIDI across; incoming MIDI reaches the next block rendered, the clock out leaves with its samples. A plugin renders as its DAW asks.
+
 ## The MCP server
 
 The standalone app can serve Claude over MCP on 127.0.0.1:47633 (`src/mcp`, as CoolSynth's): read and set the panel, run the sequencer, hold keys, record the output into a WAV file, picture the window. It is off until switched on in **Options > MIDI > Claude (MCP server)**, and the switch starts or stops it at once; only this computer can reach it. The switch is kept in `%APPDATA%\CoolSynth303\CoolSynth303.settings` as `<VALUE name="mcpServer" val="1"/>`, so a test setup can switch it on there before the app starts. `COOLSYNTH303_NO_MCP` in the environment keeps it off whatever the switch says. The plugin opens no port.

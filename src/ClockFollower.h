@@ -73,6 +73,10 @@ namespace cs303
             tests, where the MIDI comes in the block it belongs to. */
         void setBlockLate(bool on) noexcept { blockLate = on; }
 
+        /** Rendered ahead (CoolSynth's D372): the blocks are rendered this many samples before they are heard, so the
+            last pulse is that much older than the block's start, and the beat runs on past it by that much. */
+        void setLead(int samples) noexcept { lead = std::max(0, samples); }
+
         /** Song position pointer: sixteenths from the start. */
         void songPosition(int sixteenths) noexcept
         {
@@ -116,7 +120,8 @@ namespace cs303
             // Handed a block late (the standalone's MIDI), the pulses say where the last block began: aimed a block on.
             const std::int64_t aimed = now + (blockLate ? samples : 0);
             if (lastPulse >= 0 && pulseBeat >= 0.0)
-                target = pulseBeat + std::min(static_cast<double>(aimed - lastPulse) * beatsPerSample, 1.0 / pulsesPerBeat);
+                target = pulseBeat + std::min(static_cast<double>(aimed - lastPulse) * beatsPerSample,
+                                              1.0 / pulsesPerBeat + static_cast<double>(lead) * beatsPerSample);
             if (snap || std::abs(target - beat) > 0.5)
                 beat = target; // a start, a continue, a song position, or far off: there at once
             snap = false;
@@ -140,5 +145,6 @@ namespace cs303
         bool pulsed = false; // a pulse since the start
         bool snap = false;   // go where the pulses say at the next block
         bool blockLate = false;
+        int lead = 0;
     };
 }

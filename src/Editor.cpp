@@ -177,6 +177,8 @@ namespace cs303
             return job;
         };
         hooks.appRate = [this] { return processor.captureRate(); }; // the device's rate, or the host's
+        hooks.aheadSamples = [this] { return processor.renderAheadSamples(); }; // render ahead (D372)
+        hooks.renderLoad = [this] { return processor.load(); };
         if (processor.hasBeatSync())
         {
             // the beat sync's Play and Stop shared, or not (D361); kept by the processor in the app's settings

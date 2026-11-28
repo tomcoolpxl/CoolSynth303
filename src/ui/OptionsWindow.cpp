@@ -996,8 +996,11 @@ namespace cs303::ui
             if (device == nullptr)
                 return "No audio device open";
             const double r = device->getCurrentSampleRate();
-            const double ms = r > 0.0 ? 1000.0 * (device->getOutputLatencyInSamples() + device->getCurrentBufferSizeSamples()) / r : 0.0;
-            return "Latency " + juce::String(ms, 1) + " ms   CPU " + juce::String(juce::roundToInt(devices->getCpuUsage() * 100.0)) + " %";
+            // render ahead's lead counts, and its worker's load stands for the callback's, which only hands blocks over (D372)
+            const int aheadNow = hooks.aheadSamples ? hooks.aheadSamples() : 0;
+            const double ms = r > 0.0 ? 1000.0 * (device->getOutputLatencyInSamples() + device->getCurrentBufferSizeSamples() + aheadNow) / r : 0.0;
+            const double cpu = aheadNow > 0 && hooks.renderLoad ? static_cast<double>(hooks.renderLoad()) : devices->getCpuUsage();
+            return "Latency " + juce::String(ms, 1) + " ms   CPU " + juce::String(juce::roundToInt(cpu * 100.0)) + " %";
         }
 
         void changeListenerCallback(juce::ChangeBroadcaster*) override
