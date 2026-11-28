@@ -85,6 +85,8 @@ namespace cs303
 
         [[nodiscard]] bool isRunning() const noexcept { return isThreadRunning(); }
         [[nodiscard]] int aheadSamples() const noexcept { return ahead; }
+        /** Samples rendered and not yet played: the lead, less what the worker has fallen behind. */
+        [[nodiscard]] int buffered() const noexcept { return audioFifo.getNumReady(); }
         /** Samples the sound card got silence for because the worker was behind. */
         [[nodiscard]] std::int64_t shortfall() const noexcept { return missing.load(std::memory_order_relaxed); }
 

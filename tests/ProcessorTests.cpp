@@ -195,6 +195,49 @@ namespace
                 ahead->releaseResources();
             }
 
+            beginTest("rendered_ahead_and_falling_behind_it_plays_light_until_calm_then_best_again");
+            {
+                // D372: the worker's buffer below half its lead switches to Light; calm for calmSeconds, Best again
+                auto p = std::make_unique<Processor>();
+                p->useRenderAheadForTesting(true);
+                std::atomic<int> fill { 1 << 20 };
+                p->setRenderAheadFillForTesting([&fill] { return fill.load(); });
+                p->setPlaying(true);
+                p->setPlayConfigDetails(0, 2, 48000.0, 480);
+                p->prepareToPlay(48000.0, 480);
+                const auto play = [&](double seconds) {
+                    std::vector<float> left;
+                    juce::AudioBuffer<float> buffer(2, 480);
+                    for (int b = 0; b < static_cast<int>(seconds * 100.0); ++b)
+                    {
+                        p->waitForRenderAheadForTesting(2000);
+                        juce::MidiBuffer midi;
+                        p->processBlock(buffer, midi);
+                        for (int i = 0; i < 480; ++i)
+                            left.push_back(buffer.getSample(0, i));
+                    }
+                    return left;
+                };
+                play(0.5);
+                expect(! p->isLightWhileBusy(), "Best while the worker keeps ahead");
+                fill.store(0);
+                play(0.2);
+                expect(p->isLightWhileBusy(), "Light once it falls behind");
+                fill.store(1 << 20);
+                const auto light = play(1.0);
+                expect(allFinite(light));
+                expect(rms(light, 0, light.size()) > 0.01, "it plays on at Light");
+                expect(p->isLightWhileBusy(), "Light until calm for long enough");
+                logMessage("at Light while busy: " + juce::String(juce::roundToInt(100.0f * p->load())) + " % of the time it plays");
+                // the calm needs Light under 45 % of a core: so on this machine, not on a busy shared runner
+                if (juce::SystemStats::getEnvironmentVariable("CI", {}).isEmpty())
+                {
+                    play(Processor::calmSeconds + 1.0);
+                    expect(! p->isLightWhileBusy(), "Best again after the calm");
+                }
+                p->releaseResources();
+            }
+
             beginTest("the_accuracy_levels_sound_alike_cost_less_and_an_offline_render_plays_at_best");
             {
                 // D349: Light (the host's rate, the looser solve) as loud as Best within 1 dB and cheaper; a host's

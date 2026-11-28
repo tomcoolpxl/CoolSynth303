@@ -148,11 +148,13 @@ namespace cs303::ui
         }
 
         // the audio thread's share of its time, small, at the far left of the transport
+        // LIGHT in its place while the app has gone to Light because it fell behind (D372)
         const float load = editor.processor.load();
-        g.setColour(load > 0.8f ? colour::lampOn : palette().barDim);
+        const bool lightBusy = editor.processor.isLightWhileBusy();
+        g.setColour(load > 0.8f || lightBusy ? colour::lampOn : palette().barDim);
         g.setFont(monoFont(9.5f));
-        shapedText(g, "DSP " + juce::String(juce::roundToInt(load * 100.0f)) + "%", juce::Rectangle<int>(play->getX() - 74, 8, 64, 26),
-                   juce::Justification::centredRight, false);
+        shapedText(g, (lightBusy ? "LIGHT " : "DSP ") + juce::String(juce::roundToInt(load * 100.0f)) + "%",
+                   juce::Rectangle<int>(play->getX() - 74, 8, 64, 26), juce::Justification::centredRight, false);
     }
 
     juce::String TopBar::hintAt(juce::Point<int> p) const

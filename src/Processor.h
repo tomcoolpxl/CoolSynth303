@@ -188,6 +188,16 @@ namespace cs303
         /** For the tests: waits until the render ahead is a whole lead ahead of the sound card. */
         bool waitForRenderAheadForTesting(int milliseconds);
 
+        /** Light while busy (D372): at Best, a render ahead that falls below half its lead switches the voice to Light
+            (the device's rate, the looser solve) until it has run calm for a while, then back to Best. The voice
+            starts again at each switch, so the note it plays ends. True while it runs Light for that reason. */
+        [[nodiscard]] bool isLightWhileBusy() const noexcept { return lightBusyNow.load(std::memory_order_acquire); }
+        /** How long Light must run calm (its load under calmLoad on average, the lead at least half full) before Best
+            comes back; doubled at each return, so a machine that cannot hold Best does not switch back and forth. */
+        static constexpr double calmSeconds = 5.0, calmLoad = 0.45;
+        /** For the tests: what the render ahead has buffered, in place of the worker's own count. */
+        void setRenderAheadFillForTesting(std::function<int()> fill) { fillForTesting = std::move(fill); }
+
         // ---------------------------------------------------------------- the accuracy (D349; message thread)
         /** The circuits' accuracy: 0 Best; 1 Light, the voice at the host's rate, not near 96 kHz, and every
             circuit's solve to 1 uV but the pitch's (Tb303Voice::setLighter). A host's offline render always runs at
@@ -385,6 +395,14 @@ namespace cs303
         std::unique_ptr<juce::Timer> syncTicker;
         void startBeatSync(const SyncChoice& choice, bool network, coolsynth::sync::BeatSync::Options options);
         void keepSyncChoiceNow();
+
+        // Light while busy (D372): the render ahead's worker only
+        void watchLoad(int samples) noexcept;
+        void switchVoiceRate(bool light) noexcept;
+        bool lightBusy = false;
+        double calmNeeded = calmSeconds, calmFor = 0.0, calmLoadSum = 0.0;
+        std::atomic<bool> lightBusyNow { false };
+        std::function<int()> fillForTesting;
 
         // Render ahead (D372): wanted in the standalone app; last, so it stops before anything it renders with goes.
         bool aheadWanted = false;

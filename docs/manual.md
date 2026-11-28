@@ -74,6 +74,6 @@ Options opens the 303's own options: the audio device and the accuracy, the MIDI
 
 Accuracy: Best, or Light: the voice at the output's own rate and solved a little less tightly, some 40 % less CPU, the top octave up to 3.5 dB duller. A DAW's export always renders at Best.
 
-The standalone app renders its sound 50 ms ahead of the sound card, so a heavy moment (a note's attack, a knob turned fast) never drops out; keys, knobs and Play answer 50 ms later. The latency shown on the Audio page includes it, and its CPU figure is the rendering's.
+The standalone app renders its sound 50 ms ahead of the sound card, so a heavy moment (a note's attack, a knob turned fast) never drops out; keys, knobs and Play answer 50 ms later. The latency shown on the Audio page includes it, and its CPU figure is the rendering's. If the computer still falls behind at Best, the app goes to Light by itself (the note that plays ends there) and shows LIGHT in place of DSP; after a calm stretch it goes back to Best.
 
 Export: the pattern shown or the chain, 1 to 16 times, cut, rung out or as a seamless loop, the mix or the dry voice beside it too, at the app's rate or 96 kHz; a 24-bit WAV rendered at Best while the 303 plays on.

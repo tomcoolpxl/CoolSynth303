@@ -383,6 +383,10 @@ namespace cs303
         sixteenth = -1;
         dirty.store(true);
         prepared = true;
+        lightBusy = false; // Light while busy starts afresh (D372)
+        calmNeeded = calmSeconds;
+        calmFor = calmLoadSum = 0.0;
+        lightBusyNow.store(false, std::memory_order_release);
 
         // Render ahead (D372): the worker renders from here on; the MIDI clock's pulses it follows are that much older.
         const int lead = juce::roundToInt(aheadSeconds * hostRate);
@@ -392,6 +396,7 @@ namespace cs303
             if (ahead == nullptr)
                 ahead = std::make_unique<RenderAhead>();
             ahead->start([this](juce::AudioBuffer<float>& block, juce::MidiBuffer& m, std::int64_t start, std::int64_t micros) {
+                watchLoad(block.getNumSamples());
                 samplesSoFar = start;
                 renderBlock(block, m, micros);
             },
@@ -399,6 +404,64 @@ namespace cs303
                              return hostClockForTesting ? hostClockForTesting() : coolsynth::sync::hostMicrosNow();
                          });
         }
+    }
+
+    void Processor::watchLoad(int samples) noexcept
+    {
+        if (accuracyNow != 0 || ahead == nullptr)
+            return; // Light chosen: nothing lighter to go to
+        const int lead = ahead->aheadSamples();
+        const int fill = fillForTesting ? fillForTesting() : ahead->buffered();
+        if (! lightBusy)
+        {
+            if (fill < lead / 2)
+            {
+                lightBusy = true;
+                calmFor = calmLoadSum = 0.0;
+                switchVoiceRate(true);
+            }
+            return;
+        }
+        // Light renders at some 55 % of Best's cost (D349): its load under calmLoad on average over the window (a
+        // note's attack goes over it by itself), Best comes to some 80 %
+        if (fill < lead / 2)
+        {
+            calmFor = calmLoadSum = 0.0;
+            return;
+        }
+        const double seconds = samples / hostRate;
+        calmFor += seconds;
+        calmLoadSum += loadFollow * seconds;
+        if (calmFor < calmNeeded)
+            return;
+        if (calmLoadSum / calmFor < calmLoad)
+        {
+            lightBusy = false;
+            calmNeeded = std::min(2.0 * calmNeeded, 60.0);
+            switchVoiceRate(false);
+        }
+        calmFor = calmLoadSum = 0.0;
+    }
+
+    void Processor::switchVoiceRate(bool light) noexcept
+    {
+        // As prepareToPlay makes the voice, between two blocks of the worker; the voice starts again at the note
+        factor = hostRate < 80000.0 && ! light ? 2 : 1;
+        voiceRate = factor * hostRate;
+        lidEvery = std::max(1, juce::roundToInt(voiceRate / lidRate));
+        lidPhase = 0;
+        for (auto* v : { voice.get(), fishVoice.get() })
+        {
+            v->prepare(voiceRate);
+            v->setLighter(light);
+        }
+        decimator->reset();
+        coolsynth::synth::v3::SlotMemory memory;
+        drive->prepare(voiceRate, std::max(preparedBlock, maxBlock), memory);
+        for (auto* v : { voice.get(), fishVoice.get() })
+            v->settle(v == active && playing ? sequencer.current().volts : auditionVolts);
+        restSettled = false;
+        lightBusyNow.store(light, std::memory_order_release);
     }
 
     void Processor::releaseResources()
